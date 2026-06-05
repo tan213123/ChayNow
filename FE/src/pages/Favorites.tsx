@@ -54,7 +54,7 @@ export default function Favorites() {
             {authUser ? (
               <>
                 <span className="flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-sm">NV</span>
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-sm">{authUser.label?.[0] ?? "U"}</span>
                   {authUser.label}
                 </span>
                 <button

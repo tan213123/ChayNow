@@ -11,6 +11,7 @@ export default defineConfig({
     },
   },
   server: {
+    open: "/",
     proxy: {
       "/api": {
         // mọi request bắt đầu với /api sẽ được chuyển tiếp

@@ -1,44 +1,28 @@
 import { Link } from "react-router-dom";
+import OwnerLayout from "@/components/OwnerLayout";
 
 export default function OwnerNewDish() {
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="border-b border-slate-200 bg-white/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <Link to="/" className="flex items-center gap-3 text-emerald-700">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-xl">🌱</div>
-            <span className="font-semibold">Chay TPHCM</span>
-          </Link>
-          <nav className="flex items-center gap-8 text-sm text-slate-600">
-            <Link to="/" className="flex items-center gap-2 font-medium text-slate-900">
-              <span>🏠</span> Trang chủ
-            </Link>
-            <Link to="/favorites" className="flex items-center gap-2 text-slate-700 hover:text-slate-900">
-              <span>♥</span> Yêu thích
-            </Link>
-            <Link to="/manage" className="flex items-center gap-2 text-slate-700 hover:text-slate-900">
-              <span>🏪</span> Quản lý quán
-            </Link>
-          </nav>
-          <div className="flex items-center gap-4 text-sm text-slate-700">
-            <div className="flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2">
-              <img
-                src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=60"
-                alt="Avatar"
-                className="h-8 w-8 rounded-full object-cover"
-              />
-              Trần Thị Bình
-            </div>
-            <Link
-              to="/login"
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
-            >
-              ↩ Đăng xuất
-            </Link>
+    <OwnerLayout
+      profile={
+        <div className="flex items-center gap-4 text-sm text-slate-700">
+          <div className="flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2">
+            <img
+              src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=60"
+              alt="Avatar"
+              className="h-8 w-8 rounded-full object-cover"
+            />
+            Trần Thị Bình
           </div>
+          <Link
+            to="/login"
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+          >
+            ↩ Đăng xuất
+          </Link>
         </div>
-      </header>
-
+      }
+    >
       <section className="mx-auto max-w-6xl px-6 py-10">
         <div className="rounded-[2rem] bg-white p-10 shadow-xl">
           <div className="mb-10 flex flex-col gap-4">
@@ -117,6 +101,6 @@ export default function OwnerNewDish() {
           </form>
         </div>
       </section>
-    </main>
+    </OwnerLayout>
   );
 }

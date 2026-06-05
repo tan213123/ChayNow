@@ -8,6 +8,7 @@ import RestaurantDetail from "@/pages/RestaurantDetail";
 import OwnerDashboard from "@/pages/OwnerDashboard";
 import OwnerEdit from "@/pages/OwnerEdit";
 import OwnerNewDish from "@/pages/OwnerNewDish";
+import OwnerRestaurants from "@/pages/OwnerRestaurants";
 import OwnerEvents from "@/pages/OwnerEvents";
 import OwnerReviews from "@/pages/OwnerReviews";
 
@@ -31,6 +32,10 @@ export const routes: RouteObject[] = [
   {
     path: "/manage",
     element: <OwnerDashboard />,
+  },
+  {
+    path: "/manage/restaurants",
+    element: <OwnerRestaurants />,
   },
   {
     path: "/manage/edit",
