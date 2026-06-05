@@ -7,14 +7,9 @@ import { restaurants } from "@/data/restaurants";
 const defaultRestaurant = restaurants[0];
 
 type OwnerRestaurant = typeof defaultRestaurant;
-type AuthUser = {
-  email: string;
-  label: string;
-};
 
 export default function OwnerEdit() {
   const navigate = useNavigate();
-  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [restaurant, setRestaurant] = useState<OwnerRestaurant>(defaultRestaurant);
   const [tagString, setTagString] = useState(defaultRestaurant.tags.join(", "));
 

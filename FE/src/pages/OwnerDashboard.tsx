@@ -6,11 +6,6 @@ import { restaurants } from "@/data/restaurants";
 
 const defaultRestaurant = restaurants[0];
 
-type AuthUser = {
-  email: string;
-  label: string;
-};
-
 type OwnerRestaurant = typeof defaultRestaurant;
 type OwnerEvent = {
   id: string;
