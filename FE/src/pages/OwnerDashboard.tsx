@@ -1,20 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import Navbar from "@/components/Navbar";
 import { restaurants } from "@/data/restaurants";
 
 const defaultRestaurant = restaurants[0];
-
-type AuthUser = {
-  email: string;
-  label: string;
-};
 
 type OwnerRestaurant = typeof defaultRestaurant;
 
 export default function OwnerDashboard() {
   const navigate = useNavigate();
-  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [ownerRestaurant, setOwnerRestaurant] = useState<OwnerRestaurant>(defaultRestaurant);
 
   useEffect(() => {
@@ -25,7 +20,7 @@ export default function OwnerDashboard() {
     }
 
     try {
-      setAuthUser(JSON.parse(authData));
+      JSON.parse(authData); // validate JSON
     } catch {
       localStorage.removeItem("authUser");
       navigate("/login");
@@ -44,34 +39,7 @@ export default function OwnerDashboard() {
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="border-b border-slate-200 bg-white/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-3 text-emerald-700">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-xl">🌱</div>
-            <span className="font-semibold">Chay TPHCM</span>
-          </div>
-          <nav className="flex items-center gap-8 text-sm text-slate-600">
-            <Link to="/" className="flex items-center gap-2 font-medium text-slate-900">
-              <span>🏠</span> Trang chủ
-            </Link>
-            <Link to="/favorites" className="flex items-center gap-2 text-slate-700 hover:text-slate-900">
-              <span>♥</span> Yêu thích
-            </Link>
-            <Link to="/manage" className="flex items-center gap-2 text-slate-700 hover:text-slate-900">
-              <span>🏪</span> Quản lý quán
-            </Link>
-          </nav>
-          <div className="flex items-center gap-4 text-sm text-slate-700">
-            <span className="flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-sm">TB</span>
-              Trần Thị Bình
-            </span>
-            <button className="rounded-full bg-slate-100 px-4 py-2 font-semibold hover:bg-slate-200">
-              Đăng xuất
-            </button>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       <section className="mx-auto max-w-7xl px-6 py-10">
         <div className="space-y-8">
