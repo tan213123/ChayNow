@@ -11,7 +11,33 @@ public enum ErrorCode {
     FORBIDDEN("ERR_FORBIDDEN", "Access denied", HttpStatus.FORBIDDEN),
     NOT_FOUND("ERR_NOT_FOUND", "Resource not found", HttpStatus.NOT_FOUND),
     USER_ALREADY_EXISTS("ERR_USER_EXISTS", "User already exists", HttpStatus.BAD_REQUEST),
-    INVALID_CREDENTIALS("ERR_INVALID_CREDENTIALS", "Invalid username or password", HttpStatus.BAD_REQUEST);
+    INVALID_CREDENTIALS("ERR_INVALID_CREDENTIALS", "Invalid username or password", HttpStatus.BAD_REQUEST),
+    USER_NOT_FOUND("USER_NOT_FOUND" ,"User not found", HttpStatus.NOT_FOUND),
+    // TYPE RESTAURANT
+    TYPE_RESTAURANT_NOT_FOUND(
+            "ERR_TYPE_RESTAURANT_NOT_FOUND",
+            "cannot find type of restaurant",
+            HttpStatus.NOT_FOUND
+    ),
+
+    TYPE_RESTAURANT_ALREADY_EXISTS(
+            "ERR_TYPE_RESTAURANT_ALREADY_EXISTS",
+            "this type restaurant is exist",
+            HttpStatus.BAD_REQUEST
+    ),
+
+    RESTAURANT_NOT_FOUND(
+            "ERR_RESTAURANT_NOT_FOUND",
+            "cannot find this restaurant",
+            HttpStatus.NOT_FOUND
+    ),
+
+    REVIEW_ALREADY_EXISTS(
+            "ERR_REVIEW_ALREADY_EXISTS",
+            "You are comment this restaurant",
+            HttpStatus.BAD_REQUEST
+    );
+    
 
     private final String code;
     private final String defaultMessage;
