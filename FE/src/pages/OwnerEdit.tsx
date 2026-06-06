@@ -8,8 +8,17 @@ const defaultRestaurant = restaurants[0];
 
 type OwnerRestaurant = typeof defaultRestaurant;
 
+type AuthUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  label?: string;
+};
+
 export default function OwnerEdit() {
   const navigate = useNavigate();
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [restaurant, setRestaurant] = useState<OwnerRestaurant>(defaultRestaurant);
   const [tagString, setTagString] = useState(defaultRestaurant.tags.join(", "));
 
@@ -165,7 +174,7 @@ export default function OwnerEdit() {
           </div>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-slate-500">Thông tin quán của bạn sẽ được lưu trong trình duyệt và giữ trạng thái khi tải lại.</p>
+            <p className="text-sm text-slate-500"></p>
             <Link to="/manage" className="text-sm font-semibold text-emerald-700 hover:underline">
               Quay lại Dashboard
             </Link>

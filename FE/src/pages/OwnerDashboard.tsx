@@ -61,6 +61,7 @@ export default function OwnerDashboard() {
     }
   });
   const [dashboardView, setDashboardView] = useState<"menu" | "events">("menu");
+  const [selectedEvent, setSelectedEvent] = useState<OwnerEvent | null>(null);
 
   useEffect(() => {
     if (!authUser) {
@@ -70,12 +71,23 @@ export default function OwnerDashboard() {
 
     if (authUser.label !== "Chủ quán") {
       navigate("/");
+      return;
+    }
+
+    const storedRestaurant = localStorage.getItem("ownerRestaurant");
+    if (!storedRestaurant) {
+      navigate("/manage/restaurants");
     }
   }, [navigate, authUser]);
 
   const handleLogout = () => {
     localStorage.removeItem("authUser");
     navigate("/login");
+  };
+
+  const handleEditEvent = (event: OwnerEvent) => {
+    localStorage.setItem("editingEvent", JSON.stringify(event));
+    navigate("/manage/events");
   };
 
   return (
@@ -163,6 +175,7 @@ export default function OwnerDashboard() {
             </Link>
             <Link
               to="/manage/events"
+              onClick={() => localStorage.removeItem("editingEvent")}
               className="rounded-[2rem] border border-sky-200 bg-sky-50 p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
             >
               <p className="text-lg font-semibold text-sky-900">Tạo sự kiện</p>
@@ -233,10 +246,16 @@ export default function OwnerDashboard() {
                     <div className="flex flex-wrap items-center gap-3 text-sm text-slate-700">
                       <p className="font-semibold text-emerald-700">{event.discount ?? event.charityTime ?? ""}</p>
                       <Button
-                        onClick={() => navigate("/manage/events")}
+                        onClick={() => setSelectedEvent(event)}
+                        className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                      >
+                        Xem
+                      </Button>
+                      <Button
+                        onClick={() => handleEditEvent(event)}
                         className="rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
                       >
-                        Xem sự kiện
+                        Chỉnh sửa
                       </Button>
                     </div>
                   </div>
@@ -249,6 +268,90 @@ export default function OwnerDashboard() {
             </div>
           </div>
         </div>
+
+        {selectedEvent && (() => {
+          const getEventStatus = (startStr: string, endStr: string) => {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const start = new Date(startStr);
+            const end = new Date(endStr);
+            
+            if (today < start) return "Sắp diễn ra";
+            if (today > end) return "Đã kết thúc";
+            return "Đang diễn ra";
+          };
+
+          return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+              <div className="relative w-full max-w-lg overflow-hidden rounded-[2.5rem] border border-slate-100 bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+                
+                {/* Event Image */}
+                <div className="relative h-60 overflow-hidden bg-slate-100">
+                  <img 
+                    src={
+                      selectedEvent.type === "charity"
+                        ? "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80"
+                        : "https://images.unsplash.com/photo-1529042410759-befb1204b468?auto=format&fit=crop&w=1200&q=80"
+                    } 
+                    alt={selectedEvent.title} 
+                    className="h-full w-full object-cover" 
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                  
+                  {/* Badges */}
+                  <span className="absolute left-6 top-6 rounded-full bg-rose-500 px-4 py-1.5 text-xs font-bold text-white shadow-md">
+                    {selectedEvent.type === "discount" ? selectedEvent.discount : "Từ thiện"}
+                  </span>
+                  <span className={`absolute right-6 top-6 rounded-full px-4 py-1.5 text-xs font-bold text-white shadow-md ${
+                    getEventStatus(selectedEvent.startDate, selectedEvent.endDate) === "Đang diễn ra"
+                      ? "bg-emerald-600"
+                      : getEventStatus(selectedEvent.startDate, selectedEvent.endDate) === "Sắp diễn ra"
+                      ? "bg-amber-500"
+                      : "bg-slate-500"
+                  }`}>
+                    {getEventStatus(selectedEvent.startDate, selectedEvent.endDate)}
+                  </span>
+                </div>
+
+                {/* Event Body */}
+                <div className="p-8 space-y-5">
+                  <div>
+                    <h3 className="text-2xl font-bold text-slate-900 leading-snug">{selectedEvent.title}</h3>
+                    <p className="mt-4 text-sm leading-relaxed text-slate-600">{selectedEvent.description}</p>
+                  </div>
+
+                  {/* Metadata Details */}
+                  <div className="border-t border-slate-100 pt-5 space-y-3 text-sm text-slate-500">
+                    <p className="flex items-center gap-2">
+                      <span className="text-base">📍</span> 
+                      <span className="font-semibold text-slate-800">Quán:</span> {ownerRestaurant.name}
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <span className="text-base">📅</span> 
+                      <span className="font-semibold text-slate-800">Thời gian:</span> {selectedEvent.startDate} đến {selectedEvent.endDate}
+                    </p>
+                    {selectedEvent.charityTime && (
+                      <p className="flex items-center gap-2">
+                        <span className="text-base">🕒</span> 
+                        <span className="font-semibold text-slate-800">Giờ phát:</span> {selectedEvent.charityTime}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Close Button */}
+                  <div className="pt-2 flex justify-end">
+                    <Button 
+                      onClick={() => setSelectedEvent(null)}
+                      className="rounded-2xl bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition"
+                    >
+                      Đóng
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </OwnerLayout>
   );
 }

@@ -17,6 +17,8 @@ export default function OwnerEvents() {
   const [discount, setDiscount] = useState("");
   const [charityTime, setCharityTime] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
     const authData = localStorage.getItem("authUser");
@@ -29,10 +31,30 @@ export default function OwnerEvents() {
       const parsed = JSON.parse(authData) as { email: string; label: string };
       if (parsed.label !== "Chủ quán") {
         navigate("/");
+        return;
       }
     } catch {
       localStorage.removeItem("authUser");
       navigate("/login");
+      return;
+    }
+
+    const storedEditingEvent = localStorage.getItem("editingEvent");
+    if (storedEditingEvent) {
+      try {
+        const eventObj = JSON.parse(storedEditingEvent);
+        setIsEditMode(true);
+        setEditingId(eventObj.id);
+        setEventType(eventObj.type || "charity");
+        setTitle(eventObj.title || "");
+        setDescription(eventObj.description || "");
+        setStartDate(eventObj.startDate || "");
+        setEndDate(eventObj.endDate || "");
+        setDiscount(eventObj.discount ? eventObj.discount.replace("%", "") : "");
+        setCharityTime(eventObj.charityTime || "");
+      } catch {
+        localStorage.removeItem("editingEvent");
+      }
     }
   }, [navigate]);
 
@@ -47,30 +69,53 @@ export default function OwnerEvents() {
       return;
     }
 
-    const newEvent = {
-      id: `event-${Date.now()}`,
-      type: eventType,
-      title,
-      description,
-      startDate,
-      endDate,
-      discount: eventType === "discount" ? `${discount}%` : undefined,
-      charityTime: eventType === "charity" ? charityTime : undefined,
-      createdAt: new Date().toISOString(),
-    };
-
     const storedEvents = localStorage.getItem("ownerEvents");
-    const events = storedEvents ? JSON.parse(storedEvents) : [];
-    localStorage.setItem("ownerEvents", JSON.stringify([...events, newEvent]));
+    let events = storedEvents ? JSON.parse(storedEvents) : [];
 
-    setSuccessMessage("Sự kiện đã được tạo thành công! Bạn có thể xem lại trên trang Dashboard.");
-    setTitle("");
-    setDescription("");
-    setStartDate("");
-    setEndDate("");
-    setDiscount("");
-    setCharityTime("");
-    setEventType("charity");
+    if (isEditMode && editingId) {
+      events = events.map((ev: any) => {
+        if (ev.id === editingId) {
+          return {
+            ...ev,
+            type: eventType,
+            title,
+            description,
+            startDate,
+            endDate,
+            discount: eventType === "discount" ? `${discount}%` : undefined,
+            charityTime: eventType === "charity" ? charityTime : undefined,
+          };
+        }
+        return ev;
+      });
+      localStorage.setItem("ownerEvents", JSON.stringify(events));
+      localStorage.removeItem("editingEvent");
+      setSuccessMessage("Sự kiện đã được cập nhật thành công!");
+      setTimeout(() => {
+        navigate("/manage");
+      }, 1500);
+    } else {
+      const newEvent = {
+        id: `event-${Date.now()}`,
+        type: eventType,
+        title,
+        description,
+        startDate,
+        endDate,
+        discount: eventType === "discount" ? `${discount}%` : undefined,
+        charityTime: eventType === "charity" ? charityTime : undefined,
+        createdAt: new Date().toISOString(),
+      };
+      localStorage.setItem("ownerEvents", JSON.stringify([...events, newEvent]));
+      setSuccessMessage("Sự kiện đã được tạo thành công! Bạn có thể xem lại trên trang Dashboard.");
+      setTitle("");
+      setDescription("");
+      setStartDate("");
+      setEndDate("");
+      setDiscount("");
+      setCharityTime("");
+      setEventType("charity");
+    }
   };
 
   return (
@@ -97,10 +142,16 @@ export default function OwnerEvents() {
       <section className="mx-auto max-w-6xl px-6 py-10">
         <div className="rounded-[2rem] bg-white p-10 shadow-xl">
           <div className="mb-10 space-y-4">
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-emerald-600">Tạo sự kiện mới</p>
-            <h1 className="text-4xl font-extrabold text-slate-900">Tạo sự kiện mới</h1>
+            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-emerald-600">
+              {isEditMode ? "Chỉnh sửa sự kiện" : "Tạo sự kiện mới"}
+            </p>
+            <h1 className="text-4xl font-extrabold text-slate-900">
+              {isEditMode ? "Chỉnh sửa sự kiện" : "Tạo sự kiện mới"}
+            </h1>
             <p className="max-w-2xl text-sm leading-7 text-slate-600">
-              Tạo chương trình giảm giá hoặc hoạt động từ thiện cho quán, giúp khách hàng dễ dàng biết đến hơn.
+              {isEditMode 
+                ? "Cập nhật thông tin chi tiết của sự kiện này." 
+                : "Tạo chương trình giảm giá hoặc hoạt động từ thiện cho quán, giúp khách hàng dễ dàng biết đến hơn."}
             </p>
           </div>
 
@@ -225,6 +276,7 @@ export default function OwnerEvents() {
               <div className="flex flex-wrap gap-3">
                 <Link
                   to="/manage"
+                  onClick={() => localStorage.removeItem("editingEvent")}
                   className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100"
                 >
                   Hủy
@@ -234,7 +286,7 @@ export default function OwnerEvents() {
                   onClick={handleCreateEvent}
                   className="rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-700"
                 >
-                  + Tạo sự kiện
+                  {isEditMode ? "Cập nhật sự kiện" : "+ Tạo sự kiện"}
                 </button>
               </div>
             </div>
