@@ -21,7 +21,7 @@ const achievements = [
   { id: 1, icon: "🌱", title: "Người mới", desc: "Đã tham gia cộng đồng chay", unlocked: true },
   { id: 2, icon: "⭐", title: "Nhà phê bình", desc: "Đã viết 5 đánh giá", unlocked: true },
   { id: 3, icon: "♥", title: "Tín đồ chay", desc: "Đã lưu 10 địa điểm yêu thích", unlocked: false },
-  { id: 4, icon: "🏆", title: "Chuyên gia", desc: "Đã thử 20 nhà hàng chay", unlocked: false },
+  { id: 4, icon: "🏆", title: "Chuyênn gia", desc: "Đã thử 20 nhà hàng chay", unlocked: false },
 ];
 
 export default function Profile() {
