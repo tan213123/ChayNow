@@ -16,6 +16,10 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.CascadeType;
 import java.util.ArrayList;
 import java.util.List;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "restaurants")
 @Getter
@@ -24,6 +28,24 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class Restaurant extends BaseEntity {
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id")
+    private User owner;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private RestaurantStatus status = RestaurantStatus.PENDING;
+
+    @Column(name = "reject_reason", length = 1000)
+    private String rejectReason;
+
+    @Column(name = "approved_by")
+    private Long approvedBy;
+
+    @Column(name = "approved_at")
+    private LocalDateTime approvedAt;
      
     @Column(nullable = false,length = 255)
     private String name;
