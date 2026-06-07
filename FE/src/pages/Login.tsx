@@ -1,38 +1,68 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { login as loginApi } from "@/services/auth.service";
+import { useAuthStore } from "@/store/authStore";
+import type { Role } from "@/types/auth";
 
-const demoAccounts = [
-  { label: "Người dùng", email: "user@demo.com", password: "demo123" },
-  { label: "Chủ quán", email: "owner@demo.com", password: "demo123" },
-  { label: "Quản trị viên", email: "admin@demo.com", password: "demo123" },
-];
+const roleLabels: Record<Role, string> = {
+  ADMIN: "Quản trị viên",
+  OWNER: "Chủ quán",
+  USER: "Người dùng",
+};
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const login = useAuthStore((state) => state.login);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [selectedDemo, setSelectedDemo] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleDemoClick = (account: typeof demoAccounts[number]) => {
-    setEmail(account.email);
-    setPassword(account.password);
-    setSelectedDemo(account.email);
-  };
+  const redirectTo =
+    (location.state as { from?: { pathname?: string } } | null)?.from
+      ?.pathname ?? "/";
 
-  const handleLogin = () => {
-    const account = demoAccounts.find((item) => item.email === email.trim());
-    if (!account || password !== account.password) {
-      alert("Email hoặc mật khẩu không đúng. Vui lòng dùng demo123 cho tài khoản demo.");
+  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!email.trim() || !password) {
+      toast.error("Vui lòng nhập email và mật khẩu.");
       return;
     }
 
-    localStorage.setItem(
-      "authUser",
-      JSON.stringify({ email: account.email, label: account.label })
-    );
+    try {
+      setIsSubmitting(true);
+      const loginResponse = await loginApi({
+        email: email.trim(),
+        password,
+      });
 
-    navigate("/");
+      login(loginResponse);
+
+      // Temporary compatibility for pages that still read the old authUser key.
+      localStorage.setItem(
+        "authUser",
+        JSON.stringify({
+          email: loginResponse.user.email,
+          label: roleLabels[loginResponse.user.role],
+        }),
+      );
+
+      toast.success("Đăng nhập thành công.");
+      
+      const destination = loginResponse.user.role === "ADMIN" ? "/admin" : redirectTo;
+      navigate(destination, { replace: true });
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Đăng nhập thất bại. Vui lòng thử lại.";
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -40,11 +70,16 @@ export default function Login() {
       <header className="border-b border-slate-200 bg-white/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <Link to="/" className="flex items-center gap-3 text-emerald-700">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-xl">🌱</div>
-            <span className="font-semibold">Chay TPHCM</span>
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-xl">
+              🌱
+            </div>
+            <span className="font-semibold">ChayNow</span>
           </Link>
           <div className="flex items-center gap-4">
-            <Link to="/" className="text-sm font-medium text-slate-700 hover:text-slate-900">
+            <Link
+              to="/"
+              className="text-sm font-medium text-slate-700 hover:text-slate-900"
+            >
               Trang chủ
             </Link>
             <Link
@@ -62,75 +97,69 @@ export default function Login() {
           <div className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr] lg:items-start">
             <div>
               <div className="text-center">
-                <p className="text-sm font-semibold uppercase tracking-[0.3em] text-emerald-600">Đăng nhập</p>
-                <h1 className="mt-4 text-3xl font-extrabold text-slate-900">Đăng nhập vào Chay TPHCM</h1>
+                <p className="text-sm font-semibold uppercase tracking-[0.3em] text-emerald-600">
+                  Đăng nhập
+                </p>
+                <h1 className="mt-4 text-3xl font-extrabold text-slate-900">
+                  Đăng nhập vào ChayNow
+                </h1>
                 <p className="mt-3 text-sm leading-7 text-slate-600">
-                  Dùng tài khoản demo để đăng nhập nhanh và chuyển sang giao diện người dùng.
+                  Sử dụng tài khoản đã đăng ký để tiếp tục quản lý hồ sơ, yêu
+                  thích và khu vực chủ quán.
                 </p>
               </div>
 
-              <div className="mt-10 rounded-[2rem] border border-slate-200 bg-slate-50 p-8">
+              <form
+                onSubmit={handleLogin}
+                className="mt-10 rounded-[2rem] border border-slate-200 bg-slate-50 p-8"
+              >
                 <div className="space-y-5">
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-700">Email</label>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">
+                      Email
+                    </label>
                     <input
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(event) => setEmail(event.target.value)}
                       type="email"
+                      autoComplete="email"
                       placeholder="your@email.com"
                       className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
                     />
                   </div>
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-700">Mật khẩu</label>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">
+                      Mật khẩu
+                    </label>
                     <input
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(event) => setPassword(event.target.value)}
                       type="password"
-                      placeholder="••••••••"
+                      autoComplete="current-password"
+                      placeholder="Nhập mật khẩu"
                       className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
                     />
                   </div>
                   <Button
-                    onClick={handleLogin}
-                    className="w-full rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700"
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
                   >
-                    Đăng nhập
+                    {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
                   </Button>
                 </div>
-              </div>
-
-              <div className="mt-8 rounded-[2rem] border border-slate-200 bg-slate-50 p-6">
-                <p className="text-sm font-semibold text-slate-900">Tài khoản demo nhanh</p>
-                <p className="mt-2 text-sm text-slate-500">Nhấn vào tài khoản demo để tự động điền email và mật khẩu.</p>
-                <div className="mt-4 grid gap-3">
-                  {demoAccounts.map((account) => (
-                    <button
-                      key={account.email}
-                      type="button"
-                      onClick={() => handleDemoClick(account)}
-                      className={`w-full rounded-2xl border px-4 py-4 text-left shadow-sm transition ${
-                        selectedDemo === account.email
-                          ? "border-emerald-500 bg-emerald-50"
-                          : "border-slate-200 bg-white hover:border-emerald-300"
-                      }`}
-                    >
-                      <p className="text-sm font-semibold text-slate-900">{account.label}</p>
-                      <p className="mt-1 text-sm text-slate-500">{account.email}</p>
-                    </button>
-                  ))}
-                </div>
-                <p className="mt-4 text-xs text-slate-400">Mật khẩu mẫu: demo123</p>
-              </div>
+              </form>
             </div>
 
             <div className="rounded-[2rem] bg-emerald-600 p-8 text-white shadow-xl">
               <div className="space-y-6">
                 <div>
-                  <p className="text-sm uppercase tracking-[0.3em] text-emerald-100">Chưa có tài khoản?</p>
+                  <p className="text-sm uppercase tracking-[0.3em] text-emerald-100">
+                    Chưa có tài khoản?
+                  </p>
                   <h2 className="mt-3 text-2xl font-bold">Đăng ký nhanh</h2>
                   <p className="mt-3 text-sm leading-7 text-emerald-100/90">
-                    Chọn loại tài khoản phù hợp để tham gia cộng đồng Chay TPHCM ngay lập tức.
+                    Chọn loại tài khoản phù hợp để tham gia cộng đồng ChayNow.
                   </p>
                 </div>
                 <div className="space-y-3">
@@ -150,7 +179,8 @@ export default function Login() {
                 <div className="rounded-3xl bg-white/10 p-4 text-sm text-emerald-100">
                   <p className="font-semibold">Gợi ý</p>
                   <p className="mt-2 leading-6 text-emerald-100/90">
-                    Nếu bạn quản lý quán chay, chọn đăng ký chủ quán để đăng thông tin quán và sự kiện.
+                    Nếu bạn quản lý quán chay, chọn đăng ký chủ quán để đăng
+                    thông tin quán và sự kiện.
                   </p>
                 </div>
               </div>
