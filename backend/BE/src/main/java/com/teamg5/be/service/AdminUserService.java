@@ -11,4 +11,7 @@ public interface AdminUserService {
             String role,
             String status
     );
+
+    void suspendUser(Long userId);
+    void activateUser(Long userId);
 }

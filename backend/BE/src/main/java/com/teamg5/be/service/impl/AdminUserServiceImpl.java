@@ -88,4 +88,56 @@ public class AdminUserServiceImpl implements AdminUserService {
                 .last(dbPage.isLast())
                 .build();
     }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public void suspendUser(Long userId) {
+        User targetUser = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "User not found"));
+
+        User currentUser = getCurrentUser();
+        if (currentUser.getId().equals(targetUser.getId())) {
+            throw new AppException(ErrorCode.INVALID_INPUT, "You cannot suspend yourself");
+        }
+
+        targetUser.setStatus(AccountStatus.SUSPENDED);
+        userRepository.save(targetUser);
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public void activateUser(Long userId) {
+        User targetUser = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "User not found"));
+
+        User currentUser = getCurrentUser();
+        if (currentUser.getId().equals(targetUser.getId())) {
+            throw new AppException(ErrorCode.INVALID_INPUT, "You cannot activate yourself");
+        }
+
+        targetUser.setStatus(AccountStatus.ACTIVE);
+        userRepository.save(targetUser);
+    }
+
+    private User getCurrentUser() {
+        org.springframework.security.core.Authentication authentication =
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof User user) {
+            return user;
+        }
+
+        String email = authentication.getName();
+        if (email == null || email.equals("anonymousUser")) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+    }
 }

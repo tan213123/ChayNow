@@ -3,6 +3,7 @@ package com.teamg5.be.controller;
 import com.teamg5.be.dto.AdminUserResponseDTO;
 import com.teamg5.be.service.AdminUserService;
 import com.teamg5.be.dto.PageResponse;
+import com.teamg5.be.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -10,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -46,5 +49,29 @@ public class AdminController {
     ) {
         PageResponse<AdminUserResponseDTO> response = adminUserService.getAllUsers(page, size, keyword, role, status);
         return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/users/{id}/suspend")
+    @Operation(summary = "Đình chỉ người dùng", description = "Thay đổi trạng thái tài khoản của người dùng thành SUSPENDED.")
+    public ResponseEntity<ApiResponse<Void>> suspendUser(
+            @PathVariable(name = "id") Long id
+    ) {
+        adminUserService.suspendUser(id);
+        return ResponseEntity.ok(ApiResponse.<Void>builder()
+                .success(true)
+                .message("User suspended successfully")
+                .build());
+    }
+
+    @PutMapping("/users/{id}/activate")
+    @Operation(summary = "Kích hoạt người dùng", description = "Thay đổi trạng thái tài khoản của người dùng thành ACTIVE.")
+    public ResponseEntity<ApiResponse<Void>> activateUser(
+            @PathVariable(name = "id") Long id
+    ) {
+        adminUserService.activateUser(id);
+        return ResponseEntity.ok(ApiResponse.<Void>builder()
+                .success(true)
+                .message("User activated successfully")
+                .build());
     }
 }
