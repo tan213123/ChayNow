@@ -29,12 +29,17 @@ export default function Navbar() {
     navigate("/login");
   };
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => {
+    if (path.startsWith("/manage")) {
+      return location.pathname.startsWith("/manage");
+    }
+    return location.pathname === path;
+  };
 
   const navLinks = [
     { to: "/", label: "Trang chủ", icon: "🏠" },
     { to: "/favorites", label: "Yêu thích", icon: "♥" },
-    ...(authUser?.label === "Chủ quán" ? [{ to: "/manage", label: "Quản lý quán", icon: "🏪" }] : []),
+    ...(authUser?.label === "Chủ quán" ? [{ to: "/manage/restaurants", label: "Quản lý quán", icon: "🏪" }] : []),
   ];
 
   // Get user initials

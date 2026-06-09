@@ -9,8 +9,12 @@ import Profile from "@/pages/Profile";
 import OwnerDashboard from "@/pages/OwnerDashboard";
 import OwnerEdit from "@/pages/OwnerEdit";
 import OwnerNewDish from "@/pages/OwnerNewDish";
+import OwnerRestaurants from "@/pages/OwnerRestaurants";
 import OwnerEvents from "@/pages/OwnerEvents";
 import OwnerReviews from "@/pages/OwnerReviews";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import AdminDashboard from "@/pages/AdminDashboard";
+import AdminUsers from "@/pages/AdminUsers";
 
 export const routes: RouteObject[] = [
   {
@@ -23,7 +27,11 @@ export const routes: RouteObject[] = [
   },
   {
     path: "/favorites",
-    element: <Favorites />,
+    element: (
+      <ProtectedRoute>
+        <Favorites />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/restaurant/:id",
@@ -31,27 +39,75 @@ export const routes: RouteObject[] = [
   },
   {
     path: "/profile",
-    element: <Profile />,
+    element: (
+      <ProtectedRoute>
+        <Profile />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/manage",
-    element: <OwnerDashboard />,
+    element: (
+      <ProtectedRoute requiredRoles={["OWNER"]}>
+        <OwnerDashboard />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/manage/restaurants",
+    element: (
+      <ProtectedRoute requiredRoles={["OWNER"]}>
+        <OwnerRestaurants />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/manage/edit",
-    element: <OwnerEdit />,
+    element: (
+      <ProtectedRoute requiredRoles={["OWNER"]}>
+        <OwnerEdit />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/manage/new-dish",
-    element: <OwnerNewDish />,
+    element: (
+      <ProtectedRoute requiredRoles={["OWNER"]}>
+        <OwnerNewDish />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/manage/events",
-    element: <OwnerEvents />,
+    element: (
+      <ProtectedRoute requiredRoles={["OWNER"]}>
+        <OwnerEvents />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/manage/reviews",
-    element: <OwnerReviews />,
+    element: (
+      <ProtectedRoute requiredRoles={["OWNER"]}>
+        <OwnerReviews />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/admin",
+    element: (
+      <ProtectedRoute requiredRoles={["ADMIN"]}>
+        <AdminDashboard />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/admin/users",
+    element: (
+      <ProtectedRoute requiredRoles={["ADMIN"]}>
+        <AdminUsers />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/",

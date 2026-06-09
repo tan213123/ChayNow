@@ -1,15 +1,24 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import Navbar from "@/components/Navbar";
+import OwnerLayout from "@/components/OwnerLayout";
 import { restaurants } from "@/data/restaurants";
 
 const defaultRestaurant = restaurants[0];
 
 type OwnerRestaurant = typeof defaultRestaurant;
 
+type AuthUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  label?: string;
+};
+
 export default function OwnerEdit() {
   const navigate = useNavigate();
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [restaurant, setRestaurant] = useState<OwnerRestaurant>(defaultRestaurant);
   const [tagString, setTagString] = useState(defaultRestaurant.tags.join(", "));
 
@@ -21,7 +30,12 @@ export default function OwnerEdit() {
     }
 
     try {
-      JSON.parse(authData); // validate JSON
+      const parsed = JSON.parse(authData) as AuthUser;
+      if (parsed.label !== "Chủ quán") {
+        navigate("/");
+        return;
+      }
+      setAuthUser(parsed);
     } catch {
       localStorage.removeItem("authUser");
       navigate("/login");
@@ -40,6 +54,11 @@ export default function OwnerEdit() {
     }
   }, [navigate]);
 
+  const handleLogout = () => {
+    localStorage.removeItem("authUser");
+    navigate("/login");
+  };
+
   const handleInputChange = (key: keyof OwnerRestaurant, value: string) => {
     setRestaurant((current) => ({ ...current, [key]: value } as OwnerRestaurant));
   };
@@ -55,9 +74,19 @@ export default function OwnerEdit() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900">
-      <Navbar />
-
+    <OwnerLayout
+      profile={
+        <div className="flex items-center gap-4 text-sm text-slate-700">
+          <span className="flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-sm">{authUser?.label?.[0] ?? "U"}</span>
+            {authUser?.label ?? "Chủ quán"}
+          </span>
+          <button onClick={handleLogout} className="rounded-full bg-slate-100 px-4 py-2 font-semibold hover:bg-slate-200">
+            Đăng xuất
+          </button>
+        </div>
+      }
+    >
       <section className="mx-auto max-w-5xl px-6 py-10">
         <div className="rounded-[2rem] bg-white p-8 shadow-sm">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
@@ -145,13 +174,13 @@ export default function OwnerEdit() {
           </div>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-slate-500">Thông tin quán của bạn sẽ được lưu trong trình duyệt và giữ trạng thái khi tải lại.</p>
+            <p className="text-sm text-slate-500"></p>
             <Link to="/manage" className="text-sm font-semibold text-emerald-700 hover:underline">
               Quay lại Dashboard
             </Link>
           </div>
         </div>
       </section>
-    </main>
+    </OwnerLayout>
   );
 }

@@ -94,7 +94,7 @@ export default function Profile() {
                   </button>
                   {authUser.label === "Chủ quán" && (
                     <Link
-                      to="/manage"
+                      to="/manage/restaurants"
                       className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-emerald-700 shadow-lg transition hover:bg-emerald-50"
                     >
                       Quản lý quán
