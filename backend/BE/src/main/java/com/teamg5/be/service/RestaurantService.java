@@ -3,13 +3,14 @@ package com.teamg5.be.service;
 import com.teamg5.be.dto.CreateRestaurantRequest;
 import com.teamg5.be.dto.RestaurantResponse;
 import com.teamg5.be.dto.TypeRestaurantResponse;
+import com.teamg5.be.dto.UpdateRestaurantRequest;
 import com.teamg5.be.repository.RestaurantRepository;
 import com.teamg5.be.repository.TypeRestaurantRepository;
 import com.teamg5.be.exception.AppException;
 import com.teamg5.be.exception.ErrorCode;
 
 import lombok.RequiredArgsConstructor;
-
+import org.springframework.util.StringUtils;
 import com.teamg5.be.entity.TypeRestaurant;
 import com.teamg5.be.entity.Media;
 import com.teamg5.be.entity.Mediatype;
@@ -68,7 +69,37 @@ public class RestaurantService {
                 .map(RestaurantResponse::from)
                 .toList();
     }
+    public RestaurantResponse updateResponse(Long restaurantId , UpdateRestaurantRequest request) {
+         Restaurant restaurant = restaurantRepository.findById(restaurantId)
+            .orElseThrow(() -> new AppException(ErrorCode.RESTAURANT_NOT_FOUND));
 
+    if (StringUtils.hasText(request.getName())) {
+        restaurant.setName(request.getName());
+    }
+
+    if (StringUtils.hasText(request.getAddress())) {
+        restaurant.setAddress(request.getAddress());
+    }
+
+    if (StringUtils.hasText(request.getPhoneNumber())) {
+        restaurant.setPhoneNumber(request.getPhoneNumber());
+    }
+
+    if (StringUtils.hasText(request.getDescription())) {
+        restaurant.setDescription(request.getDescription());
+    }
+
+    if (request.getTypeRestaurantId() != null) {
+        TypeRestaurant typeRestaurant = typeRestaurantRepository.findById(request.getTypeRestaurantId())
+                .orElseThrow(() -> new AppException(ErrorCode.TYPE_RESTAURANT_NOT_FOUND));
+
+        restaurant.setTypeRestaurant(typeRestaurant);
+    }
+
+    Restaurant savedRestaurant = restaurantRepository.save(restaurant);
+
+    return RestaurantResponse.from(savedRestaurant);
+    }
 
 
 }
