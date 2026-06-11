@@ -19,6 +19,11 @@ type OwnerEvent = {
   createdAt: string;
 };
 
+type AuthUser = {
+  email: string;
+  label: string;
+};
+
 export default function OwnerDashboard() {
   const navigate = useNavigate();
   const authUser = useMemo<AuthUser | null>(() => {

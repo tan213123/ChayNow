@@ -1,78 +1,105 @@
 import axios, {
+  AxiosError,
   type AxiosInstance,
   type AxiosRequestConfig,
-  type AxiosResponse,
+  type InternalAxiosRequestConfig,
 } from "axios";
 
+import { useAuthStore } from "@/store/authStore";
+
 const config: AxiosRequestConfig = {
-  baseURL:
-    "https://e5a6-2405-4803-ccdd-f6f0-c0b5-aaf6-31a0-74a4.ngrok-free.app/api",
   timeout: 10000,
   headers: {
-    "Content-Type": "application/json",
+    "Content-Type": "application/json"
   },
 };
 
 const apiService: AxiosInstance = axios.create(config);
 
-//INTERCEPTORS
+const publicEndpoints = ["/auth/login", "/auth/register"];
+
+const isPublicEndpoint = (url?: string) => {
+  if (!url) {
+    return false;
+  }
+
+  return publicEndpoints.some((endpoint) => url.includes(endpoint));
+};
+
+/**
+ * REQUEST INTERCEPTOR
+ */
 apiService.interceptors.request.use(
-  (config) => {
-    const token =
-      typeof window !== "undefined"
-        ? localStorage.getItem("access_token")
-        : null;
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+  (config: InternalAxiosRequestConfig) => {
+    const { accessToken } = useAuthStore.getState();
+
+    if (accessToken && !isPublicEndpoint(config.url)) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
     }
-    // Let the browser set Content-Type automatically for FormData (multipart + boundary)
+
     if (config.data instanceof FormData) {
       delete config.headers["Content-Type"];
     }
+
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  },
+  (error) => Promise.reject(error),
 );
 
+/**
+ * RESPONSE INTERCEPTOR
+ */
 apiService.interceptors.response.use(
-  (response: AxiosResponse) => {
-    return response.data;
-  },
-  (error) => {
-    if (error.response) {
-      // Extract the backend message
-      const backendMessage =
-        error.response.data?.message ||
-        error.response.data?.error ||
-        error.message;
-      switch (error.response.status) {
-        case 400:
-          console.error("Bad Request:", backendMessage);
-          break;
-        case 401:
-          console.error(
-            "Unauthorized - token may be invalid or expired:",
-            backendMessage,
-          );
-          localStorage.removeItem("access_token");
-          break;
-        case 403:
-          console.error(
-            "Forbidden - insufficient permissions:",
-            backendMessage,
-          );
-          break;
-        case 500:
-          console.error("Server error:", backendMessage);
-          break;
-        default:
-          console.error("Unexpected error:", error.response.status);
-      }
-      // Reject with an Error that carries the backend message
-      return Promise.reject(new Error(backendMessage));
+  (response) => response.data,
+
+  (error: AxiosError<any>) => {
+    if (!error.response) {
+      console.error("Network Error:", error.message);
+      return Promise.reject(error);
     }
+
+    const status = error.response.status;
+
+    const backendMessage =
+      error.response.data?.message ||
+      error.response.data?.error ||
+      error.message;
+
+    switch (status) {
+      case 400:
+        console.error("Bad Request:", backendMessage);
+        break;
+
+      case 401:
+        console.error("Unauthorized:", backendMessage);
+
+        // Logout khỏi Zustand
+        useAuthStore.getState().logout();
+
+        break;
+
+      case 403:
+        console.error("Forbidden:", backendMessage);
+        break;
+
+      case 404:
+        console.error("Not Found:", backendMessage);
+        break;
+
+      case 500:
+        console.error("Internal Server Error:", backendMessage);
+        break;
+
+      default:
+        console.error(`HTTP ${status}:`, backendMessage);
+    }
+
+    /**
+     * Giữ nguyên AxiosError
+     * Chỉ overwrite message, UI hiển thị đẹp hơn
+     */
+    error.message = backendMessage;
+
     return Promise.reject(error);
   },
 );
