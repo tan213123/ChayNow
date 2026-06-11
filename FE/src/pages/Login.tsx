@@ -51,7 +51,7 @@ export default function Login() {
       );
 
       toast.success("Đăng nhập thành công.");
-      
+
       const destination = loginResponse.user.role === "ADMIN" ? "/admin" : redirectTo;
       navigate(destination, { replace: true });
     } catch (error) {
