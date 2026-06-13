@@ -4,7 +4,13 @@ import com.teamg5.be.entity.Place;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.List;
+import java.util.Optional;
 @Repository
 public interface PlaceRepository extends JpaRepository<Place, Long> {
-   // List<Place> findActivePlace();
+   Optional<Place> findByIdAndActiveTrue(Long placeId);
+
+    List<Place> findAllByActiveTrue();
+
+    List<Place> findAllByActiveFalse();
+   
 }

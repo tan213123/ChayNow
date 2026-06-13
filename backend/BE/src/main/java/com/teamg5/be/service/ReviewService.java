@@ -56,21 +56,92 @@ public class ReviewService {
 
         return ReviewResponse.from(savedReview);
     }
-
+// lấy tất cả review của nhà hàng theo id
     @Transactional(readOnly = true)
     public List<ReviewResponse> getReviewsByRestaurant(Long restaurantId) {
 
-        boolean restaurantExists = restaurantRepository.existsById(restaurantId);
-
-        if (!restaurantExists) {
-            throw new AppException(ErrorCode.RESTAURANT_NOT_FOUND);
-        }
+        restaurantRepository.findByIdAndActiveTrue(restaurantId)
+                .orElseThrow(() ->
+                        new AppException(
+                                ErrorCode.RESTAURANT_NOT_FOUND
+                        )
+                );
 
         return reviewRepository.findByRestaurant_Id(restaurantId)
                 .stream()
                 .map(ReviewResponse::from)
                 .toList();
     }
+    // lấy tất cả review của hệ thống
+     @Transactional(readOnly = true)
+    public List<ReviewResponse> getAllReviews() {
+
+        return reviewRepository.findAll()
+                .stream()
+                .map(ReviewResponse::from)
+                .toList();
+    }
+    @Transactional(readOnly = true)
+    public ReviewResponse getReviewById(Long reviewId) {
+
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() ->
+                        new AppException(ErrorCode.REVIEW_NOT_FOUND)
+                );
+
+        return ReviewResponse.from(review);
+    }
+    // update
+    public ReviewResponse updateReview(
+            Long reviewId,
+            CreateReviewRequest request
+    ) {
+        User currentUser = getCurrentUser();
+
+        Review review = reviewRepository
+                .findByIdAndUser_Id(
+                        reviewId,
+                        currentUser.getId()
+                )
+                .orElseThrow(() ->
+                        new AppException(ErrorCode.REVIEW_NOT_FOUND)
+                );
+
+        review.setRating(request.getRating());
+        review.setContext(request.getContext().trim());
+
+        Review savedReview = reviewRepository.save(review);
+
+        return ReviewResponse.from(savedReview);
+    }
+    // được xóa bởi người dùng
+     public void deleteReview(Long reviewId) {
+
+        User currentUser = getCurrentUser();
+
+        Review review = reviewRepository
+                .findByIdAndUser_Id(
+                        reviewId,
+                        currentUser.getId()
+                )
+                .orElseThrow(() ->
+                        new AppException(ErrorCode.REVIEW_NOT_FOUND)
+                );
+
+        reviewRepository.delete(review);
+    }
+    // xóa bởi admin
+
+     public void adminDeleteReview(Long reviewId) {
+
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() ->
+                        new AppException(ErrorCode.REVIEW_NOT_FOUND)
+                );
+
+        reviewRepository.delete(review);
+    }
+
 
     private User getCurrentUser() {
 
@@ -96,4 +167,5 @@ public class ReviewService {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
     }
+    
 }

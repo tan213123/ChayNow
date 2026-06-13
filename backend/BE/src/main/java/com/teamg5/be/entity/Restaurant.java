@@ -8,6 +8,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Column;
 import com.teamg5.be.entity.BaseEntity;
 import jakarta.persistence.ManyToOne;
@@ -42,6 +44,14 @@ public class Restaurant extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "place_id")
     private Place place;
+     // cập nhật trạng tháy hiện tại đống của hay mở của (optional)
+    // @Enumerated(EnumType.STRING)
+    // @Column(name = "operating_status", nullable = false , length = 20)
+    // @Builder.Default
+    // private RestaurantStatus restaurantStatus = RestaurantStatus.OPEN;
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean active = true;
 
     @OneToMany(mappedBy = "restaurant", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

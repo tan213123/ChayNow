@@ -20,6 +20,9 @@ public class CreateRestaurantRequest {
     
     private String description;
 
+    @NotNull(message = "Place cannot null!")
+    private Long placeId;
+
     @NotNull(message = "Type restaurant ID is required")
     private Long typeRestaurantId;
 

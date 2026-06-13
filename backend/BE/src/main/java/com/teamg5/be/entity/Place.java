@@ -35,9 +35,9 @@ public class Place extends BaseEntity {
     @Column(length = 500)
     private String address;
 
-    private Double latitude;
+    // private Double latitude;
 
-    private Double longitude;
+    // private Double longitude;
 
     @Column(name = "map_url", length = 1000)
     private String mapUrl;

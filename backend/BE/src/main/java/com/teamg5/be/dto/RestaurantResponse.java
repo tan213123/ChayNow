@@ -17,25 +17,49 @@ public class RestaurantResponse {
     private String description;
     private String phoneNumber;
     private String address;
-
+    private Boolean active;
     private Long typeRestaurantId;
+    private Long placeId;
+    private String placeName;
     private String typeRestaurantName;
 
     private List<MediaResponse> mediaList;
 
     public static RestaurantResponse from(Restaurant restaurant) {
-        return RestaurantResponse.builder()
+         return RestaurantResponse.builder()
                 .id(restaurant.getId())
                 .name(restaurant.getName())
+                .address(restaurant.getAddress())
                 .description(restaurant.getDescription())
                 .phoneNumber(restaurant.getPhoneNumber())
-                .address(restaurant.getAddress())
-                .typeRestaurantId(restaurant.getTypeRestaurant().getId())
-                .typeRestaurantName(restaurant.getTypeRestaurant().getName())
+
+               // .operatingStatus(restaurant.getOperatingStatus())
+                .active(restaurant.getActive())
+
+                .placeId(
+                        restaurant.getPlace() != null
+                                ? restaurant.getPlace().getId()
+                                : null
+                )
+                .placeName(
+                        restaurant.getPlace() != null
+                                ? restaurant.getPlace().getName()
+                                : null
+                )
+
+                .typeRestaurantId(
+                        restaurant.getTypeRestaurant().getId()
+                )
+                .typeRestaurantName(
+                        restaurant.getTypeRestaurant().getName()
+                )
+
                 .mediaList(
-                        restaurant.getMediaList().stream()
-                        .map(MediaResponse::from)
-                        .toList())
+                        restaurant.getMediaList()
+                                .stream()
+                                .map(MediaResponse::from)
+                                .toList()
+                )
                 .build();
     }
 }

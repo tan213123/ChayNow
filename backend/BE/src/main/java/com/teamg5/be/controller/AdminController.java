@@ -52,7 +52,7 @@ public class AdminController {
     }
 
     @PutMapping("/users/{id}/suspend")
-    @Operation(summary = "Đình chỉ người dùng", description = "Thay đổi trạng thái tài khoản của người dùng thành SUSPENDED.")
+@Operation(summary = "Đình chỉ người dùng", description = "Thay đổi trạng thái tài khoản của người dùng thành SUSPENDED.")    
     public ResponseEntity<ApiResponse<Void>> suspendUser(
             @PathVariable(name = "id") Long id
     ) {
