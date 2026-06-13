@@ -11,6 +11,7 @@ import OwnerEdit from "@/pages/OwnerEdit";
 import OwnerNewDish from "@/pages/OwnerNewDish";
 import OwnerEvents from "@/pages/OwnerEvents";
 import OwnerReviews from "@/pages/OwnerReviews";
+import UserManagement from "@/pages/UserManagement";
 
 export const routes: RouteObject[] = [
   {
@@ -52,6 +53,10 @@ export const routes: RouteObject[] = [
   {
     path: "/manage/reviews",
     element: <OwnerReviews />,
+  },
+  {
+    path: "/manage/user",
+    element: <UserManagement />,
   },
   {
     path: "/",
