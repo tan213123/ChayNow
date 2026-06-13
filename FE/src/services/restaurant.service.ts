@@ -3,6 +3,7 @@ import type {
   ApiResponse,
   CreateRestaurantRequest,
   CreateReviewRequest,
+  CreateTypeRestaurantRequest,
   RestaurantResponse,
   ReviewResponse,
   TypeRestaurantResponse,
@@ -22,6 +23,14 @@ export const getTypeRestaurant = async (
 ): Promise<TypeRestaurantResponse> =>
   apiService.get<TypeRestaurantResponse, TypeRestaurantResponse>(
     `/api/type-restaurant/${typeRestaurantId}`,
+  );
+
+export const createTypeRestaurant = async (
+  data: CreateTypeRestaurantRequest,
+): Promise<TypeRestaurantResponse> =>
+  apiService.post<TypeRestaurantResponse, TypeRestaurantResponse>(
+    "/api/type-restaurant",
+    data,
   );
 
 export const getRestaurant = async (

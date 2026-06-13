@@ -10,6 +10,11 @@ export interface TypeRestaurantResponse {
   description: string | null;
 }
 
+export interface CreateTypeRestaurantRequest {
+  name: string;
+  description?: string;
+}
+
 export interface RestaurantResponse {
   id: number;
   name: string;

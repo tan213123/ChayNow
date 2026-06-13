@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import OwnerLayout from "@/components/OwnerLayout";
 import {
   createRestaurant,
+  createTypeRestaurant,
   getRestaurant,
   getTypeRestaurants,
   updateRestaurant,
@@ -32,6 +33,8 @@ type RestaurantForm = {
   placeId: string;
   mediaUrl: string;
 };
+
+const standardTypeNames = ["Bình dân", "Buffet", "Cao cấp", "Từ thiện"] as const;
 
 const emptyRestaurant: RestaurantForm = {
   name: "",
@@ -64,6 +67,9 @@ export default function OwnerEdit() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingPlace, setIsSavingPlace] = useState(false);
+  const [isCreatingType, setIsCreatingType] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -141,6 +147,56 @@ export default function OwnerEdit() {
 
   const setPlaceField = (key: keyof PlaceRequest, value: string) => {
     setPlaceDraft((current) => ({ ...current, [key]: value }));
+  };
+
+  const handleTypeSelection = async (value: string) => {
+    if (!value || !value.startsWith("new:")) {
+      setField("typeRestaurantId", value);
+      return;
+    }
+
+    const typeName = value.slice(4);
+    try {
+      setIsCreatingType(true);
+      const created = await createTypeRestaurant({
+        name: typeName,
+        description: `Loại hình ${typeName}`,
+      });
+      setTypes((current) => [...current, created]);
+      setField("typeRestaurantId", String(created.id));
+      toast.success(`Đã thêm loại hình "${typeName}".`);
+    } catch (error) {
+      setField("typeRestaurantId", "");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Không thể tạo loại hình nhà hàng.",
+      );
+    } finally {
+      setIsCreatingType(false);
+    }
+  };
+
+  const handleImageChange = (file: File | null) => {
+    if (!file) {
+      setImageFile(null);
+      setImagePreviewUrl("");
+      return;
+    }
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+      toast.error("Chỉ hỗ trợ ảnh PNG, JPG, JPEG hoặc WebP.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Dung lượng ảnh tối đa là 5MB.");
+      return;
+    }
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setImagePreviewUrl(typeof reader.result === "string" ? reader.result : "");
+    };
+    reader.readAsDataURL(file);
   };
 
   const handlePlaceSelection = async (value: string) => {
@@ -255,6 +311,13 @@ export default function OwnerEdit() {
       return;
     }
 
+    if (imageFile) {
+      toast.error(
+        "Backend chưa có API upload ảnh. Vui lòng bỏ ảnh mới trước khi lưu nhà hàng.",
+      );
+      return;
+    }
+
     const phoneNumber = form.phoneNumber.replace(/\s/g, "");
     if (phoneNumber && !/^(0|\+84)[0-9]{8,10}$/.test(phoneNumber)) {
       toast.error("Số điện thoại không đúng định dạng.");
@@ -341,17 +404,29 @@ export default function OwnerEdit() {
               Loại hình *
               <select
                 value={form.typeRestaurantId}
-                onChange={(event) =>
-                  setField("typeRestaurantId", event.target.value)
-                }
+                onChange={(event) => handleTypeSelection(event.target.value)}
+                disabled={isCreatingType}
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-normal outline-none focus:border-emerald-500"
               >
-                <option value="">Chọn loại hình</option>
-                {types.map((type) => (
-                  <option key={type.id} value={type.id}>
-                    {type.name}
-                  </option>
-                ))}
+                <option value="">Tất cả</option>
+                {standardTypeNames.map((name) => {
+                  const existingType = types.find(
+                    (type) =>
+                      type.name.localeCompare(name, "vi", {
+                        sensitivity: "base",
+                      }) === 0,
+                  );
+                  return (
+                    <option
+                      key={name}
+                      value={
+                        existingType ? String(existingType.id) : `new:${name}`
+                      }
+                    >
+                      {name}
+                    </option>
+                  );
+                })}
               </select>
             </label>
             <label className="space-y-2 text-sm font-semibold text-slate-700">
@@ -372,15 +447,51 @@ export default function OwnerEdit() {
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-normal outline-none focus:border-emerald-500"
               />
             </label>
-            <label className="space-y-2 text-sm font-semibold text-slate-700 md:col-span-2">
-              URL hình ảnh
-              <input
-                value={form.mediaUrl}
-                onChange={(event) => setField("mediaUrl", event.target.value)}
-                placeholder="https://..."
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-normal outline-none focus:border-emerald-500"
-              />
-            </label>
+            <div className="space-y-3 text-sm font-semibold text-slate-700 md:col-span-2">
+              Hình ảnh nhà hàng
+              <label className="flex cursor-pointer flex-col items-center justify-center rounded-[2rem] border border-dashed border-slate-300 bg-slate-50 p-6 text-center transition hover:border-emerald-400 hover:bg-emerald-50">
+                <span className="text-sm font-semibold text-slate-700">
+                  Chọn ảnh từ máy tính
+                </span>
+                <span className="mt-1 text-xs font-normal text-slate-500">
+                  PNG, JPG, JPEG hoặc WebP, tối đa 5MB
+                </span>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="sr-only"
+                  onChange={(event) =>
+                    handleImageChange(event.target.files?.[0] ?? null)
+                  }
+                />
+              </label>
+              {imagePreviewUrl || form.mediaUrl ? (
+                <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-100">
+                  <img
+                    src={imagePreviewUrl || form.mediaUrl}
+                    alt="Xem trước nhà hàng"
+                    className="h-64 w-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setImageFile(null);
+                      setImagePreviewUrl("");
+                      setField("mediaUrl", "");
+                    }}
+                    className="absolute right-4 top-4 rounded-full bg-white/90 px-4 py-2 text-xs font-semibold text-rose-700 shadow"
+                  >
+                    Xóa ảnh
+                  </button>
+                </div>
+              ) : null}
+              {imageFile ? (
+                <p className="text-xs font-normal text-amber-700">
+                  Đã chọn: {imageFile.name}. Backend hiện chưa có API upload
+                  file nên ảnh mới chưa thể lưu lên hệ thống.
+                </p>
+              ) : null}
+            </div>
             <label className="space-y-2 text-sm font-semibold text-slate-700 md:col-span-2">
               Mô tả
               <textarea
