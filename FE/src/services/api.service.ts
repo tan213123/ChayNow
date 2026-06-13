@@ -8,15 +8,16 @@ import axios, {
 import { useAuthStore } from "@/store/authStore";
 
 const config: AxiosRequestConfig = {
+  baseURL: import.meta.env.VITE_API_BASE_URL ?? "",
   timeout: 10000,
   headers: {
-    "Content-Type": "application/json"
+    "Content-Type": "application/json",
   },
 };
 
 const apiService: AxiosInstance = axios.create(config);
 
-const publicEndpoints = ["/auth/login", "/auth/register"];
+const publicEndpoints = ["/api/v1/auth/login", "/api/v1/auth/register"];
 
 const isPublicEndpoint = (url?: string) => {
   if (!url) {
@@ -52,7 +53,7 @@ apiService.interceptors.request.use(
 apiService.interceptors.response.use(
   (response) => response.data,
 
-  (error: AxiosError<any>) => {
+  (error: AxiosError<{ message?: string; error?: string }>) => {
     if (!error.response) {
       console.error("Network Error:", error.message);
       return Promise.reject(error);

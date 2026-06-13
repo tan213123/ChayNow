@@ -39,7 +39,7 @@ export default function OwnerDashboard() {
       return null;
     }
   }, []);
-  const [ownerRestaurant] = useState<OwnerRestaurant>(() => {
+  const [ownerRestaurant, setOwnerRestaurant] = useState<OwnerRestaurant>(() => {
     const storedRestaurant = localStorage.getItem("ownerRestaurant");
     if (!storedRestaurant) {
       return defaultRestaurant;
@@ -52,7 +52,7 @@ export default function OwnerDashboard() {
       return defaultRestaurant;
     }
   });
-  const [ownerEvents] = useState<OwnerEvent[]>(() => {
+  const [ownerEvents, setOwnerEvents] = useState<OwnerEvent[]>(() => {
     const storedEvents = localStorage.getItem("ownerEvents");
     if (!storedEvents) {
       return [];
@@ -65,6 +65,32 @@ export default function OwnerDashboard() {
       return [];
     }
   });
+
+  const handleDeleteDish = (dishName: string) => {
+    const confirmed = window.confirm("Bạn có chắc chắn muốn xóa món ăn này không?");
+    if (!confirmed) return;
+
+    const updatedRestaurant = {
+      ...ownerRestaurant,
+      menu: ownerRestaurant.menu.filter((dish) => dish.name !== dishName),
+    } as OwnerRestaurant;
+
+    setOwnerRestaurant(updatedRestaurant);
+    localStorage.setItem("ownerRestaurant", JSON.stringify(updatedRestaurant));
+  };
+
+  const handleDeleteEvent = (eventId: string) => {
+    const confirmed = window.confirm("Bạn có chắc chắn muốn xóa sự kiện này không?");
+    if (!confirmed) return;
+
+    const updatedEvents = ownerEvents.filter((event) => event.id !== eventId);
+    setOwnerEvents(updatedEvents);
+    localStorage.setItem("ownerEvents", JSON.stringify(updatedEvents));
+
+    if (selectedEvent?.id === eventId) {
+      setSelectedEvent(null);
+    }
+  };
   const [dashboardView, setDashboardView] = useState<"menu" | "events">("menu");
   const [selectedEvent, setSelectedEvent] = useState<OwnerEvent | null>(null);
 
@@ -233,6 +259,12 @@ export default function OwnerDashboard() {
                         >
                           Chỉnh sửa
                         </Button>
+                        <Button
+                          onClick={() => handleDeleteDish(dish.name)}
+                          className="rounded-2xl border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50"
+                        >
+                          Xóa
+                        </Button>
                       </div>
                     </div>
                   ))
@@ -261,6 +293,12 @@ export default function OwnerDashboard() {
                         className="rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
                       >
                         Chỉnh sửa
+                      </Button>
+                      <Button
+                        onClick={() => handleDeleteEvent(event.id)}
+                        className="rounded-2xl border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50"
+                      >
+                        Xóa
                       </Button>
                     </div>
                   </div>

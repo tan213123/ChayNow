@@ -1,30 +1,47 @@
 import apiService from "@/services/api.service";
 import type {
   ApiResponse,
-  LoginApiData,
   LoginRequest,
   LoginResponse,
+  RegisterRequest,
+  TokenApiData,
 } from "@/types/auth";
+
+const toLoginResponse = (data: TokenApiData): LoginResponse => ({
+  accessToken: data.accessToken,
+  user: {
+    email: data.email,
+    fullName: data.fullName,
+    role: data.role,
+    status: "ACTIVE",
+    avatarUrl: null,
+  },
+});
 
 export const login = async (data: LoginRequest): Promise<LoginResponse> => {
   const response = await apiService.post<
-    ApiResponse<LoginApiData>,
-    ApiResponse<LoginApiData>
-  >("api/auth/login", data);
+    ApiResponse<TokenApiData>,
+    ApiResponse<TokenApiData>
+  >("/api/v1/auth/login", data);
 
   if (!response.success) {
     throw new Error(response.message || "Login failed");
   }
 
-  return {
-    accessToken: response.data.accessToken,
-    user: {
-      id: response.data.id,
-      email: response.data.email,
-      fullName: response.data.fullName,
-      role: response.data.role,
-      status: response.data.status,
-      avatarUrl: response.data.avtUrl,
-    },
-  };
+  return toLoginResponse(response.data);
+};
+
+export const register = async (
+  data: RegisterRequest,
+): Promise<LoginResponse> => {
+  const response = await apiService.post<
+    ApiResponse<TokenApiData>,
+    ApiResponse<TokenApiData>
+  >("/api/v1/auth/register", data);
+
+  if (!response.success) {
+    throw new Error(response.message || "Registration failed");
+  }
+
+  return toLoginResponse(response.data);
 };

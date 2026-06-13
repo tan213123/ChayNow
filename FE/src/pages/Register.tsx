@@ -1,30 +1,74 @@
-import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { register as registerApi } from "@/services/auth.service";
+import { useAuthStore } from "@/store/authStore";
 
 type Role = "user" | "owner";
 
 export default function Register() {
+  const navigate = useNavigate();
   const [params] = useSearchParams();
+  const login = useAuthStore((state) => state.login);
   const initialRole = params.get("type") === "owner" ? "owner" : "user";
   const [role, setRole] = useState<Role>(initialRole);
   const [ownerStep, setOwnerStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (params.get("type") === "owner") {
-      setRole("owner");
-      setOwnerStep(1);
+  const handleUserRegister = async (
+    event: React.FormEvent<HTMLFormElement>,
+  ) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const fullName = String(formData.get("fullName") ?? "").trim();
+    const email = String(formData.get("email") ?? "").trim();
+    const password = String(formData.get("password") ?? "");
+    const confirmPassword = String(formData.get("confirmPassword") ?? "");
+
+    if (!fullName || !email || !password) {
+      toast.error("Vui lòng nhập đầy đủ họ tên, email và mật khẩu.");
+      return;
     }
-  }, [params]);
+    if (password.length < 8 || password.length > 12) {
+      toast.error("Mật khẩu phải có từ 8 đến 12 ký tự.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      toast.error("Mật khẩu xác nhận không khớp.");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const response = await registerApi({ fullName, email, password });
+      login(response);
+      localStorage.setItem(
+        "authUser",
+        JSON.stringify({ email: response.user.email, label: "Người dùng" }),
+      );
+      toast.success("Đăng ký thành công.");
+      navigate("/", { replace: true });
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Đăng ký thất bại. Vui lòng thử lại.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const renderUserForm = () => (
-    <div className="space-y-6">
+    <form className="space-y-6" onSubmit={handleUserRegister}>
       <div>
         <label className="mb-2 block text-sm font-medium text-slate-700">
           Họ và tên *
         </label>
         <input
           type="text"
+          name="fullName"
           placeholder="Nguyễn Văn A"
           className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
         />
@@ -35,6 +79,7 @@ export default function Register() {
         </label>
         <input
           type="email"
+          name="email"
           placeholder="your@email.com"
           className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
         />
@@ -45,7 +90,8 @@ export default function Register() {
         </label>
         <input
           type="password"
-          placeholder="Tối thiểu 6 ký tự"
+          name="password"
+          placeholder="Từ 8 đến 12 ký tự"
           className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
         />
       </div>
@@ -55,17 +101,22 @@ export default function Register() {
         </label>
         <input
           type="password"
+          name="confirmPassword"
           placeholder="Nhập lại mật khẩu"
           className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
         />
       </div>
-      <Button className="w-full rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700">
+      <Button
+        type="submit"
+        disabled={isSubmitting}
+        className="w-full rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
+      >
         Đăng ký
       </Button>
       {/* <div className="text-center text-sm text-slate-600">
         Đã có tài khoản? <Link to="/login" className="font-semibold text-emerald-700 hover:underline">Đăng nhập ngay</Link>
       </div> */}
-    </div>
+    </form>
   );
 
   const renderOwnerForm = () => (
