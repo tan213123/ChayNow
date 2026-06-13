@@ -12,6 +12,7 @@ import OwnerNewDish from "@/pages/OwnerNewDish";
 import OwnerEvents from "@/pages/OwnerEvents";
 import OwnerReviews from "@/pages/OwnerReviews";
 import UserManagement from "@/pages/UserManagement";
+import ReportManagement from "@/pages/ReportManagement";
 
 export const routes: RouteObject[] = [
   {
@@ -57,6 +58,10 @@ export const routes: RouteObject[] = [
   {
     path: "/manage/user",
     element: <UserManagement />,
+  },
+  {
+    path: "/manage/report",
+    element: <ReportManagement />,
   },
   {
     path: "/",
