@@ -17,7 +17,7 @@ const config: AxiosRequestConfig = {
 
 const apiService: AxiosInstance = axios.create(config);
 
-const publicEndpoints = ["/api/v1/auth/login", "/api/v1/auth/register"];
+const publicEndpoints = ["/api/auth/login", "/api/auth/register"];
 
 const isPublicEndpoint = (url?: string) => {
   if (!url) {

@@ -1,6 +1,6 @@
 export type Role = "ADMIN" | "USER" | "OWNER";
 
-export type AccountStatus = "ACTIVE" | "SUSPENDED";
+export type AccountStatus = "ACTIVE" | "SUSPENDED" | "PENDING";
 
 export interface User {
   id?: number;
@@ -37,6 +37,9 @@ export interface TokenApiData {
   email: string;
   fullName: string;
   role: Role;
+  id: number;
+  avtUrl: string | null;
+  status: AccountStatus;
 }
 
 export interface ApiResponse<T> {
@@ -44,7 +47,7 @@ export interface ApiResponse<T> {
   message: string;
   code: string | null;
   data: T;
-  timestamp: string;
+  timestamp: string | number[];
 }
 
 export interface AuthState {

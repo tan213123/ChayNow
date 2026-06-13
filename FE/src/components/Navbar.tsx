@@ -1,31 +1,24 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useAuthStore } from "@/store/authStore";
+import type { Role } from "@/types/auth";
 
-type AuthUser = {
-  email: string;
-  label: string;
+const roleLabels: Record<Role, string> = {
+  ADMIN: "Quản trị viên",
+  OWNER: "Chủ quán",
+  USER: "Người dùng",
 };
 
 export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const user = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  useEffect(() => {
-    const authData = localStorage.getItem("authUser");
-    if (authData) {
-      try {
-        setAuthUser(JSON.parse(authData));
-      } catch {
-        localStorage.removeItem("authUser");
-      }
-    }
-  }, [location.pathname]);
-
   const handleLogout = () => {
+    logout();
     localStorage.removeItem("authUser");
-    setAuthUser(null);
     navigate("/login");
   };
 
@@ -39,7 +32,9 @@ export default function Navbar() {
   const navLinks = [
     { to: "/", label: "Trang chủ", icon: "🏠" },
     { to: "/favorites", label: "Yêu thích", icon: "♥" },
-    ...(authUser?.label === "Chủ quán" ? [{ to: "/manage/restaurants", label: "Quản lý quán", icon: "🏪" }] : []),
+    ...(user?.role === "OWNER"
+      ? [{ to: "/manage/restaurants", label: "Quản lý quán", icon: "🏪" }]
+      : []),
   ];
 
   // Get user initials
@@ -78,7 +73,7 @@ export default function Navbar() {
 
         {/* Right side */}
         <div className="flex items-center gap-3">
-          {authUser ? (
+          {user ? (
             <div className="flex items-center gap-3">
               <Link
                 to="/profile"
@@ -89,9 +84,9 @@ export default function Navbar() {
                 }`}
               >
                 <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-xs font-bold text-white">
-                  {getInitials(authUser.email)}
+                  {getInitials(user.email)}
                 </span>
-                <span className="font-medium">{authUser.label}</span>
+                <span className="font-medium">{roleLabels[user.role]}</span>
               </Link>
               <button
                 onClick={handleLogout}
@@ -149,7 +144,7 @@ export default function Navbar() {
             </Link>
           ))}
           <div className="pt-2 border-t border-slate-100">
-            {authUser ? (
+            {user ? (
               <div className="space-y-2">
                 <Link
                   to="/profile"
@@ -157,7 +152,7 @@ export default function Navbar() {
                   className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50"
                 >
                   <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-xs font-bold text-white">
-                    {getInitials(authUser.email)}
+                    {getInitials(user.email)}
                   </span>
                   Hồ sơ cá nhân
                 </Link>

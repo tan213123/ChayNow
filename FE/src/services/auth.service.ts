@@ -10,11 +10,12 @@ import type {
 const toLoginResponse = (data: TokenApiData): LoginResponse => ({
   accessToken: data.accessToken,
   user: {
+    id: data.id,
     email: data.email,
     fullName: data.fullName,
     role: data.role,
-    status: "ACTIVE",
-    avatarUrl: null,
+    status: data.status,
+    avatarUrl: data.avtUrl,
   },
 });
 
@@ -22,7 +23,7 @@ export const login = async (data: LoginRequest): Promise<LoginResponse> => {
   const response = await apiService.post<
     ApiResponse<TokenApiData>,
     ApiResponse<TokenApiData>
-  >("/api/v1/auth/login", data);
+  >("/api/auth/login", data);
 
   if (!response.success) {
     throw new Error(response.message || "Login failed");
@@ -37,7 +38,7 @@ export const register = async (
   const response = await apiService.post<
     ApiResponse<TokenApiData>,
     ApiResponse<TokenApiData>
-  >("/api/v1/auth/register", data);
+  >("/api/auth/register", data);
 
   if (!response.success) {
     throw new Error(response.message || "Registration failed");
