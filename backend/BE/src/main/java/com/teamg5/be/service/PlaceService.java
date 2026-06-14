@@ -31,7 +31,7 @@ public class PlaceService {
                 .name(request.getName().trim())
                 .district(request.getDistrict())
                 .city(request.getCity())
-                .address(request.getAddress())
+                //.address(request.getAddress())
                 .mapUrl(request.getMapUrl())
                 .active(true)
                 .build();
@@ -87,9 +87,9 @@ public class PlaceService {
             place.setCity(request.getCity().trim());
         }
 
-        if (StringUtils.hasText(request.getAddress())) {
-            place.setAddress(request.getAddress().trim());
-        }
+        // if (StringUtils.hasText(request.getAddress())) {
+        //     place.setAddress(request.getAddress().trim());
+        // }
 
         
         

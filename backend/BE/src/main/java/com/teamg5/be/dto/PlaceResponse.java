@@ -36,7 +36,7 @@ public class PlaceResponse {
                 .name(place.getName())
                 .district(place.getDistrict())
                 .city(place.getCity())
-                .address(place.getAddress())
+                //.address(place.getAddress())
                 
                 .mapUrl(place.getMapUrl())
                 .active(place.getActive())

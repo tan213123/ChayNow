@@ -3,8 +3,13 @@ package com.teamg5.be.dto;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import com.teamg5.be.entity.Restaurant;
+
+import jakarta.persistence.Column;
 
 
 @Getter
@@ -22,6 +27,10 @@ public class RestaurantResponse {
     private Long placeId;
     private String placeName;
     private String typeRestaurantName;
+    
+    private LocalTime openTime;
+    
+    private LocalTime closedTime;
 
     private List<MediaResponse> mediaList;
 
@@ -60,6 +69,8 @@ public class RestaurantResponse {
                                 .map(MediaResponse::from)
                                 .toList()
                 )
+                .openTime(restaurant.getOpenTime())
+                .closedTime(restaurant.getClosedTime())
                 .build();
     }
 }

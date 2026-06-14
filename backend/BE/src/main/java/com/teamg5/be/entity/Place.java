@@ -32,8 +32,8 @@ public class Place extends BaseEntity {
     @Column(length = 255)
     private String city;
 
-    @Column(length = 500)
-    private String address;
+    // @Column(length = 500)
+    // private String address;
 
     // private Double latitude;
 

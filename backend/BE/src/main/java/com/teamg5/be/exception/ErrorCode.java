@@ -52,8 +52,13 @@ public enum ErrorCode {
         ),
         REVIEW_NOT_FOUND(
         "REVIEW_NOT_FOUND",
-        "This review cannot found",
+        "This review cannot be found",
         HttpStatus.BAD_REQUEST
+        ),
+        MENU_NOT_FOUND(
+        "ERR_MENU_NOT_FOUND",
+        "This food cannot be found",
+        HttpStatus.NOT_FOUND
         );
 
     

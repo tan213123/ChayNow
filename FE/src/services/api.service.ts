@@ -8,7 +8,7 @@ import axios, {
 import { useAuthStore } from "@/store/authStore";
 
 const config: AxiosRequestConfig = {
-  baseURL: import.meta.env.VITE_API_BASE_URL ?? "",
+  baseURL: import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8081",
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
