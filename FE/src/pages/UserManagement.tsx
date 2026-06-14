@@ -1,69 +1,65 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Navbar from "@/components/Navbar";
+import { activeUser, getAdminUsers, suspendUser, type AdminUser } from "@/services/admin.service";
 
-const fakeUsers = [
-  {
-    id: 1,
-    name: "Nguyễn Văn An",
-    email: "an@gmail.com",
-    phone: "0901234567",
-    avatar: "https://i.pravatar.cc/150?img=1",
-    status: "active",
-    joinDate: "2026-05-01",
-  },
-  {
-    id: 2,
-    name: "Lê Thị Cẩm",
-    email: "cam@gmail.com",
-    phone: "0908888888",
-    avatar: "https://i.pravatar.cc/150?img=2",
-    status: "blocked",
-    joinDate: "2026-05-02",
-  },
-  {
-    id: 3,
-    name: "Trần Minh Khang",
-    email: "khang@gmail.com",
-    phone: "0909999999",
-    avatar: "https://i.pravatar.cc/150?img=3",
-    status: "active",
-    joinDate: "2026-05-10",
-  },
-];
+
 
 export default function UserManagement() {
   const [keyword, setKeyword] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [users, setUsers] = useState(fakeUsers);
+ const [users, setUsers] = useState<AdminUser[]>([]);
+const [loading, setLoading] = useState(false);
 
-  const filteredUsers = useMemo(() => {
-    return users.filter((user) => {
-      const matchKeyword =
-        user.name.toLowerCase().includes(keyword.toLowerCase()) ||
-        user.email.toLowerCase().includes(keyword.toLowerCase());
+const [page, setPage] = useState(0);
+const [size] = useState(10);
 
-      const matchStatus =
-        statusFilter === "all" || user.status === statusFilter;
+const [totalPages, setTotalPages] = useState(0);
+const [totalElements, setTotalElements] = useState(0);
 
-      return matchKeyword && matchStatus;
+const fetchUsers = async () => {
+  try {
+    setLoading(true);
+
+    const res = await getAdminUsers({
+      page,
+      size,
+      keyword,
+      status:
+        statusFilter === "all"
+          ? "ALL"
+          : (statusFilter.toUpperCase() as any),
     });
-  }, [keyword, statusFilter, users]);
 
-  const handleToggleStatus = (id: number) => {
-    setUsers((prev) =>
-      prev.map((user) =>
-        user.id === id
-          ? {
-              ...user,
-              status:
-                user.status === "active"
-                  ? "blocked"
-                  : "active",
-            }
-          : user
-      )
-    );
-  };
+    setUsers(res.content);
+    setTotalPages(res.totalPages);
+    setTotalElements(res.totalElements);
+  } catch (err) {
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+};
+
+useEffect(() => {
+  fetchUsers();
+}, [page, keyword, statusFilter]);
+
+
+const   handleToggleStatus = async (
+  user: AdminUser
+) => {
+  try {
+    if (user.status === "ACTIVE") {
+      await suspendUser(user.id);
+    } else {
+      await activeUser(user.id);
+    }
+
+    fetchUsers();
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   const handleDelete = (id: number) => {
     if (!window.confirm("Xóa người dùng này?")) return;
@@ -107,7 +103,7 @@ export default function UserManagement() {
             <p className="mt-3 text-3xl font-bold text-green-600">
               {
                 users.filter(
-                  (u) => u.status === "active"
+                  (u) => u.status === "ACTIVE"
                 ).length
               }
             </p>
@@ -119,9 +115,9 @@ export default function UserManagement() {
             </p>
             <p className="mt-3 text-3xl font-bold text-red-600">
               {
-                users.filter(
-                  (u) => u.status === "blocked"
-                ).length
+              users.filter(
+u=>u.status==="SUSPENDED"
+).length
               }
             </p>
           </div>
@@ -180,9 +176,7 @@ export default function UserManagement() {
                   Người dùng
                 </th>
 
-                <th className="p-4 text-left">
-                  Số điện thoại
-                </th>
+            
 
                 <th className="p-4 text-left">
                   Ngày tham gia
@@ -199,7 +193,7 @@ export default function UserManagement() {
             </thead>
 
             <tbody>
-              {filteredUsers.map((user) => (
+              {users.map((user) => (
                 <tr
                   key={user.id}
                   className="border-t"
@@ -207,13 +201,16 @@ export default function UserManagement() {
                   <td className="p-4">
                     <div className="flex items-center gap-3">
                       <img
-                        src={user.avatar}
+                        src={
+        user.avatarUrl ??
+        "/images/avatar-default.png"
+    }
                         className="h-12 w-12 rounded-full"
                       />
 
                       <div>
                         <p className="font-semibold">
-                          {user.name}
+                        {user.fullName} 
                         </p>
 
                         <p className="text-sm text-slate-500">
@@ -223,46 +220,45 @@ export default function UserManagement() {
                     </div>
                   </td>
 
+                 
+
                   <td className="p-4">
-                    {user.phone}
+                    {user.joinedDate}
                   </td>
 
                   <td className="p-4">
-                    {user.joinDate}
-                  </td>
+                   <span
+className={`rounded-full px-3 py-1 text-xs font-semibold ${
+user.status==="ACTIVE"
+?"bg-green-100 text-green-700"
+:"bg-red-100 text-red-700"
+}`}
+>
 
-                  <td className="p-4">
-                    <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                        user.status === "active"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
-                      }`}
-                    >
-                      {user.status}
-                    </span>
+{user.status==="ACTIVE"
+?"Active"
+:"Blocked"}
+
+</span>
                   </td>
 
                   <td className="p-4">
                     <div className="flex justify-center gap-2">
                       <button
-                        onClick={() =>
-                          handleToggleStatus(
-                            user.id
-                          )
-                        }
-                        className="rounded-xl bg-yellow-500 px-4 py-2 text-white"
+              onClick={() =>
+  handleToggleStatus(user)
+}                    className="rounded-xl bg-yellow-500 px-4 py-2 text-white"
                       >
                         {user.status ===
-                        "active"
+                        "ACTIVE"
                           ? "Khóa"
                           : "Mở khóa"}
                       </button>
 
                       <button
-                        onClick={() =>
-                          handleDelete(user.id)
-                        }
+                        // onClick={() =>
+                        //   handleDelete(user.id)
+                        // }
                         className="rounded-xl bg-red-600 px-4 py-2 text-white"
                       >
                         Xóa
@@ -273,7 +269,37 @@ export default function UserManagement() {
               ))}
             </tbody>
           </table>
+<div className="flex items-center justify-between border-t p-5">
 
+<p>
+
+Tổng {totalElements} người dùng
+
+</p>
+
+<div className="flex gap-3">
+
+<button
+disabled={page===0}
+onClick={()=>setPage(page-1)}
+>
+
+Previous
+
+</button>
+
+<button
+disabled={page>=totalPages-1}
+onClick={()=>setPage(page+1)}
+>
+
+Next
+
+</button>
+
+</div>
+
+</div>    
         </div>
       </section>
     </main>
