@@ -32,6 +32,9 @@ public class RestaurantResponse {
     
     private LocalTime closedTime;
 
+    private Long ownerId;
+    private String ownerName;
+
     private List<MediaResponse> mediaList;
 
     public static RestaurantResponse from(Restaurant restaurant) {
@@ -71,6 +74,16 @@ public class RestaurantResponse {
                 )
                 .openTime(restaurant.getOpenTime())
                 .closedTime(restaurant.getClosedTime())
+                .ownerId(
+                restaurant.getOwner() != null
+                        ? restaurant.getOwner().getId()
+                        : null
+                )
+                .ownerName(
+                        restaurant.getOwner() != null
+                                ? restaurant.getOwner().getFullName()
+                                : null
+                )
                 .build();
     }
 }
