@@ -89,7 +89,6 @@ export default function UserManagement() {
           </h1>
         </div>
 
-        {/* Statistic */}
 
         <div className="grid gap-6 lg:grid-cols-4 mb-8">
           <div className="rounded-[2rem] bg-white p-6 shadow-sm border">
@@ -137,7 +136,6 @@ export default function UserManagement() {
           </div>
         </div>
 
-        {/* Filter */}
 
         <div className="rounded-[2rem] bg-white p-6 shadow-sm border mb-8">
           <div className="grid gap-4 lg:grid-cols-2">
@@ -172,7 +170,6 @@ export default function UserManagement() {
           </div>
         </div>
 
-        {/* Table */}
 
         <div className="overflow-hidden rounded-[2rem] bg-white shadow-sm border">
 
