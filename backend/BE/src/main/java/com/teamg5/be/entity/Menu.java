@@ -50,6 +50,10 @@ public class Menu extends BaseEntity {
 
     @Builder.Default
     private Boolean featured = false;
+     // Xóa mềm
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean active = true;
 
     @OneToMany(mappedBy = "menu", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

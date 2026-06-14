@@ -1,9 +1,9 @@
 export type Role = "ADMIN" | "USER" | "OWNER";
 
-export type AccountStatus = "ACTIVE" | "SUSPENDED";
+export type AccountStatus = "ACTIVE" | "SUSPENDED" | "PENDING";
 
 export interface User {
-  id: number;
+  id?: number;
   email: string;
   fullName: string;
   role: Role;
@@ -18,13 +18,19 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  fullName: string;
+}
+
 export interface LoginResponse {
   user: User;
   accessToken: string;
   refreshToken?: string;
 }
 
-export interface LoginApiData {
+export interface TokenApiData {
   accessToken: string;
   tokenType: string;
   expiresIn: number;
@@ -41,7 +47,7 @@ export interface ApiResponse<T> {
   message: string;
   code: string | null;
   data: T;
-  timestamp: string;
+  timestamp: string | number[];
 }
 
 export interface AuthState {

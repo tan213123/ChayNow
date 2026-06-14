@@ -1,9 +1,13 @@
 package com.teamg5.be.dto;
 import lombok.Getter;
 import lombok.Setter;
+import jakarta.persistence.Column;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 @Getter
 @Setter
@@ -25,6 +29,10 @@ public class CreateRestaurantRequest {
 
     @NotNull(message = "Type restaurant ID is required")
     private Long typeRestaurantId;
+    @NotNull(message = "Open time cannot null")
+    private LocalTime openTime;
+    @NotNull(message = "Closed time cannot null")
+    private LocalTime closedTime;
 
     private List<String> mediaUrls;
 

@@ -1,362 +1,223 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { toast } from "sonner";
 import OwnerLayout from "@/components/OwnerLayout";
-import { restaurants } from "@/data/restaurants";
+import {
+  getRestaurant,
+  getRestaurantReviews,
+  getRestaurants,
+} from "@/services/restaurant.service";
+import {
+  getSelectedRestaurantId,
+  setSelectedRestaurantId,
+} from "@/lib/ownerRestaurant";
+import type {
+  RestaurantResponse,
+  ReviewResponse,
+} from "@/types/restaurant";
 
-const defaultRestaurant = restaurants[0];
-
-type OwnerRestaurant = typeof defaultRestaurant;
-type OwnerEvent = {
-  id: string;
-  type: string;
-  title: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-  discount?: string;
-  charityTime?: string;
-  createdAt: string;
-};
-
-type AuthUser = {
-  email: string;
-  label: string;
-};
+const fallbackImage =
+  "https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=1200&q=80";
 
 export default function OwnerDashboard() {
-  const navigate = useNavigate();
-  const authUser = useMemo<AuthUser | null>(() => {
-    const authData = localStorage.getItem("authUser");
-    if (!authData) {
-      return null;
-    }
-
-    try {
-      return JSON.parse(authData) as AuthUser;
-    } catch {
-      localStorage.removeItem("authUser");
-      return null;
-    }
-  }, []);
-  const [ownerRestaurant] = useState<OwnerRestaurant>(() => {
-    const storedRestaurant = localStorage.getItem("ownerRestaurant");
-    if (!storedRestaurant) {
-      return defaultRestaurant;
-    }
-
-    try {
-      return JSON.parse(storedRestaurant);
-    } catch {
-      localStorage.removeItem("ownerRestaurant");
-      return defaultRestaurant;
-    }
-  });
-  const [ownerEvents] = useState<OwnerEvent[]>(() => {
-    const storedEvents = localStorage.getItem("ownerEvents");
-    if (!storedEvents) {
-      return [];
-    }
-
-    try {
-      return JSON.parse(storedEvents);
-    } catch {
-      localStorage.removeItem("ownerEvents");
-      return [];
-    }
-  });
-  const [dashboardView, setDashboardView] = useState<"menu" | "events">("menu");
-  const [selectedEvent, setSelectedEvent] = useState<OwnerEvent | null>(null);
+  const [restaurant, setRestaurant] = useState<RestaurantResponse | null>(null);
+  const [reviews, setReviews] = useState<ReviewResponse[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!authUser) {
-      navigate("/login");
-      return;
+    let cancelled = false;
+
+    const loadDashboard = async () => {
+      let restaurantId = getSelectedRestaurantId();
+
+      if (!restaurantId) {
+        const restaurants = await getRestaurants();
+        restaurantId = restaurants[0]?.id ?? null;
+        if (restaurantId) {
+          setSelectedRestaurantId(restaurantId);
+        }
+      }
+
+      if (!restaurantId) {
+        return;
+      }
+
+      const [restaurantData, reviewData] = await Promise.all([
+        getRestaurant(restaurantId),
+        getRestaurantReviews(restaurantId),
+      ]);
+
+      if (!cancelled) {
+        setRestaurant(restaurantData);
+        setReviews(reviewData);
+      }
+    };
+
+    loadDashboard()
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "Không thể tải dashboard.",
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const averageRating = useMemo(() => {
+    if (reviews.length === 0) {
+      return 0;
     }
+    return (
+      reviews.reduce((total, review) => total + review.rating, 0) /
+      reviews.length
+    );
+  }, [reviews]);
 
-    if (authUser.label !== "Chủ quán") {
-      navigate("/");
-      return;
-    }
+  if (isLoading) {
+    return (
+      <OwnerLayout>
+        <div className="rounded-[2rem] bg-white p-10 text-center text-sm text-slate-500">
+          Đang tải dashboard...
+        </div>
+      </OwnerLayout>
+    );
+  }
 
-    const storedRestaurant = localStorage.getItem("ownerRestaurant");
-    if (!storedRestaurant) {
-      navigate("/manage/restaurants");
-    }
-  }, [navigate, authUser]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("authUser");
-    navigate("/login");
-  };
-
-  const handleEditEvent = (event: OwnerEvent) => {
-    localStorage.setItem("editingEvent", JSON.stringify(event));
-    navigate("/manage/events");
-  };
+  if (!restaurant) {
+    return (
+      <OwnerLayout>
+        <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white p-12 text-center">
+          <h1 className="text-2xl font-bold text-slate-900">
+            Chưa có nhà hàng để quản lý
+          </h1>
+          <Link
+            to="/manage/edit"
+            className="mt-6 inline-flex rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white"
+          >
+            Tạo nhà hàng
+          </Link>
+        </div>
+      </OwnerLayout>
+    );
+  }
 
   return (
-    <OwnerLayout
-      profile={
-        <div className="flex items-center gap-4 text-sm text-slate-700">
-          <span className="flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-sm">
-              {authUser?.label?.[0] ?? "C"}
-            </span>
-            {authUser?.label ?? "Chủ quán"}
-          </span>
-          <button
-            onClick={handleLogout}
-            className="rounded-full bg-slate-100 px-4 py-2 font-semibold hover:bg-slate-200"
-          >
-            Đăng xuất
-          </button>
-        </div>
-      }
-    >
+    <OwnerLayout>
       <div className="space-y-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-emerald-600">Dashboard Chủ Quán</p>
-            <h1 className="mt-3 text-3xl font-extrabold text-slate-900">Quản lý quán ăn và bài đăng của bạn</h1>
+            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-emerald-600">
+              Dashboard chủ quán
+            </p>
+            <h1 className="mt-3 text-3xl font-extrabold text-slate-900">
+              {restaurant.name}
+            </h1>
           </div>
+          <Link
+            to="/manage/restaurants"
+            className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+          >
+            Đổi nhà hàng
+          </Link>
+        </div>
 
-          <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex items-center gap-5">
-                <img src={ownerRestaurant.image} alt={ownerRestaurant.name} className="h-28 w-28 rounded-[2rem] object-cover" />
-                <div>
-                  <h2 className="text-2xl font-semibold text-slate-900">{ownerRestaurant.name}</h2>
-                  <p className="mt-2 text-sm text-slate-500">{ownerRestaurant.address}</p>
-                  <div className="mt-3 flex flex-wrap gap-2 text-sm text-slate-500">
-                    <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">{ownerRestaurant.category}</span>
-                    <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">{ownerRestaurant.hours}</span>
-                  </div>
-                </div>
-              </div>
-              <Button onClick={() => navigate("/manage/edit")} className="rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white hover:bg-emerald-700">
-                Chỉnh sửa
-              </Button>
-            </div>
-          </div>
-
-          <div className="grid gap-6 lg:grid-cols-3">
-            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-              <p className="text-sm font-semibold text-slate-500">Đánh giá trung bình</p>
-              <p className="mt-4 text-3xl font-extrabold text-slate-900">{ownerRestaurant.rating}</p>
-            </div>
-            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-              <p className="text-sm font-semibold text-slate-500">Tổng đánh giá</p>
-              <p className="mt-4 text-3xl font-extrabold text-slate-900">{ownerRestaurant.reviews}</p>
-            </div>
-            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-              <p className="text-sm font-semibold text-slate-500">Bài đăng</p>
-              <p className="mt-4 text-3xl font-extrabold text-slate-900">3</p>
-            </div>
-          </div>
-
-          <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center gap-5">
+              <img
+                src={restaurant.mediaList[0]?.url ?? fallbackImage}
+                alt={restaurant.name}
+                className="h-28 w-28 rounded-[2rem] object-cover"
+              />
               <div>
-                <p className="text-sm font-semibold text-slate-500">Nhà hàng của tôi</p>
-                <p className="mt-2 text-lg font-semibold text-slate-900">Quản lý danh sách quán</p>
-                <p className="mt-3 text-sm text-slate-500">Xem danh sách quán, chỉnh sửa thông tin và thêm quán mới cho chủ quán.</p>
-              </div>
-              <Link
-                to="/manage/restaurants"
-                className="inline-flex items-center justify-center rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white hover:bg-emerald-700"
-              >
-                Xem My Restaurants
-              </Link>
-            </div>
-          </div>
-
-          <div className="grid gap-6 lg:grid-cols-3">
-            <Link
-              to="/manage/new-dish"
-              className="rounded-[2rem] border border-emerald-200 bg-emerald-50 p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
-            >
-              <p className="text-lg font-semibold text-emerald-900">Đăng món ăn mới</p>
-              <p className="mt-3 text-sm text-emerald-700">Chia sẻ món ăn đặc biệt của quán bạn với mọi người.</p>
-            </Link>
-            <Link
-              to="/manage/events"
-              onClick={() => localStorage.removeItem("editingEvent")}
-              className="rounded-[2rem] border border-sky-200 bg-sky-50 p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
-            >
-              <p className="text-lg font-semibold text-sky-900">Tạo sự kiện</p>
-              <p className="mt-3 text-sm text-sky-700">Tạo chương trình giảm giá hoặc hoạt động từ thiện cho quán.</p>
-            </Link>
-            <Link
-              to="/manage/reviews"
-              className="rounded-[2rem] border border-rose-200 bg-rose-50 p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
-            >
-              <p className="text-lg font-semibold text-rose-900">Xem đánh giá</p>
-              <p className="mt-3 text-sm text-rose-700">Xem và phản hồi các đánh giá mới nhất từ khách hàng.</p>
-            </Link>
-          </div>
-
-          <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-lg font-semibold text-slate-900">{dashboardView === "menu" ? "Món ăn của quán" : "Sự kiện của quán"}</p>
+                <h2 className="text-2xl font-semibold text-slate-900">
+                  {restaurant.name}
+                </h2>
                 <p className="mt-2 text-sm text-slate-500">
-                  {dashboardView === "menu"
-                    ? "Xem danh sách món ăn hiện tại và chỉnh sửa từng món khi cần."
-                    : "Xem danh sách sự kiện đã tạo và quản lý các sự kiện của quán."}
+                  {restaurant.address || "Chưa cập nhật địa chỉ"}
                 </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setDashboardView(dashboardView === "menu" ? "events" : "menu")}
-                  className="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white hover:bg-slate-800"
-                >
-                  {dashboardView === "menu" ? "Hiện sự kiện" : "Hiện món ăn"}
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {dashboardView === "menu" ? (
-                ownerRestaurant.menu.length > 0 ? (
-                  ownerRestaurant.menu.map((dish) => (
-                    <div key={dish.name} className="flex flex-col gap-4 rounded-[2rem] border border-slate-200 bg-slate-50 p-5 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <p className="font-semibold text-slate-900">{dish.name}</p>
-                        <p className="mt-1 text-sm text-slate-500">{dish.category}</p>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-3 text-sm text-slate-700">
-                        <p className="font-semibold text-emerald-700">{dish.price}</p>
-                        <Button
-                          onClick={() => navigate("/manage/new-dish")}
-                          className="rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
-                        >
-                          Chỉnh sửa
-                        </Button>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="rounded-[2rem] border border-dashed border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">
-                    Chưa có món ăn nào. Hãy thêm món ăn mới để khách hàng biết đến quán của bạn.
-                  </div>
-                )
-              ) : ownerEvents.length > 0 ? (
-                ownerEvents.map((event) => (
-                  <div key={event.id} className="flex flex-col gap-4 rounded-[2rem] border border-slate-200 bg-slate-50 p-5 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="font-semibold text-slate-900">{event.title}</p>
-                      <p className="mt-1 text-sm text-slate-500">{event.type} • {event.startDate} - {event.endDate}</p>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-3 text-sm text-slate-700">
-                      <p className="font-semibold text-emerald-700">{event.discount ?? event.charityTime ?? ""}</p>
-                      <Button
-                        onClick={() => setSelectedEvent(event)}
-                        className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
-                      >
-                        Xem
-                      </Button>
-                      <Button
-                        onClick={() => handleEditEvent(event)}
-                        className="rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
-                      >
-                        Chỉnh sửa
-                      </Button>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="rounded-[2rem] border border-dashed border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">
-                  Chưa có sự kiện nào. Hãy tạo sự kiện mới để khách hàng biết đến quán của bạn.
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-sm text-emerald-700">
+                    {restaurant.typeRestaurantName}
+                  </span>
+                  {restaurant.placeName ? (
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-600">
+                      {restaurant.placeName}
+                    </span>
+                  ) : null}
                 </div>
-              )}
+              </div>
             </div>
+            <Link
+              to={`/manage/edit?id=${restaurant.id}`}
+              className="rounded-2xl bg-emerald-600 px-6 py-3 text-center text-sm font-semibold text-white hover:bg-emerald-700"
+            >
+              Chỉnh sửa
+            </Link>
           </div>
         </div>
 
-        {selectedEvent && (() => {
-          const getEventStatus = (startStr: string, endStr: string) => {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const start = new Date(startStr);
-            const end = new Date(endStr);
-            
-            if (today < start) return "Sắp diễn ra";
-            if (today > end) return "Đã kết thúc";
-            return "Đang diễn ra";
-          };
+        <div className="grid gap-6 md:grid-cols-3">
+          <div className="rounded-[2rem] bg-white p-6 shadow-sm">
+            <p className="text-sm font-semibold text-slate-500">
+              Đánh giá trung bình
+            </p>
+            <p className="mt-4 text-3xl font-extrabold text-slate-900">
+              {averageRating.toFixed(1)}
+            </p>
+          </div>
+          <div className="rounded-[2rem] bg-white p-6 shadow-sm">
+            <p className="text-sm font-semibold text-slate-500">
+              Tổng đánh giá
+            </p>
+            <p className="mt-4 text-3xl font-extrabold text-slate-900">
+              {reviews.length}
+            </p>
+          </div>
+          <div className="rounded-[2rem] bg-white p-6 shadow-sm">
+            <p className="text-sm font-semibold text-slate-500">
+              Đánh giá tích cực
+            </p>
+            <p className="mt-4 text-3xl font-extrabold text-slate-900">
+              {reviews.filter((review) => review.rating >= 4).length}
+            </p>
+          </div>
+        </div>
 
-          return (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-              <div className="relative w-full max-w-lg overflow-hidden rounded-[2.5rem] border border-slate-100 bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-                
-                {/* Event Image */}
-                <div className="relative h-60 overflow-hidden bg-slate-100">
-                  <img 
-                    src={
-                      selectedEvent.type === "charity"
-                        ? "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80"
-                        : "https://images.unsplash.com/photo-1529042410759-befb1204b468?auto=format&fit=crop&w=1200&q=80"
-                    } 
-                    alt={selectedEvent.title} 
-                    className="h-full w-full object-cover" 
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-                  
-                  {/* Badges */}
-                  <span className="absolute left-6 top-6 rounded-full bg-rose-500 px-4 py-1.5 text-xs font-bold text-white shadow-md">
-                    {selectedEvent.type === "discount" ? selectedEvent.discount : "Từ thiện"}
-                  </span>
-                  <span className={`absolute right-6 top-6 rounded-full px-4 py-1.5 text-xs font-bold text-white shadow-md ${
-                    getEventStatus(selectedEvent.startDate, selectedEvent.endDate) === "Đang diễn ra"
-                      ? "bg-emerald-600"
-                      : getEventStatus(selectedEvent.startDate, selectedEvent.endDate) === "Sắp diễn ra"
-                      ? "bg-amber-500"
-                      : "bg-slate-500"
-                  }`}>
-                    {getEventStatus(selectedEvent.startDate, selectedEvent.endDate)}
-                  </span>
-                </div>
-
-                {/* Event Body */}
-                <div className="p-8 space-y-5">
-                  <div>
-                    <h3 className="text-2xl font-bold text-slate-900 leading-snug">{selectedEvent.title}</h3>
-                    <p className="mt-4 text-sm leading-relaxed text-slate-600">{selectedEvent.description}</p>
-                  </div>
-
-                  {/* Metadata Details */}
-                  <div className="border-t border-slate-100 pt-5 space-y-3 text-sm text-slate-500">
-                    <p className="flex items-center gap-2">
-                      <span className="text-base">📍</span> 
-                      <span className="font-semibold text-slate-800">Quán:</span> {ownerRestaurant.name}
-                    </p>
-                    <p className="flex items-center gap-2">
-                      <span className="text-base">📅</span> 
-                      <span className="font-semibold text-slate-800">Thời gian:</span> {selectedEvent.startDate} đến {selectedEvent.endDate}
-                    </p>
-                    {selectedEvent.charityTime && (
-                      <p className="flex items-center gap-2">
-                        <span className="text-base">🕒</span> 
-                        <span className="font-semibold text-slate-800">Giờ phát:</span> {selectedEvent.charityTime}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Close Button */}
-                  <div className="pt-2 flex justify-end">
-                    <Button 
-                      onClick={() => setSelectedEvent(null)}
-                      className="rounded-2xl bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition"
-                    >
-                      Đóng
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })()}
-      </OwnerLayout>
+        <div className="grid gap-6 md:grid-cols-2">
+          <Link
+            to="/manage/reviews"
+            className="rounded-[2rem] border border-emerald-200 bg-emerald-50 p-7"
+          >
+            <h2 className="text-lg font-semibold text-emerald-900">
+              Xem đánh giá
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-emerald-700">
+              Dữ liệu đánh giá được lấy trực tiếp theo nhà hàng đang chọn.
+            </p>
+          </Link>
+          <div className="rounded-[2rem] border border-amber-200 bg-amber-50 p-7">
+            <h2 className="text-lg font-semibold text-amber-900">
+              Menu và sự kiện
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-amber-700">
+              Swagger hiện chưa cung cấp API menu, bài đăng hoặc sự kiện nên FE
+              không gửi dữ liệu giả cho các chức năng này.
+            </p>
+          </div>
+        </div>
+      </div>
+    </OwnerLayout>
   );
 }

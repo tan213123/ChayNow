@@ -44,6 +44,8 @@ public class RestaurantService {
                                             .phoneNumber(request.getPhoneNumber())
                                             .description(request.getDescription())
                                             .typeRestaurant(typeRestaurant)
+                                            .openTime(request.getOpenTime())
+                                            .closedTime(request.getClosedTime())
                                             .place(place)
                                             .build();
         
@@ -109,6 +111,12 @@ public class RestaurantService {
     if(request.getPlaceId() != null ) {
         Place place = placeRepository.findById(request.getPlaceId())
                     .orElseThrow(() -> new AppException(ErrorCode.PLACE_NOT_FOUND));
+    }
+    if(request.getOpenTime() != null) {
+        restaurant.setOpenTime(request.getOpenTime());
+    }
+    if(request.getClosedTime() != null){
+        request.setClosedTime(request.getClosedTime());
     }
 
     if(request.getMediaUrls() != null) {

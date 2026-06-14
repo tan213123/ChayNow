@@ -27,11 +27,13 @@ const roleLabels: Record<Role, string> = {
 const statusLabels: Record<AccountStatus, string> = {
   ACTIVE: "Hoạt động",
   SUSPENDED: "Tạm khóa",
+  PENDING: "Chờ duyệt",
 };
 
 const statusClassNames: Record<AccountStatus, string> = {
   ACTIVE: "bg-emerald-50 text-emerald-700 ring-emerald-100",
   SUSPENDED: "bg-red-50 text-red-700 ring-red-100",
+  PENDING: "bg-amber-50 text-amber-700 ring-amber-100",
 };
 
 const roleClassNames: Record<Role, string> = {
@@ -47,8 +49,6 @@ export default function AdminUsers() {
 
   const [page, setPage] = useState(0);
   const [size] = useState(6);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
 
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -83,8 +83,6 @@ export default function AdminUsers() {
       });
 
       setUsersList(data.content || []);
-      setTotalPages(data.totalPages || 0);
-      setTotalElements(data.totalElements || 0);
     } catch (err: any) {
       setError(err?.message || "Đã xảy ra lỗi khi lấy danh sách người dùng.");
     } finally {

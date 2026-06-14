@@ -46,4 +46,15 @@ public class AuthController {
                 .data(response)
                 .build());
     }
+    @PostMapping("/register/Owner")
+    @Operation(summary = "Register a new user", description = "Creates a new user profile and returns a JWT access token for authentication.")
+    public ResponseEntity<ApiResponse<TokenResponse>> registerOwner(@Valid @RequestBody RegisterRequest request) {
+        TokenResponse response = authService.registerOwner(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.<TokenResponse>builder()
+                .success(true)
+                .message("User registered successfully")
+                .data(response)
+                .build());
+    }
+
 }

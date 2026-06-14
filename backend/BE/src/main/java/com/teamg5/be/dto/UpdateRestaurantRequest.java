@@ -4,11 +4,14 @@ package com.teamg5.be.dto;
 
 import com.teamg5.be.entity.Place;
 
+import jakarta.persistence.Column;
 import jakarta.validation.constraints.Pattern;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Getter
@@ -26,6 +29,9 @@ public class UpdateRestaurantRequest {
     private String phoneNumber;
     private Long placeId;
     private Long typeRestaurantId;
+    private LocalTime openTime;
+   
+    private LocalTime closedTime;
     private List<String> mediaUrls;
 
 

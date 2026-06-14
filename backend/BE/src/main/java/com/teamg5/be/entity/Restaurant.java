@@ -16,6 +16,9 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.CascadeType;
+
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 @Entity
@@ -36,6 +39,10 @@ public class Restaurant extends BaseEntity {
     private String description;
     @Column(name = "phone_number", length = 20)
     private String phoneNumber;
+    @Column (name = "open_time", nullable = false)
+    private LocalTime openTime;
+    @Column(name = "closed_time", nullable = false)
+    private LocalTime closedTime;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "type_restaurant_id", nullable = false)
@@ -44,6 +51,7 @@ public class Restaurant extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "place_id")
     private Place place;
+    
      // cập nhật trạng tháy hiện tại đống của hay mở của (optional)
     // @Enumerated(EnumType.STRING)
     // @Column(name = "operating_status", nullable = false , length = 20)
