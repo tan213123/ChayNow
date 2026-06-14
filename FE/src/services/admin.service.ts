@@ -1,5 +1,5 @@
 import apiService from "@/services/api.service";
-import type { Role, AccountStatus } from "@/types/auth";
+import type { ApiResponse, Role, AccountStatus } from "@/types/auth";
 
 export interface AdminUser {
   id: number;
@@ -29,8 +29,15 @@ export interface FetchUsersParams {
   status?: AccountStatus | "ALL";
 }
 
+type AdminUsersApiResponse = AdminUsersResponse | ApiResponse<AdminUsersResponse>;
+
+const isWrappedResponse = (
+  response: AdminUsersApiResponse,
+): response is ApiResponse<AdminUsersResponse> =>
+  "success" in response && "data" in response;
+
 export const getAdminUsers = async (params: FetchUsersParams): Promise<AdminUsersResponse> => {
-  const queryParams: Record<string, any> = {};
+  const queryParams: Record<string, string | number> = {};
 
   if (params.page !== undefined) {
     queryParams.page = params.page;
@@ -48,25 +55,18 @@ export const getAdminUsers = async (params: FetchUsersParams): Promise<AdminUser
     queryParams.status = params.status;
   }
 
-  const response = await apiService.get<any, any>("/api/admin/users", {
+  const response = await apiService.get<unknown, AdminUsersApiResponse>("/api/admin/users", {
     params: queryParams,
   });
 
-
-  // Support both wrapped in ApiResponse (with success/data fields) and raw response data
-  if (response && typeof response === "object" && "data" in response && response.success !== undefined) {
-    return response.data;
-  }
-  return response;
+  return isWrappedResponse(response) ? response.data : response;
 };
 
-export const suspendUser = async (id: number): Promise<any> => {
-  const response = await apiService.patch<any, any>(`/api/admin/users/${id}/suspend`);
-  return response;
+export const suspendUser = async (id: number): Promise<void> => {
+  await apiService.patch(`/api/admin/users/${id}/suspend`);
 };
 
-export const activeUser = async (id: number): Promise<any> => {
-  const response = await apiService.patch<any, any>(`/api/admin/users/${id}/activate`);
-  return response;
+export const activeUser = async (id: number): Promise<void> => {
+  await apiService.patch(`/api/admin/users/${id}/activate`);
 };
 

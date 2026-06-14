@@ -147,6 +147,12 @@ export default function OwnerDashboard() {
                 <p className="mt-2 text-sm text-slate-500">
                   {restaurant.address || "Chưa cập nhật địa chỉ"}
                 </p>
+                {restaurant.openTime && restaurant.closedTime ? (
+                  <p className="mt-2 text-sm text-slate-500">
+                    Mở cửa {restaurant.openTime.slice(0, 5)} -{" "}
+                    {restaurant.closedTime.slice(0, 5)}
+                  </p>
+                ) : null}
                 <div className="mt-3 flex flex-wrap gap-2">
                   <span className="rounded-full bg-emerald-50 px-3 py-1 text-sm text-emerald-700">
                     {restaurant.typeRestaurantName}
@@ -207,15 +213,17 @@ export default function OwnerDashboard() {
               Dữ liệu đánh giá được lấy trực tiếp theo nhà hàng đang chọn.
             </p>
           </Link>
-          <div className="rounded-[2rem] border border-amber-200 bg-amber-50 p-7">
+          <Link
+            to="/manage/new-dish"
+            className="rounded-[2rem] border border-amber-200 bg-amber-50 p-7"
+          >
             <h2 className="text-lg font-semibold text-amber-900">
-              Menu và sự kiện
+              Quản lý thực đơn
             </h2>
             <p className="mt-2 text-sm leading-6 text-amber-700">
-              Swagger hiện chưa cung cấp API menu, bài đăng hoặc sự kiện nên FE
-              không gửi dữ liệu giả cho các chức năng này.
+              Tạo, chỉnh sửa và ngừng hiển thị món ăn của nhà hàng đang chọn.
             </p>
-          </div>
+          </Link>
         </div>
       </div>
     </OwnerLayout>

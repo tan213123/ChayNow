@@ -1,5 +1,5 @@
 import { Search, ShieldCheck } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import type { AccountStatus, Role } from "@/types/auth";
 import {
@@ -42,6 +42,9 @@ const roleClassNames: Record<Role, string> = {
   USER: "bg-purple-50 text-purple-700",
 };
 
+const getErrorMessage = (error: unknown, fallback: string) =>
+  error instanceof Error ? error.message : fallback;
+
 export default function AdminUsers() {
   const [usersList, setUsersList] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,7 +73,7 @@ export default function AdminUsers() {
     return () => clearTimeout(handler);
   }, [query]);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -83,16 +86,20 @@ export default function AdminUsers() {
       });
 
       setUsersList(data.content || []);
-    } catch (err: any) {
-      setError(err?.message || "Đã xảy ra lỗi khi lấy danh sách người dùng.");
+    } catch (error: unknown) {
+      setError(
+        getErrorMessage(error, "Đã xảy ra lỗi khi lấy danh sách người dùng."),
+      );
     } finally {
       setLoading(false);
     }
-  };
+  }, [debouncedQuery, page, roleFilter, size, statusFilter]);
 
   useEffect(() => {
-    fetchUsers();
-  }, [page, size, debouncedQuery, roleFilter, statusFilter]);
+    // Fetching remote data is the synchronization performed by this effect.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchUsers();
+  }, [fetchUsers]);
 
   const handleConfirmAction = async () => {
     if (!targetUser) return;
@@ -107,9 +114,9 @@ export default function AdminUsers() {
 
       setConfirmOpen(false);
       setTargetUser(null);
-      fetchUsers();
-    } catch (err: any) {
-      alert(err?.message || "Đã xảy ra lỗi khi thực hiện thao tác.");
+      void fetchUsers();
+    } catch (error: unknown) {
+      alert(getErrorMessage(error, "Đã xảy ra lỗi khi thực hiện thao tác."));
     } finally {
       setActionLoading(false);
     }
@@ -198,19 +205,19 @@ export default function AdminUsers() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center">
+                    <td colSpan={5} className="px-6 py-12 text-center">
                       Đang tải...
                     </td>
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center text-red-600">
+                    <td colSpan={5} className="px-6 py-12 text-center text-red-600">
                       {error}
                     </td>
                   </tr>
                 ) : usersList.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center">
+                    <td colSpan={5} className="px-6 py-12 text-center">
                       Không có dữ liệu
                     </td>
                   </tr>
