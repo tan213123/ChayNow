@@ -4,9 +4,10 @@ import {
   ShieldAlert,
   CheckCircle,
 } from "lucide-react";
+import type { Report } from "@/data/reports";
 
 interface Props {
-  reports: any[];
+  reports: Report[];
 }
 
 export default function ReportStats({

@@ -26,7 +26,17 @@ const achievements = [
 
 export default function Profile() {
   const navigate = useNavigate();
-  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const [authUser] = useState<AuthUser | null>(() => {
+    const authData = localStorage.getItem("authUser");
+    if (!authData) return null;
+
+    try {
+      return JSON.parse(authData) as AuthUser;
+    } catch {
+      localStorage.removeItem("authUser");
+      return null;
+    }
+  });
   const [activeTab, setActiveTab] = useState<"overview" | "favorites" | "activity" | "settings">("overview");
   const [editMode, setEditMode] = useState(false);
   const [name, setName] = useState("Nguyễn Văn A");
@@ -34,18 +44,10 @@ export default function Profile() {
   const [phone, setPhone] = useState("0901 234 567");
 
   useEffect(() => {
-    const authData = localStorage.getItem("authUser");
-    if (!authData) {
-      navigate("/login");
-      return;
-    }
-    try {
-      setAuthUser(JSON.parse(authData));
-    } catch {
-      localStorage.removeItem("authUser");
+    if (!authUser) {
       navigate("/login");
     }
-  }, [navigate]);
+  }, [authUser, navigate]);
 
   if (!authUser) return null;
 

@@ -46,3 +46,18 @@ export const register = async (
 
   return toLoginResponse(response.data);
 };
+
+export const registerOwner = async (
+  data: RegisterRequest,
+): Promise<LoginResponse> => {
+  const response = await apiService.post<
+    ApiResponse<TokenApiData>,
+    ApiResponse<TokenApiData>
+  >("/api/auth/register/Owner", data);
+
+  if (!response.success) {
+    throw new Error(response.message || "Owner registration failed");
+  }
+
+  return toLoginResponse(response.data);
+};

@@ -23,17 +23,22 @@ export default function Navbar() {
   };
 
   const isActive = (path: string) => {
-    if (path.startsWith("/manage")) {
-      return location.pathname.startsWith("/manage");
-    }
-    return location.pathname === path;
+    return (
+      location.pathname === path ||
+      (path !== "/" && location.pathname.startsWith(`${path}/`))
+    );
   };
 
   const navLinks = [
     { to: "/", label: "Trang chủ", icon: "🏠" },
     { to: "/favorites", label: "Yêu thích", icon: "♥" },
     ...(user?.role === "OWNER"
-      ? [{ to: "/manage/restaurants", label: "Quản lý quán", icon: "🏪" }]
+      ? [
+          { to: "/manage", label: "Dashboard", icon: "▦" },
+          { to: "/manage/restaurants", label: "Quản lý quán", icon: "🏪" },
+          { to: "/manage/new-dish", label: "Thực đơn", icon: "☰" },
+          { to: "/manage/reviews", label: "Đánh giá", icon: "★" },
+        ]
       : []),
   ];
 

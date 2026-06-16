@@ -26,6 +26,8 @@ export interface RestaurantResponse {
   typeRestaurantName: string;
   placeId: number | null;
   placeName: string | null;
+  openTime: string | null;
+  closedTime: string | null;
   mediaList: MediaResponse[];
 }
 
@@ -36,6 +38,8 @@ export interface CreateRestaurantRequest {
   description?: string;
   placeId: number;
   typeRestaurantId: number;
+  openTime: string;
+  closedTime: string;
   mediaUrls?: string[];
 }
 
@@ -46,6 +50,8 @@ export interface UpdateRestaurantRequest {
   description?: string;
   placeId?: number;
   typeRestaurantId?: number;
+  openTime?: string;
+  closedTime?: string;
   mediaUrls?: string[];
 }
 
@@ -87,6 +93,34 @@ export interface CreateReviewRequest {
   rating: number;
   context: string;
 }
+
+export interface MenuResponse {
+  id: number;
+  restaurantId: number;
+  restaurantName: string;
+  name: string;
+  description: string | null;
+  price: number;
+  category: string | null;
+  imageUrl: string | null;
+  available: boolean;
+  featured: boolean;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateMenuRequest {
+  name: string;
+  description?: string;
+  price: number;
+  category?: string;
+  imageUrl?: string;
+  available?: boolean;
+  featured?: boolean;
+}
+
+export type UpdateMenuRequest = Partial<CreateMenuRequest>;
 
 export interface ApiResponse<T> {
   success: boolean;

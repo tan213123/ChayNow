@@ -2,7 +2,10 @@ import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { register as registerApi } from "@/services/auth.service";
+import {
+  register as registerApi,
+  registerOwner as registerOwnerApi,
+} from "@/services/auth.service";
 import { useAuthStore } from "@/store/authStore";
 import type { Role } from "@/types/auth";
 
@@ -41,7 +44,8 @@ export default function Register() {
 
     try {
       setIsSubmitting(true);
-      const response = await registerApi({
+      const register = ownerRequested ? registerOwnerApi : registerApi;
+      const response = await register({
         fullName: fullName.trim(),
         email: email.trim(),
         password,
@@ -55,8 +59,14 @@ export default function Register() {
           label: roleLabels[response.user.role],
         }),
       );
-      toast.success("Đăng ký tài khoản thành công.");
-      navigate("/", { replace: true });
+      toast.success(
+        ownerRequested
+          ? "Đăng ký tài khoản chủ quán thành công."
+          : "Đăng ký tài khoản thành công.",
+      );
+      navigate(ownerRequested ? "/manage/restaurants" : "/", {
+        replace: true,
+      });
     } catch (error) {
       toast.error(
         error instanceof Error
@@ -102,10 +112,9 @@ export default function Register() {
           </div>
 
           {ownerRequested ? (
-            <div className="mt-8 rounded-3xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-800">
-              API đăng ký hiện chỉ tạo tài khoản vai trò người dùng. Swagger
-              chưa có trường role hoặc endpoint đăng ký chủ quán, nên FE không
-              thể tạo tài khoản OWNER mà không thay đổi backend.
+            <div className="mt-8 rounded-3xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-800">
+              Bạn đang đăng ký tài khoản chủ quán. Sau khi đăng ký, bạn có thể
+              tạo nhà hàng và thực đơn trong khu vực quản lý.
             </div>
           ) : null}
 
@@ -162,7 +171,11 @@ export default function Register() {
               disabled={isSubmitting}
               className="w-full rounded-2xl bg-emerald-600 px-4 py-3 text-white hover:bg-emerald-700"
             >
-              {isSubmitting ? "Đang đăng ký..." : "Đăng ký tài khoản"}
+              {isSubmitting
+                ? "Đang đăng ký..."
+                : ownerRequested
+                  ? "Đăng ký chủ quán"
+                  : "Đăng ký tài khoản"}
             </Button>
           </form>
 

@@ -31,6 +31,8 @@ type RestaurantForm = {
   description: string;
   typeRestaurantId: string;
   placeId: string;
+  openTime: string;
+  closedTime: string;
   mediaUrl: string;
 };
 
@@ -43,6 +45,8 @@ const emptyRestaurant: RestaurantForm = {
   description: "",
   typeRestaurantId: "",
   placeId: "",
+  openTime: "08:00",
+  closedTime: "22:00",
   mediaUrl: "",
 };
 
@@ -103,6 +107,8 @@ export default function OwnerEdit() {
         description: restaurant.description ?? "",
         typeRestaurantId: String(restaurant.typeRestaurantId),
         placeId: restaurant.placeId ? String(restaurant.placeId) : "",
+        openTime: restaurant.openTime?.slice(0, 5) ?? "08:00",
+        closedTime: restaurant.closedTime?.slice(0, 5) ?? "22:00",
         mediaUrl: restaurant.mediaList[0]?.url ?? "",
       });
 
@@ -305,9 +311,18 @@ export default function OwnerEdit() {
     if (
       !form.name.trim() ||
       !form.typeRestaurantId ||
-      !form.placeId
+      !form.placeId ||
+      !form.openTime ||
+      !form.closedTime
     ) {
-      toast.error("Vui lòng nhập tên quán, loại hình và địa điểm.");
+      toast.error(
+        "Vui lòng nhập tên quán, loại hình, địa điểm và giờ hoạt động.",
+      );
+      return;
+    }
+
+    if (form.openTime === form.closedTime) {
+      toast.error("Giờ mở cửa và đóng cửa không được trùng nhau.");
       return;
     }
 
@@ -331,6 +346,8 @@ export default function OwnerEdit() {
       description: form.description.trim() || undefined,
       placeId: Number(form.placeId),
       typeRestaurantId: Number(form.typeRestaurantId),
+      openTime: form.openTime,
+      closedTime: form.closedTime,
       mediaUrls: form.mediaUrl.trim() ? [form.mediaUrl.trim()] : [],
     };
 
@@ -444,6 +461,24 @@ export default function OwnerEdit() {
                 onChange={(event) =>
                   setField("phoneNumber", event.target.value)
                 }
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-normal outline-none focus:border-emerald-500"
+              />
+            </label>
+            <label className="space-y-2 text-sm font-semibold text-slate-700">
+              Giờ mở cửa *
+              <input
+                value={form.openTime}
+                onChange={(event) => setField("openTime", event.target.value)}
+                type="time"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-normal outline-none focus:border-emerald-500"
+              />
+            </label>
+            <label className="space-y-2 text-sm font-semibold text-slate-700">
+              Giờ đóng cửa *
+              <input
+                value={form.closedTime}
+                onChange={(event) => setField("closedTime", event.target.value)}
+                type="time"
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-normal outline-none focus:border-emerald-500"
               />
             </label>

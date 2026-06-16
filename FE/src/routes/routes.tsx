@@ -112,36 +112,20 @@ export const routes: RouteObject[] = [
     ),
   },
   {
-    path: "/admin",
+    path: "/manage/user",
     element: (
       <ProtectedRoute requiredRoles={["ADMIN"]}>
-        <AdminDashboard />
+        <UserManagement />
       </ProtectedRoute>
     ),
   },
   {
-    path: "/admin/users",
+    path: "/manage/report",
     element: (
       <ProtectedRoute requiredRoles={["ADMIN"]}>
-        <AdminUsers />
+        <ReportManagement />
       </ProtectedRoute>
     ),
-  },
-  {
-    path: "/manage/user",
-    element: <UserManagement />,
-  },
-  {
-    path: "/manage/report",
-    element: <ReportManagement />,
-  },
-  {
-    path: "/manage/user",
-    element: <UserManagement />,
-  },
-  {
-    path: "/manage/report",
-    element: <ReportManagement />,
   },
   {
     path: "/",

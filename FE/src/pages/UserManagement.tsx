@@ -1,12 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import { activeUser, getAdminUsers, suspendUser, type AdminUser } from "@/services/admin.service";
+import type { AccountStatus } from "@/types/auth";
 
 
 
 export default function UserManagement() {
   const [keyword, setKeyword] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] =
+    useState<AccountStatus | "all">("all");
  const [users, setUsers] = useState<AdminUser[]>([]);
 const [loading, setLoading] = useState(false);
 
@@ -16,18 +18,18 @@ const [size] = useState(10);
 const [totalPages, setTotalPages] = useState(0);
 const [totalElements, setTotalElements] = useState(0);
 
-const fetchUsers = async () => {
+const fetchUsers = useCallback(async () => {
   try {
     setLoading(true);
+
+    const status: AccountStatus | "ALL" =
+      statusFilter === "all" ? "ALL" : statusFilter;
 
     const res = await getAdminUsers({
       page,
       size,
       keyword,
-      status:
-        statusFilter === "all"
-          ? "ALL"
-          : (statusFilter.toUpperCase() as any),
+      status,
     });
 
     setUsers(res.content);
@@ -38,11 +40,13 @@ const fetchUsers = async () => {
   } finally {
     setLoading(false);
   }
-};
+}, [keyword, page, size, statusFilter]);
 
 useEffect(() => {
-  fetchUsers();
-}, [page, keyword, statusFilter]);
+  // Fetching remote data is the synchronization performed by this effect.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  void fetchUsers();
+}, [fetchUsers]);
 
 
 const   handleToggleStatus = async (
@@ -55,19 +59,11 @@ const   handleToggleStatus = async (
       await activeUser(user.id);
     }
 
-    fetchUsers();
+    void fetchUsers();
   } catch (err) {
     console.error(err);
   }
 };
-
-  const handleDelete = (id: number) => {
-    if (!window.confirm("Xóa người dùng này?")) return;
-
-    setUsers((prev) =>
-      prev.filter((user) => user.id !== id)
-    );
-  };
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -92,7 +88,7 @@ const   handleToggleStatus = async (
               Tổng người dùng
             </p>
             <p className="mt-3 text-3xl font-bold">
-              {users.length}
+              {loading ? "..." : totalElements}
             </p>
           </div>
 
@@ -147,7 +143,7 @@ u=>u.status==="SUSPENDED"
             <select
               value={statusFilter}
               onChange={(e) =>
-                setStatusFilter(e.target.value)
+                setStatusFilter(e.target.value as AccountStatus | "all")
               }
               className="rounded-2xl border px-4 py-3"
             >
@@ -155,11 +151,11 @@ u=>u.status==="SUSPENDED"
                 Tất cả trạng thái
               </option>
 
-              <option value="active">
+              <option value="ACTIVE">
                 Active
               </option>
 
-              <option value="blocked">
+              <option value="SUSPENDED">
                 Blocked
               </option>
             </select>
@@ -256,10 +252,10 @@ user.status==="ACTIVE"
                       </button>
 
                       <button
-                        // onClick={() =>
-                        //   handleDelete(user.id)
-                        // }
-                        className="rounded-xl bg-red-600 px-4 py-2 text-white"
+                        type="button"
+                        disabled
+                        title="Chức năng xóa chưa được hỗ trợ"
+                        className="cursor-not-allowed rounded-xl bg-red-300 px-4 py-2 text-white"
                       >
                         Xóa
                       </button>
