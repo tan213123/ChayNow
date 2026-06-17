@@ -110,7 +110,7 @@ public class AdminPostingServiceImpl implements AdminPostingService {
                 .likeCount(p.getLikeCount())
                 .commentCount(p.getCommentCount())
                 .status(p.getStatus())
-                .rejectReason(p.getRejectReason())
+                .rejectReason("REJECTED".equalsIgnoreCase(p.getStatus()) ? p.getRejectReason() : null)
                 .createdAt(p.getCreatedAt())
                 .updatedAt(p.getUpdatedAt())
 
