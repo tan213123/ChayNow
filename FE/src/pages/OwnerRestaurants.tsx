@@ -1,4 +1,3 @@
-import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -14,72 +13,12 @@ import type {
   ReviewResponse,
 } from "@/types/restaurant";
 
-const fallbackImage =
-  "https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=1200&q=80";
-
 export default function OwnerRestaurants() {
   const navigate = useNavigate();
-  const [restaurants, setRestaurants] = useState<RestaurantResponse[]>([]);
-  const [reviews, setReviews] = useState<ReviewResponse[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    Promise.all([getRestaurants(), getReviews()])
-      .then(([restaurantData, reviewData]) => {
-        if (!cancelled) {
-          setRestaurants(restaurantData);
-          setReviews(reviewData);
-        }
-      })
-      .catch((error: unknown) => {
-        if (!cancelled) {
-          toast.error(
-            error instanceof Error
-              ? error.message
-              : "Không thể tải danh sách nhà hàng.",
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const reviewStats = useMemo(() => {
-    const stats = new Map<number, { count: number; average: number }>();
-
-    for (const restaurant of restaurants) {
-      const restaurantReviews = reviews.filter(
-        (review) => review.restaurantId === restaurant.id,
-      );
-      const average =
-        restaurantReviews.length === 0
-          ? 0
-          : restaurantReviews.reduce(
-              (total, review) => total + review.rating,
-              0,
-            ) / restaurantReviews.length;
-      stats.set(restaurant.id, {
-        count: restaurantReviews.length,
-        average,
-      });
-    }
-
-    return stats;
-  }, [restaurants, reviews]);
-
-  const selectRestaurant = (restaurantId: number, destination: string) => {
-    setSelectedRestaurantId(restaurantId);
-    navigate(destination);
+  const restaurantList = restaurants;
+  const handleEdit = (restaurant: typeof restaurants[number]) => {
+    localStorage.setItem("ownerRestaurant", JSON.stringify(restaurant));
+    navigate("/manage/edit");
   };
 
   const handleDelete = async (restaurant: RestaurantResponse) => {
@@ -110,8 +49,8 @@ export default function OwnerRestaurants() {
 
   return (
     <OwnerLayout>
-      <section className="mx-auto max-w-7xl">
-        <div className="mb-8 flex flex-col gap-6 rounded-[2rem] bg-white p-8 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+      <section className="mx-auto max-w-7xl px-6 py-10">
+        <div className="mb-8 flex flex-col gap-6 rounded-[2rem] bg-white p-10 shadow-xl sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.3em] text-emerald-600">
               Nhà hàng

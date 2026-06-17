@@ -47,184 +47,84 @@ const priceFormatter = new Intl.NumberFormat("vi-VN", {
 });
 
 export default function OwnerNewDish() {
-  const restaurantId = getSelectedRestaurantId();
-  const [restaurant, setRestaurant] = useState<RestaurantResponse | null>(null);
-  const [menus, setMenus] = useState<MenuResponse[]>([]);
-  const [form, setForm] = useState<MenuForm>(emptyForm);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(Boolean(restaurantId));
-  const [isSaving, setIsSaving] = useState(false);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+  return (
+    <OwnerLayout>
+      <section className="mx-auto max-w-6xl px-6 py-10">
+        <div className="rounded-[2rem] bg-white p-10 shadow-xl">
+          <div className="mb-10 flex flex-col gap-4">
+            <div className="space-y-3">
+              <p className="text-sm font-semibold uppercase tracking-[0.3em] text-emerald-600">Đăng món ăn mới</p>
+              <h1 className="text-4xl font-extrabold text-slate-900">Đăng món ăn mới</h1>
+              <p className="max-w-2xl text-sm leading-7 text-slate-600">
+                Chia sẻ món ăn đặc biệt của quán bạn với mọi người. Tải ảnh lên, điền tên, mô tả và loại món để cập nhật thực đơn.
+              </p>
+            </div>
+          </div>
 
-  useEffect(() => {
-    if (!restaurantId) {
-      return;
-    }
+          <form className="space-y-8">
+            <div className="space-y-3 rounded-[2rem] border border-slate-200 bg-slate-50 p-6">
+              <label className="block text-sm font-semibold text-slate-700">Hình ảnh món ăn *</label>
+              <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500 transition hover:border-emerald-400 hover:bg-emerald-50">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-2xl text-emerald-700">
+                  ⬆
+                </div>
+                <p className="mt-4 text-sm font-semibold">Click để tải lên hoặc kéo thả hình ảnh vào đây</p>
+                <p className="mt-2 text-xs text-slate-400">PNG, JPG, JPEG (Max 5MB)</p>
+                <input type="file" className="sr-only" />
+              </div>
+            </div>
 
-    let cancelled = false;
-    Promise.all([
-      getRestaurant(restaurantId),
-      getRestaurantMenus(restaurantId),
-    ])
-      .then(([restaurantData, menuData]) => {
-        if (!cancelled) {
-          setRestaurant(restaurantData);
-          setMenus(menuData);
-        }
-      })
-      .catch((error: unknown) => {
-        if (!cancelled) {
-          toast.error(
-            error instanceof Error
-              ? error.message
-              : "Không thể tải thực đơn.",
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      });
+            <div className="grid gap-6 lg:grid-cols-[1fr_0.8fr]">
+              <div className="space-y-4 rounded-[2rem] border border-slate-200 bg-slate-50 p-6">
+                <label className="block text-sm font-semibold text-slate-700">Tên món ăn *</label>
+                <input
+                  type="text"
+                  placeholder="VD: Bún riêu chay đặc biệt"
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+                />
+              </div>
 
-    return () => {
-      cancelled = true;
-    };
-  }, [restaurantId]);
+              <div className="space-y-4 rounded-[2rem] border border-slate-200 bg-slate-50 p-6">
+                <label className="block text-sm font-semibold text-slate-700">Loại món *</label>
+                <select className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100">
+                  <option>Món chính</option>
+                  <option>Ăn vặt / Khai vị</option>
+                  <option>Tráng miệng</option>
+                  <option>Đồ uống</option>
+                </select>
+              </div>
+            </div>
 
-  const setField = <Key extends keyof MenuForm>(
-    key: Key,
-    value: MenuForm[Key],
-  ) => {
-    setForm((current) => ({ ...current, [key]: value }));
-  };
+            <div className="space-y-4 rounded-[2rem] border border-slate-200 bg-slate-50 p-6">
+              <label className="block text-sm font-semibold text-slate-700">Mô tả món ăn *</label>
+              <textarea
+                rows={6}
+                placeholder="Mô tả về nguyên liệu, hương vị, cách chế biến..."
+                className="w-full resize-none rounded-3xl border border-slate-200 bg-white px-4 py-4 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+              />
+            </div>
 
-  const resetForm = () => {
-    setForm(emptyForm);
-    setEditingId(null);
-  };
-
-  const startEditing = (menu: MenuResponse) => {
-    setEditingId(menu.id);
-    setForm({
-      name: menu.name,
-      description: menu.description ?? "",
-      price: String(menu.price),
-      category: menu.category ?? "",
-      imageUrl: menu.imageUrl ?? "",
-      available: menu.available,
-      featured: menu.featured,
-    });
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!restaurantId) {
-      return;
-    }
-
-    const price = Number(form.price);
-    if (!form.name.trim()) {
-      toast.error("Vui lòng nhập tên món.");
-      return;
-    }
-    if (!Number.isInteger(price) || price < 0) {
-      toast.error("Giá món phải là số nguyên lớn hơn hoặc bằng 0.");
-      return;
-    }
-
-    const payload: CreateMenuRequest = {
-      name: form.name.trim(),
-      description: form.description.trim() || undefined,
-      price,
-      category: form.category.trim() || undefined,
-      imageUrl: form.imageUrl.trim() || undefined,
-      available: form.available,
-      featured: form.featured,
-    };
-
-    try {
-      setIsSaving(true);
-      if (editingId) {
-        const updated = await updateMenu(editingId, payload);
-        setMenus((current) =>
-          current.map((menu) => (menu.id === updated.id ? updated : menu)),
-        );
-        toast.success("Cập nhật món ăn thành công.");
-      } else {
-        const created = await createMenu(restaurantId, payload);
-        setMenus((current) => [created, ...current]);
-        toast.success("Tạo món ăn thành công.");
-      }
-      resetForm();
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Không thể lưu món ăn.",
-      );
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleDelete = async (menu: MenuResponse) => {
-    if (!window.confirm(`Ngừng hiển thị món "${menu.name}"?`)) {
-      return;
-    }
-
-    try {
-      setDeletingId(menu.id);
-      await deleteMenu(menu.id);
-      setMenus((current) => current.filter((item) => item.id !== menu.id));
-      if (editingId === menu.id) {
-        resetForm();
-      }
-      toast.success("Đã ngừng hiển thị món ăn.");
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Không thể xóa món ăn.",
-      );
-    } finally {
-      setDeletingId(null);
-    }
-  };
-
-  const handleAvailability = async (menu: MenuResponse) => {
-    try {
-      const updated = await updateMenu(menu.id, {
-        available: !menu.available,
-      });
-      setMenus((current) =>
-        current.map((item) => (item.id === updated.id ? updated : item)),
-      );
-      toast.success(
-        updated.available ? "Món ăn đã mở bán." : "Món ăn đã tạm hết.",
-      );
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Không thể cập nhật trạng thái món.",
-      );
-    }
-  };
-
-  if (!restaurantId) {
-    return (
-      <OwnerLayout>
-        <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white p-12 text-center">
-          <h1 className="text-2xl font-bold text-slate-900">
-            Chưa chọn nhà hàng
-          </h1>
-          <p className="mt-3 text-sm text-slate-500">
-            Chọn một nhà hàng trước khi quản lý thực đơn.
-          </p>
-          <Link
-            to="/manage/restaurants"
-            className="mt-6 inline-flex rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white"
-          >
-            Chọn nhà hàng
-          </Link>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-1 text-sm text-slate-500">
+                <p className="font-semibold text-slate-900">Lưu ý</p>
+                <p>Điền đầy đủ thông tin để khách hàng dễ dàng tìm thấy món ăn trên thực đơn.</p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  to="/manage"
+                  className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                >
+                  Hủy
+                </Link>
+                <button
+                  type="button"
+                  className="rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-700"
+                >
+                  + Đăng bài
+                </button>
+              </div>
+            </div>
+          </form>
         </div>
       </OwnerLayout>
     );

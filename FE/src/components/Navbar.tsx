@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
 import type { Role } from "@/types/auth";
 
@@ -12,13 +12,12 @@ const roleLabels: Record<Role, string> = {
 export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const user = useAuthStore((state) => state.user);
-  const logout = useAuthStore((state) => state.logout);
+  const { isAuthenticated, logout, user } = useAuthStore();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
-    localStorage.removeItem("authUser");
+    setMenuOpen(false);
     navigate("/login");
   };
 
@@ -42,15 +41,16 @@ export default function Navbar() {
       : []),
   ];
 
-  // Get user initials
-  const getInitials = (email: string) => {
-    return email.slice(0, 2).toUpperCase();
+  const getInitials = () => {
+    const source = user?.fullName || user?.email || "";
+    return source.slice(0, 2).toUpperCase();
   };
+
+  const isLoggedIn = isAuthenticated && Boolean(user);
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur-xl shadow-sm">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        {/* Logo */}
         <Link to="/" className="flex items-center gap-3 text-emerald-700 group">
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-xl transition-transform group-hover:scale-110">
             🌱
@@ -58,7 +58,6 @@ export default function Navbar() {
           <span className="font-bold text-lg tracking-tight">ChayNow</span>
         </Link>
 
-        {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-1 text-sm">
           {navLinks.map((link) => (
             <Link
@@ -76,9 +75,8 @@ export default function Navbar() {
           ))}
         </nav>
 
-        {/* Right side */}
         <div className="flex items-center gap-3">
-          {user ? (
+          {isLoggedIn && user ? (
             <div className="flex items-center gap-3">
               <Link
                 to="/profile"
@@ -89,7 +87,7 @@ export default function Navbar() {
                 }`}
               >
                 <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-xs font-bold text-white">
-                  {getInitials(user.email)}
+                  {getInitials()}
                 </span>
                 <span className="font-medium">{roleLabels[user.role]}</span>
               </Link>
@@ -117,7 +115,6 @@ export default function Navbar() {
             </div>
           )}
 
-          {/* Mobile hamburger */}
           <button
             className="md:hidden flex flex-col gap-1.5 p-2 rounded-xl hover:bg-slate-100 transition"
             onClick={() => setMenuOpen(!menuOpen)}
@@ -130,7 +127,6 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Menu */}
       {menuOpen && (
         <div className="md:hidden border-t border-slate-100 bg-white px-6 py-4 space-y-2 shadow-lg">
           {navLinks.map((link) => (
@@ -149,7 +145,7 @@ export default function Navbar() {
             </Link>
           ))}
           <div className="pt-2 border-t border-slate-100">
-            {user ? (
+            {isLoggedIn && user ? (
               <div className="space-y-2">
                 <Link
                   to="/profile"
@@ -157,12 +153,12 @@ export default function Navbar() {
                   className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50"
                 >
                   <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-xs font-bold text-white">
-                    {getInitials(user.email)}
+                    {getInitials()}
                   </span>
                   Hồ sơ cá nhân
                 </Link>
                 <button
-                  onClick={() => { setMenuOpen(false); handleLogout(); }}
+                  onClick={handleLogout}
                   className="w-full text-left rounded-2xl px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition"
                 >
                   Đăng xuất

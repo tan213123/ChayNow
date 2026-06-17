@@ -38,273 +38,25 @@ type RestaurantForm = {
 
 const standardTypeNames = ["Bình dân", "Buffet", "Cao cấp", "Từ thiện"] as const;
 
-const emptyRestaurant: RestaurantForm = {
-  name: "",
-  address: "",
-  phoneNumber: "",
-  description: "",
-  typeRestaurantId: "",
-  placeId: "",
-  openTime: "08:00",
-  closedTime: "22:00",
-  mediaUrl: "",
-};
-
-const emptyPlace: PlaceRequest = {
-  name: "",
-  district: "",
-  city: "",
-  address: "",
-  mapUrl: "",
-};
-
 export default function OwnerEdit() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const restaurantId = Number(searchParams.get("id"));
-  const isEditing = Number.isInteger(restaurantId) && restaurantId > 0;
-  const [form, setForm] = useState<RestaurantForm>(emptyRestaurant);
-  const [types, setTypes] = useState<TypeRestaurantResponse[]>([]);
-  const [places, setPlaces] = useState<PlaceResponse[]>([]);
-  const [placeDraft, setPlaceDraft] = useState<PlaceRequest>(emptyPlace);
-  const [isNewPlace, setIsNewPlace] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isSavingPlace, setIsSavingPlace] = useState(false);
-  const [isCreatingType, setIsCreatingType] = useState(false);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreviewUrl, setImagePreviewUrl] = useState("");
+  const [restaurant, setRestaurant] = useState<OwnerRestaurant>(defaultRestaurant);
+  const [tagString, setTagString] = useState(defaultRestaurant.tags.join(", "));
 
   useEffect(() => {
-    let cancelled = false;
-
-    const loadForm = async () => {
-      const [typeData, placeData] = await Promise.all([
-        getTypeRestaurants(),
-        getPlaces(),
-      ]);
-
-      if (cancelled) {
-        return;
+    const storedRestaurant = localStorage.getItem("ownerRestaurant");
+    if (storedRestaurant) {
+      try {
+        const parsed = JSON.parse(storedRestaurant) as OwnerRestaurant;
+        setRestaurant(parsed);
+        setTagString(parsed.tags.join(", "));
+      } catch {
+        localStorage.removeItem("ownerRestaurant");
       }
-
-      setTypes(typeData);
-      setPlaces(placeData);
-
-      if (!isEditing) {
-        return;
-      }
-
-      const restaurant = await getRestaurant(restaurantId);
-      if (cancelled) {
-        return;
-      }
-
-      setForm({
-        name: restaurant.name,
-        address: restaurant.address ?? "",
-        phoneNumber: restaurant.phoneNumber ?? "",
-        description: restaurant.description ?? "",
-        typeRestaurantId: String(restaurant.typeRestaurantId),
-        placeId: restaurant.placeId ? String(restaurant.placeId) : "",
-        openTime: restaurant.openTime?.slice(0, 5) ?? "08:00",
-        closedTime: restaurant.closedTime?.slice(0, 5) ?? "22:00",
-        mediaUrl: restaurant.mediaList[0]?.url ?? "",
-      });
-
-      if (restaurant.placeId) {
-        const place = await getPlace(restaurant.placeId);
-        if (!cancelled) {
-          setPlaceDraft({
-            name: place.name,
-            district: place.district,
-            city: place.city,
-            address: place.address,
-            mapUrl: place.mapUrl ?? "",
-          });
-        }
-      }
-    };
-
-    loadForm()
-      .catch((error: unknown) => {
-        if (!cancelled) {
-          toast.error(
-            error instanceof Error
-              ? error.message
-              : "Không thể tải dữ liệu biểu mẫu.",
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isEditing, restaurantId]);
-
-  const setField = (key: keyof RestaurantForm, value: string) => {
-    setForm((current) => ({ ...current, [key]: value }));
-  };
-
-  const setPlaceField = (key: keyof PlaceRequest, value: string) => {
-    setPlaceDraft((current) => ({ ...current, [key]: value }));
-  };
-
-  const handleTypeSelection = async (value: string) => {
-    if (!value || !value.startsWith("new:")) {
-      setField("typeRestaurantId", value);
-      return;
     }
-
-    const typeName = value.slice(4);
-    try {
-      setIsCreatingType(true);
-      const created = await createTypeRestaurant({
-        name: typeName,
-        description: `Loại hình ${typeName}`,
-      });
-      setTypes((current) => [...current, created]);
-      setField("typeRestaurantId", String(created.id));
-      toast.success(`Đã thêm loại hình "${typeName}".`);
-    } catch (error) {
-      setField("typeRestaurantId", "");
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Không thể tạo loại hình nhà hàng.",
-      );
-    } finally {
-      setIsCreatingType(false);
-    }
-  };
-
-  const handleImageChange = (file: File | null) => {
-    if (!file) {
-      setImageFile(null);
-      setImagePreviewUrl("");
-      return;
-    }
-    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
-      toast.error("Chỉ hỗ trợ ảnh PNG, JPG, JPEG hoặc WebP.");
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Dung lượng ảnh tối đa là 5MB.");
-      return;
-    }
-    setImageFile(file);
-    const reader = new FileReader();
-    reader.onload = () => {
-      setImagePreviewUrl(typeof reader.result === "string" ? reader.result : "");
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handlePlaceSelection = async (value: string) => {
-    setField("placeId", value);
-    setIsNewPlace(false);
-
-    if (!value) {
-      setPlaceDraft(emptyPlace);
-      return;
-    }
-
-    try {
-      const place = await getPlace(Number(value));
-      setPlaceDraft({
-        name: place.name,
-        district: place.district,
-        city: place.city,
-        address: place.address,
-        mapUrl: place.mapUrl ?? "",
-      });
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Không thể tải địa điểm.",
-      );
-    }
-  };
-
-  const validatePlace = () => {
-    if (
-      !placeDraft.name.trim() ||
-      !placeDraft.district.trim() ||
-      !placeDraft.city.trim() ||
-      !placeDraft.address.trim()
-    ) {
-      toast.error("Vui lòng nhập đủ tên, quận/huyện, thành phố và địa chỉ.");
-      return false;
-    }
-    return true;
-  };
-
-  const handleSavePlace = async () => {
-    if (!validatePlace()) {
-      return;
-    }
-
-    try {
-      setIsSavingPlace(true);
-      if (isNewPlace || !form.placeId) {
-        const created = await createPlace({
-          ...placeDraft,
-          name: placeDraft.name.trim(),
-          district: placeDraft.district.trim(),
-          city: placeDraft.city.trim(),
-          address: placeDraft.address.trim(),
-          mapUrl: placeDraft.mapUrl?.trim() || undefined,
-        });
-        setPlaces((current) => [...current, created]);
-        setField("placeId", String(created.id));
-        setIsNewPlace(false);
-        toast.success("Tạo địa điểm thành công.");
-      } else {
-        const updated = await updatePlace(Number(form.placeId), placeDraft);
-        setPlaces((current) =>
-          current.map((place) => (place.id === updated.id ? updated : place)),
-        );
-        toast.success("Cập nhật địa điểm thành công.");
-      }
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Không thể lưu địa điểm.",
-      );
-    } finally {
-      setIsSavingPlace(false);
-    }
-  };
-
-  const handleDeletePlace = async () => {
-    if (!form.placeId || isNewPlace) {
-      return;
-    }
-    if (!window.confirm("Bạn có chắc muốn xóa địa điểm này không?")) {
-      return;
-    }
-
-    try {
-      setIsSavingPlace(true);
-      await deletePlace(Number(form.placeId));
-      setPlaces((current) =>
-        current.filter((place) => place.id !== Number(form.placeId)),
-      );
-      setField("placeId", "");
-      setPlaceDraft(emptyPlace);
-      toast.success("Xóa địa điểm thành công.");
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Không thể xóa địa điểm đang được sử dụng.",
-      );
-    } finally {
-      setIsSavingPlace(false);
-    }
+  }, []);
+  const handleInputChange = (key: keyof OwnerRestaurant, value: string) => {
+    setRestaurant((current) => ({ ...current, [key]: value } as OwnerRestaurant));
   };
 
   const handleSaveRestaurant = async () => {
@@ -372,19 +124,9 @@ export default function OwnerEdit() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <OwnerLayout>
-        <div className="rounded-[2rem] bg-white p-10 text-center text-sm text-slate-500">
-          Đang tải dữ liệu...
-        </div>
-      </OwnerLayout>
-    );
-  }
-
   return (
     <OwnerLayout>
-      <section className="mx-auto max-w-5xl space-y-8">
+      <section className="mx-auto max-w-5xl px-6 py-10">
         <div className="rounded-[2rem] bg-white p-8 shadow-sm">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div>

@@ -1,3 +1,5 @@
+// Demo/mock data used by public and owner screens until the matching API flows are connected.
+// Keep this file as fallback content; backend-backed pages should use service modules instead.
 export const restaurants = [
   {
     id: "hum-vegetarian",

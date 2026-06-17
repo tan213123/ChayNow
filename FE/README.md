@@ -1,73 +1,64 @@
-# React + TypeScript + Vite
+# ChayNow
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+ChayNow is a website for discovering vegetarian restaurants, dishes, events, community posts, and managing restaurant.
 
-Currently, two official plugins are available:
+## Tech Stack FE
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- React 19 + TypeScript
+- Vite
+- React Router
+- Tailwind CSS
+- Zustand for persisted auth state
+- Axios for API calls
+- Sonner for toast notifications
+- Lucide React and shadcn/Radix-style UI primitives
 
-## React Compiler
+## Main Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Public restaurant discovery, restaurant details, dishes, events, and community post UI
+- Login and registration
+- Persisted authentication with role-based protected routes
+- User profile and favorites screens
+- Owner screens for restaurant selection/editing, dishes, events, reviews, and dashboard UI
+- Admin screens for users, restaurant/location moderation, and post moderation
 
-## Expanding the ESLint configuration
+## Folder Structure
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- `src/main.tsx` and `src/App.tsx`: app bootstrap, routing shell, global toaster
+- `src/routes`: route definitions and role-protected route usage
+- `src/pages`: public, auth, user, owner, and admin screens
+- `src/components`: shared layout/navigation/protection components and UI primitives
+- `src/services`: Axios client and API service modules
+- `src/store`: Zustand stores, currently auth state
+- `src/data`: demo/mock fallback data for pages not fully API-connected yet
+- `src/lib`: small shared utilities
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Setup
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Useful commands:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run build
+npm run lint
+npm run preview
 ```
+
+## Environment Notes
+
+- API calls are made through the existing Axios service in `src/services`.
+- Development proxy details live in `vite.config.ts`.
+- Backend endpoint details beyond the existing service code are not documented in this repo.
+- Auth state is stored through `src/store/authStore.ts`; do not add new auth sources such as separate `localStorage` user objects.
+
+## Current Limitations / TODOs
+
+- README was previously the default Vite template, so deeper backend contracts are still Unknown / Not found.
+- Several public and owner screens still use demo/mock data from `src/data/restaurants.ts`.
+- Owner flows are mostly local UI/localStorage flows and are not fully backend-integrated.
+- Admin list/moderation screens are the main backend-backed areas currently visible in the frontend.
+- Add tests for auth, protected routing, and admin moderation flows.
