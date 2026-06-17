@@ -8,40 +8,12 @@ const defaultRestaurant = restaurants[0];
 
 type OwnerRestaurant = typeof defaultRestaurant;
 
-type AuthUser = {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  label?: string;
-};
-
 export default function OwnerEdit() {
   const navigate = useNavigate();
-  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [restaurant, setRestaurant] = useState<OwnerRestaurant>(defaultRestaurant);
   const [tagString, setTagString] = useState(defaultRestaurant.tags.join(", "));
 
   useEffect(() => {
-    const authData = localStorage.getItem("authUser");
-    if (!authData) {
-      navigate("/login");
-      return;
-    }
-
-    try {
-      const parsed = JSON.parse(authData) as AuthUser;
-      if (parsed.label !== "Chủ quán") {
-        navigate("/");
-        return;
-      }
-      setAuthUser(parsed);
-    } catch {
-      localStorage.removeItem("authUser");
-      navigate("/login");
-      return;
-    }
-
     const storedRestaurant = localStorage.getItem("ownerRestaurant");
     if (storedRestaurant) {
       try {
@@ -52,13 +24,7 @@ export default function OwnerEdit() {
         localStorage.removeItem("ownerRestaurant");
       }
     }
-  }, [navigate]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("authUser");
-    navigate("/login");
-  };
-
+  }, []);
   const handleInputChange = (key: keyof OwnerRestaurant, value: string) => {
     setRestaurant((current) => ({ ...current, [key]: value } as OwnerRestaurant));
   };
@@ -74,19 +40,7 @@ export default function OwnerEdit() {
   };
 
   return (
-    <OwnerLayout
-      profile={
-        <div className="flex items-center gap-4 text-sm text-slate-700">
-          <span className="flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-sm">{authUser?.label?.[0] ?? "U"}</span>
-            {authUser?.label ?? "Chủ quán"}
-          </span>
-          <button onClick={handleLogout} className="rounded-full bg-slate-100 px-4 py-2 font-semibold hover:bg-slate-200">
-            Đăng xuất
-          </button>
-        </div>
-      }
-    >
+    <OwnerLayout>
       <section className="mx-auto max-w-5xl px-6 py-10">
         <div className="rounded-[2rem] bg-white p-8 shadow-sm">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">

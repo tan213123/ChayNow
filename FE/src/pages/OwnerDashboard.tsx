@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import OwnerLayout from "@/components/OwnerLayout";
@@ -19,26 +19,8 @@ type OwnerEvent = {
   createdAt: string;
 };
 
-type AuthUser = {
-  email: string;
-  label: string;
-};
-
 export default function OwnerDashboard() {
   const navigate = useNavigate();
-  const authUser = useMemo<AuthUser | null>(() => {
-    const authData = localStorage.getItem("authUser");
-    if (!authData) {
-      return null;
-    }
-
-    try {
-      return JSON.parse(authData) as AuthUser;
-    } catch {
-      localStorage.removeItem("authUser");
-      return null;
-    }
-  }, []);
   const [ownerRestaurant] = useState<OwnerRestaurant>(() => {
     const storedRestaurant = localStorage.getItem("ownerRestaurant");
     if (!storedRestaurant) {
@@ -67,53 +49,19 @@ export default function OwnerDashboard() {
   });
   const [dashboardView, setDashboardView] = useState<"menu" | "events">("menu");
   const [selectedEvent, setSelectedEvent] = useState<OwnerEvent | null>(null);
-
   useEffect(() => {
-    if (!authUser) {
-      navigate("/login");
-      return;
-    }
-
-    if (authUser.label !== "Chủ quán") {
-      navigate("/");
-      return;
-    }
-
     const storedRestaurant = localStorage.getItem("ownerRestaurant");
     if (!storedRestaurant) {
       navigate("/manage/restaurants");
     }
-  }, [navigate, authUser]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("authUser");
-    navigate("/login");
-  };
-
+  }, [navigate]);
   const handleEditEvent = (event: OwnerEvent) => {
     localStorage.setItem("editingEvent", JSON.stringify(event));
     navigate("/manage/events");
   };
 
   return (
-    <OwnerLayout
-      profile={
-        <div className="flex items-center gap-4 text-sm text-slate-700">
-          <span className="flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-sm">
-              {authUser?.label?.[0] ?? "C"}
-            </span>
-            {authUser?.label ?? "Chủ quán"}
-          </span>
-          <button
-            onClick={handleLogout}
-            className="rounded-full bg-slate-100 px-4 py-2 font-semibold hover:bg-slate-200"
-          >
-            Đăng xuất
-          </button>
-        </div>
-      }
-    >
+    <OwnerLayout>
       <div className="space-y-8">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.3em] text-emerald-600">Dashboard Chủ Quán</p>

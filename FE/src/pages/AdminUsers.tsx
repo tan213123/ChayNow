@@ -47,8 +47,6 @@ export default function AdminUsers() {
 
   const [page, setPage] = useState(0);
   const [size] = useState(6);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
 
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -83,8 +81,6 @@ export default function AdminUsers() {
       });
 
       setUsersList(data.content || []);
-      setTotalPages(data.totalPages || 0);
-      setTotalElements(data.totalElements || 0);
     } catch (err: any) {
       setError(err?.message || "Đã xảy ra lỗi khi lấy danh sách người dùng.");
     } finally {
@@ -200,19 +196,19 @@ export default function AdminUsers() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center">
+                    <td colSpan={5} className="px-6 py-12 text-center">
                       Đang tải...
                     </td>
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center text-red-600">
+                    <td colSpan={5} className="px-6 py-12 text-center text-red-600">
                       {error}
                     </td>
                   </tr>
                 ) : usersList.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center">
+                    <td colSpan={5} className="px-6 py-12 text-center">
                       Không có dữ liệu
                     </td>
                   </tr>

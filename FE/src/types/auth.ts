@@ -36,6 +36,14 @@ export interface LoginApiData {
   status: AccountStatus;
 }
 
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  fullName: string;
+}
+
+export type RegisterApiData = LoginApiData;
+
 export interface ApiResponse<T> {
   success: boolean;
   message: string;

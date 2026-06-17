@@ -1,39 +1,11 @@
-import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import OwnerLayout from "@/components/OwnerLayout";
 import { restaurants } from "@/data/restaurants";
 
-type AuthUser = {
-  email: string;
-  label: string;
-};
-
 export default function OwnerRestaurants() {
   const navigate = useNavigate();
-  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const restaurantList = restaurants;
-
-  useEffect(() => {
-    const authData = localStorage.getItem("authUser");
-    if (!authData) {
-      navigate("/login");
-      return;
-    }
-
-    try {
-      const parsed = JSON.parse(authData) as AuthUser;
-      if (parsed.label !== "Chủ quán") {
-        navigate("/");
-        return;
-      }
-      setAuthUser(parsed);
-    } catch {
-      localStorage.removeItem("authUser");
-      navigate("/login");
-    }
-  }, [navigate]);
-
   const handleEdit = (restaurant: typeof restaurants[number]) => {
     localStorage.setItem("ownerRestaurant", JSON.stringify(restaurant));
     navigate("/manage/edit");
@@ -45,22 +17,7 @@ export default function OwnerRestaurants() {
   };
 
   return (
-    <OwnerLayout
-      profile={
-        <div className="flex items-center gap-4 text-sm text-slate-700">
-          <span className="flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-sm">{authUser?.label?.[0] ?? "U"}</span>
-            {authUser?.label ?? "Chủ quán"}
-          </span>
-          <Link
-            to="/login"
-            className="rounded-full bg-slate-100 px-4 py-2 font-semibold hover:bg-slate-200"
-          >
-            Đăng xuất
-          </Link>
-        </div>
-      }
-    >
+    <OwnerLayout>
       <section className="mx-auto max-w-7xl px-6 py-10">
         <div className="mb-8 flex flex-col gap-6 rounded-[2rem] bg-white p-10 shadow-xl sm:flex-row sm:items-center sm:justify-between">
           <div>

@@ -4,6 +4,7 @@ import type {
   LoginApiData,
   LoginRequest,
   LoginResponse,
+  RegisterRequest,
 } from "@/types/auth";
 
 export const login = async (data: LoginRequest): Promise<LoginResponse> => {
@@ -14,6 +15,29 @@ export const login = async (data: LoginRequest): Promise<LoginResponse> => {
 
   if (!response.success) {
     throw new Error(response.message || "Login failed");
+  }
+
+  return {
+    accessToken: response.data.accessToken,
+    user: {
+      id: response.data.id,
+      email: response.data.email,
+      fullName: response.data.fullName,
+      role: response.data.role,
+      status: response.data.status,
+      avatarUrl: response.data.avtUrl,
+    },
+  };
+};
+
+export const register = async (data: RegisterRequest): Promise<LoginResponse> => {
+  const response = await apiService.post<
+    ApiResponse<LoginApiData>,
+    ApiResponse<LoginApiData>
+  >("api/auth/register", data);
+
+  if (!response.success) {
+    throw new Error(response.message || "Registration failed");
   }
 
   return {

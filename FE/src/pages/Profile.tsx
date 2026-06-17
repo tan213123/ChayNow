@@ -1,12 +1,15 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import { favoriteRestaurants } from "@/data/restaurants";
+import { useAuthStore } from "@/store/authStore";
+import type { Role } from "@/types/auth";
 
-type AuthUser = {
-  email: string;
-  label: string;
+const roleLabels: Record<Role, string> = {
+  ADMIN: "Quản trị viên",
+  OWNER: "Chủ quán",
+  USER: "Người dùng",
 };
 
 const activityLog = [
@@ -25,31 +28,17 @@ const achievements = [
 ];
 
 export default function Profile() {
-  const navigate = useNavigate();
-  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const user = useAuthStore((state) => state.user);
   const [activeTab, setActiveTab] = useState<"overview" | "favorites" | "activity" | "settings">("overview");
   const [editMode, setEditMode] = useState(false);
-  const [name, setName] = useState("Nguyễn Văn A");
-  const [bio, setBio] = useState("Yêu thích ẩm thực chay, tìm kiếm những quán ngon tại TPHCM 🌱");
-  const [phone, setPhone] = useState("0901 234 567");
+  const [name, setName] = useState(user?.fullName || "Nguyễn Văn A");
+  const [bio, setBio] = useState(user?.bio || "Yêu thích ẩm thực chay, tìm kiếm những quán ngon tại TPHCM 🌱");
+  const [phone, setPhone] = useState(user?.phone || "0901 234 567");
 
-  useEffect(() => {
-    const authData = localStorage.getItem("authUser");
-    if (!authData) {
-      navigate("/login");
-      return;
-    }
-    try {
-      setAuthUser(JSON.parse(authData));
-    } catch {
-      localStorage.removeItem("authUser");
-      navigate("/login");
-    }
-  }, [navigate]);
+  if (!user) return null;
 
-  if (!authUser) return null;
-
-  const getInitials = (email: string) => email.slice(0, 2).toUpperCase();
+  const getInitials = () => (user.fullName || user.email).slice(0, 2).toUpperCase();
+  const roleLabel = roleLabels[user.role];
 
   const tabItems = [
     { id: "overview" as const, label: "Tổng quan", icon: "📊" },
@@ -62,14 +51,12 @@ export default function Profile() {
     <main className="min-h-screen bg-slate-50 text-slate-900">
       <Navbar />
 
-      {/* Profile Hero */}
       <section className="bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-600 pb-24 pt-12">
         <div className="mx-auto max-w-7xl px-6">
           <div className="flex flex-col items-center gap-6 text-center md:flex-row md:items-end md:text-left">
-            {/* Avatar */}
             <div className="relative">
               <div className="h-28 w-28 rounded-[2rem] bg-white/20 ring-4 ring-white/40 flex items-center justify-center text-4xl font-bold text-white shadow-2xl">
-                {getInitials(authUser.email)}
+                {getInitials()}
               </div>
               <button className="absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full bg-white text-sm shadow-lg hover:bg-slate-100 transition">
                 📷
@@ -80,7 +67,7 @@ export default function Profile() {
               <div className="flex flex-col items-center gap-2 md:flex-row md:items-end md:justify-between">
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-widest text-emerald-100">
-                    {authUser.label}
+                    {roleLabel}
                   </p>
                   <h1 className="mt-1 text-3xl font-extrabold text-white">{name}</h1>
                   <p className="mt-2 text-sm text-emerald-100/90">{bio}</p>
@@ -92,7 +79,7 @@ export default function Profile() {
                   >
                     {editMode ? "Huỷ" : "Chỉnh sửa hồ sơ"}
                   </button>
-                  {authUser.label === "Chủ quán" && (
+                  {user.role === "OWNER" && (
                     <Link
                       to="/manage/restaurants"
                       className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-emerald-700 shadow-lg transition hover:bg-emerald-50"
@@ -105,7 +92,6 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Stats row */}
           <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
             {[
               { label: "Địa điểm đã ghé", value: "12" },
@@ -122,10 +108,8 @@ export default function Profile() {
         </div>
       </section>
 
-      {/* Tabs */}
       <section className="mx-auto max-w-7xl px-6">
         <div className="-mt-8 rounded-[2rem] border border-slate-200 bg-white shadow-xl">
-          {/* Tab bar */}
           <div className="flex flex-wrap gap-1 border-b border-slate-100 p-2">
             {tabItems.map((tab) => (
               <button
@@ -143,20 +127,17 @@ export default function Profile() {
             ))}
           </div>
 
-          {/* Tab Content */}
           <div className="p-6">
-            {/* Overview Tab */}
             {activeTab === "overview" && (
               <div className="space-y-6">
                 <div className="grid gap-6 lg:grid-cols-2">
-                  {/* Personal Info */}
                   <div className="space-y-4">
                     <h2 className="text-lg font-semibold text-slate-900">Thông tin cá nhân</h2>
                     <div className="space-y-3 rounded-[1.5rem] bg-slate-50 p-5">
                       {[
-                        { label: "Email", value: authUser.email, icon: "📧" },
+                        { label: "Email", value: user.email, icon: "📧" },
                         { label: "Số điện thoại", value: phone, icon: "📱" },
-                        { label: "Loại tài khoản", value: authUser.label, icon: "👤" },
+                        { label: "Loại tài khoản", value: roleLabel, icon: "👤" },
                         { label: "Tham gia từ", value: "Tháng 5/2026", icon: "📅" },
                       ].map((item) => (
                         <div key={item.label} className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm">
@@ -170,7 +151,6 @@ export default function Profile() {
                     </div>
                   </div>
 
-                  {/* Achievements */}
                   <div className="space-y-4">
                     <h2 className="text-lg font-semibold text-slate-900">Thành tích</h2>
                     <div className="grid grid-cols-2 gap-3">
@@ -194,7 +174,6 @@ export default function Profile() {
                   </div>
                 </div>
 
-                {/* Recent activity preview */}
                 <div>
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-semibold text-slate-900">Hoạt động gần đây</h2>
@@ -222,7 +201,6 @@ export default function Profile() {
               </div>
             )}
 
-            {/* Favorites Tab */}
             {activeTab === "favorites" && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -275,12 +253,10 @@ export default function Profile() {
               </div>
             )}
 
-            {/* Activity Tab */}
             {activeTab === "activity" && (
               <div className="space-y-4">
                 <h2 className="text-lg font-semibold text-slate-900">Lịch sử hoạt động</h2>
                 <div className="relative space-y-4 pl-6">
-                  {/* Timeline line */}
                   <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-slate-200" />
                   {activityLog.map((item) => (
                     <div key={item.id} className="relative flex items-start gap-4">
@@ -297,12 +273,10 @@ export default function Profile() {
               </div>
             )}
 
-            {/* Settings Tab */}
             {activeTab === "settings" && (
               <div className="space-y-6">
                 <h2 className="text-lg font-semibold text-slate-900">Cài đặt tài khoản</h2>
 
-                {/* Edit Profile */}
                 <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm space-y-4">
                   <p className="font-semibold text-slate-900">Thông tin cá nhân</p>
                   <div className="grid gap-4 sm:grid-cols-2">
@@ -337,7 +311,6 @@ export default function Profile() {
                   </Button>
                 </div>
 
-                {/* Change Password */}
                 <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm space-y-4">
                   <p className="font-semibold text-slate-900">Đổi mật khẩu</p>
                   <div className="grid gap-4 sm:grid-cols-2">
@@ -362,48 +335,12 @@ export default function Profile() {
                     Cập nhật mật khẩu
                   </Button>
                 </div>
-
-                {/* Notifications */}
-                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-                  <p className="font-semibold text-slate-900">Thông báo</p>
-                  <div className="space-y-3">
-                    {[
-                      { label: "Thông báo đánh giá mới", desc: "Nhận thông báo khi có người đánh giá địa điểm yêu thích" },
-                      { label: "Sự kiện gần đây", desc: "Nhận thông báo về sự kiện và khuyến mãi" },
-                      { label: "Gợi ý quán mới", desc: "Nhận gợi ý về các quán chay mới được thêm vào" },
-                    ].map((item, idx) => (
-                      <div key={idx} className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
-                        <div>
-                          <p className="text-sm font-medium text-slate-900">{item.label}</p>
-                          <p className="text-xs text-slate-500">{item.desc}</p>
-                        </div>
-                        <label className="relative inline-flex cursor-pointer items-center">
-                          <input type="checkbox" defaultChecked={idx === 0} className="peer sr-only" />
-                          <div className="peer h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-emerald-600 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow-sm after:transition peer-checked:after:translate-x-full" />
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Danger Zone */}
-                <div className="rounded-[1.5rem] border border-red-100 bg-red-50 p-6 space-y-3">
-                  <p className="font-semibold text-red-800">Vùng nguy hiểm</p>
-                  <p className="text-sm text-red-600">Các thao tác này không thể hoàn tác.</p>
-                  <Button
-                    variant="outline"
-                    className="rounded-2xl border-red-300 text-red-700 hover:bg-red-100 px-6 py-2.5 text-sm font-semibold"
-                  >
-                    Xoá tài khoản
-                  </Button>
-                </div>
               </div>
             )}
           </div>
         </div>
       </section>
 
-      {/* Footer spacing */}
       <div className="h-16" />
     </main>
   );

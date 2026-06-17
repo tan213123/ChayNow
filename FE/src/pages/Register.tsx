@@ -1,14 +1,27 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { register as registerApi } from "@/services/auth.service";
+import { useAuthStore } from "@/store/authStore";
 
 type Role = "user" | "owner";
 
 export default function Register() {
+  const navigate = useNavigate();
   const [params] = useSearchParams();
   const initialRole = params.get("type") === "owner" ? "owner" : "user";
   const [role, setRole] = useState<Role>(initialRole);
   const [ownerStep, setOwnerStep] = useState(1);
+
+  // User form states
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const login = useAuthStore((state) => state.login);
 
   useEffect(() => {
     if (params.get("type") === "owner") {
@@ -17,16 +30,59 @@ export default function Register() {
     }
   }, [params]);
 
+  const handleUserRegister = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!fullName.trim() || !email.trim() || !password || !confirmPassword) {
+      toast.error("Vui lòng điền đầy đủ các thông tin bắt buộc.");
+      return;
+    }
+
+    if (password.length < 6) {
+      toast.error("Mật khẩu phải chứa ít nhất 6 ký tự.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast.error("Mật khẩu xác nhận không khớp.");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const registerResponse = await registerApi({
+        fullName: fullName.trim(),
+        email: email.trim(),
+        password,
+      });
+
+      login(registerResponse);
+      toast.success("Đăng ký và đăng nhập thành công!");
+      navigate("/", { replace: true });
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Đăng ký thất bại. Vui lòng thử lại.";
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const renderUserForm = () => (
-    <div className="space-y-6">
+    <form onSubmit={handleUserRegister} className="space-y-6">
       <div>
         <label className="mb-2 block text-sm font-medium text-slate-700">
           Họ và tên *
         </label>
         <input
           type="text"
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
           placeholder="Nguyễn Văn A"
           className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+          required
         />
       </div>
       <div>
@@ -35,8 +91,11 @@ export default function Register() {
         </label>
         <input
           type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           placeholder="your@email.com"
           className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+          required
         />
       </div>
       <div>
@@ -45,8 +104,11 @@ export default function Register() {
         </label>
         <input
           type="password"
-          placeholder="Tối thiểu 6 ký tự"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Tối thiểu 8 ký tự"
           className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+          required
         />
       </div>
       <div>
@@ -55,17 +117,24 @@ export default function Register() {
         </label>
         <input
           type="password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
           placeholder="Nhập lại mật khẩu"
           className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+          required
         />
       </div>
-      <Button className="w-full rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700">
-        Đăng ký
+      <Button
+        type="submit"
+        disabled={isSubmitting}
+        className="w-full rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
+      >
+        {isSubmitting ? "Đang đăng ký..." : "Đăng ký"}
       </Button>
       {/* <div className="text-center text-sm text-slate-600">
         Đã có tài khoản? <Link to="/login" className="font-semibold text-emerald-700 hover:underline">Đăng nhập ngay</Link>
       </div> */}
-    </div>
+    </form>
   );
 
   const renderOwnerForm = () => (
@@ -115,7 +184,7 @@ export default function Register() {
             </label>
             <input
               type="password"
-              placeholder="Tối thiểu 6 ký tự"
+              placeholder="Tối thiểu 8 ký tự"
               className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
             />
           </div>

@@ -15,6 +15,8 @@ import OwnerReviews from "@/pages/OwnerReviews";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AdminDashboard from "@/pages/AdminDashboard";
 import AdminUsers from "@/pages/AdminUsers";
+import AdminLocations from "@/pages/AdminLocations";
+import AdminPosts from "@/pages/AdminPosts";
 
 export const routes: RouteObject[] = [
   {
@@ -106,6 +108,22 @@ export const routes: RouteObject[] = [
     element: (
       <ProtectedRoute requiredRoles={["ADMIN"]}>
         <AdminUsers />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/admin/locations",
+    element: (
+      <ProtectedRoute requiredRoles={["ADMIN"]}>
+        <AdminLocations />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/admin/posts",
+    element: (
+      <ProtectedRoute requiredRoles={["ADMIN"]}>
+        <AdminPosts />
       </ProtectedRoute>
     ),
   },

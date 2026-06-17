@@ -21,24 +21,6 @@ export default function OwnerEvents() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
-    const authData = localStorage.getItem("authUser");
-    if (!authData) {
-      navigate("/login");
-      return;
-    }
-
-    try {
-      const parsed = JSON.parse(authData) as { email: string; label: string };
-      if (parsed.label !== "Chủ quán") {
-        navigate("/");
-        return;
-      }
-    } catch {
-      localStorage.removeItem("authUser");
-      navigate("/login");
-      return;
-    }
-
     const storedEditingEvent = localStorage.getItem("editingEvent");
     if (storedEditingEvent) {
       try {
@@ -119,26 +101,7 @@ export default function OwnerEvents() {
   };
 
   return (
-    <OwnerLayout
-      profile={
-        <div className="flex items-center gap-4 text-sm text-slate-700">
-          <div className="flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2">
-            <img
-              src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=60"
-              alt="Avatar"
-              className="h-8 w-8 rounded-full object-cover"
-            />
-            Trần Thị Bình
-          </div>
-          <Link
-            to="/login"
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
-          >
-            ↩ Đăng xuất
-          </Link>
-        </div>
-      }
-    >
+    <OwnerLayout>
       <section className="mx-auto max-w-6xl px-6 py-10">
         <div className="rounded-[2rem] bg-white p-10 shadow-xl">
           <div className="mb-10 space-y-4">
