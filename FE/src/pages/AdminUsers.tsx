@@ -198,19 +198,19 @@ export default function AdminUsers() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center">
+                    <td colSpan={5} className="px-6 py-12 text-center">
                       Đang tải...
                     </td>
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center text-red-600">
+                    <td colSpan={5} className="px-6 py-12 text-center text-red-600">
                       {error}
                     </td>
                   </tr>
                 ) : usersList.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center">
+                    <td colSpan={5} className="px-6 py-12 text-center">
                       Không có dữ liệu
                     </td>
                   </tr>

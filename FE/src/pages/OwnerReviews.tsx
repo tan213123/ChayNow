@@ -1,7 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import OwnerLayout from "@/components/OwnerLayout";
 import {
   getRestaurant,
@@ -15,53 +13,29 @@ import type {
 } from "@/types/restaurant";
 
 export default function OwnerReviews() {
-  const restaurantId = getSelectedRestaurantId();
-  const [restaurant, setRestaurant] = useState<RestaurantResponse | null>(null);
-  const [reviews, setReviews] = useState<ReviewResponse[]>([]);
-  const [selectedReview, setSelectedReview] = useState<ReviewResponse | null>(
-    null,
-  );
-  const [isLoading, setIsLoading] = useState(Boolean(restaurantId));
+  const [reviews, setReviews] = useState<ReviewItem[]>([
+    {
+      id: "review-1",
+      name: "Nguyễn Văn An",
+      rating: 5,
+      date: "15/5/2026",
+      comment: "Đồ ăn rất ngon, không gian đẹp, nhân viên nhiệt tình. Mình đã thử món bún riêu chay và phở chay, cả hai đều tuyệt vời!",
+    },
+    {
+      id: "review-2",
+      name: "Lê Thị Cẩm",
+      rating: 4,
+      date: "18/5/2026",
+      comment: "Không gian quán sạch và yên tĩnh, phù hợp gặp gỡ bạn bè. Món ăn ngon, nước dùng đậm đà.",
+    },
+  ]);
+  const [activeReply, setActiveReply] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
 
-  useEffect(() => {
-    if (!restaurantId) {
+  const handleReply = (reviewId: string) => {
+    if (!replyText.trim()) {
+      alert("Vui lòng nhập phản hồi.");
       return;
-    }
-
-    let cancelled = false;
-    Promise.all([
-      getRestaurant(restaurantId),
-      getRestaurantReviews(restaurantId),
-    ])
-      .then(([restaurantData, reviewData]) => {
-        if (!cancelled) {
-          setRestaurant(restaurantData);
-          setReviews(reviewData);
-        }
-      })
-      .catch((error: unknown) => {
-        if (!cancelled) {
-          toast.error(
-            error instanceof Error
-              ? error.message
-              : "Không thể tải đánh giá.",
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [restaurantId]);
-
-  const average = useMemo(() => {
-    if (reviews.length === 0) {
-      return 0;
     }
     return (
       reviews.reduce((total, review) => total + review.rating, 0) /
@@ -90,23 +64,17 @@ export default function OwnerReviews() {
     }
   };
 
-  if (!restaurantId) {
-    return (
-      <OwnerLayout>
-        <div className="rounded-[2rem] bg-white p-10 text-center">
-          <h1 className="text-2xl font-bold text-slate-900">
-            Chưa chọn nhà hàng
-          </h1>
-          <Link
-            to="/manage/restaurants"
-            className="mt-5 inline-flex rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white"
-          >
-            Chọn nhà hàng
-          </Link>
-        </div>
-      </OwnerLayout>
-    );
-  }
+  return (
+    <OwnerLayout>
+      <section className="mx-auto max-w-6xl px-6 py-10">
+        <div className="rounded-[2rem] bg-white p-10 shadow-xl">
+          <div className="mb-8 space-y-4">
+            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-emerald-600">Đánh giá từ khách hàng</p>
+            <h1 className="text-4xl font-extrabold text-slate-900">Đánh giá từ khách hàng</h1>
+            <p className="max-w-2xl text-sm leading-7 text-slate-600">
+              Xem và trả lời các đánh giá về quán của bạn.
+            </p>
+          </div>
 
   return (
     <OwnerLayout>

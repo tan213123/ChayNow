@@ -36,13 +36,13 @@ const adminNavItems = [
     to: "/admin/locations",
     label: "Quản lý địa điểm",
     icon: Store,
-    enabled: false,
+    enabled: true,
   },
   {
     to: "/admin/posts",
     label: "Quản lý bài đăng",
     icon: FileText,
-    enabled: false,
+    enabled: true,
   },
   {
     to: "/admin/attributes",
@@ -65,7 +65,6 @@ export default function AdminLayout({ children, title = "Dashboard" }: AdminLayo
 
   const handleLogout = () => {
     logout();
-    localStorage.removeItem("authUser");
     navigate("/login", { replace: true });
   };
 

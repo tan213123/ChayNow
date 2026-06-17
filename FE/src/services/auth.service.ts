@@ -4,7 +4,6 @@ import type {
   LoginRequest,
   LoginResponse,
   RegisterRequest,
-  TokenApiData,
 } from "@/types/auth";
 
 const toLoginResponse = (data: TokenApiData): LoginResponse => ({
@@ -45,4 +44,27 @@ export const register = async (
   }
 
   return toLoginResponse(response.data);
+};
+
+export const register = async (data: RegisterRequest): Promise<LoginResponse> => {
+  const response = await apiService.post<
+    ApiResponse<LoginApiData>,
+    ApiResponse<LoginApiData>
+  >("api/auth/register", data);
+
+  if (!response.success) {
+    throw new Error(response.message || "Registration failed");
+  }
+
+  return {
+    accessToken: response.data.accessToken,
+    user: {
+      id: response.data.id,
+      email: response.data.email,
+      fullName: response.data.fullName,
+      role: response.data.role,
+      status: response.data.status,
+      avatarUrl: response.data.avtUrl,
+    },
+  };
 };

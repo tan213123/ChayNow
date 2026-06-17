@@ -15,8 +15,8 @@ import OwnerReviews from "@/pages/OwnerReviews";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AdminDashboard from "@/pages/AdminDashboard";
 import AdminUsers from "@/pages/AdminUsers";
-import UserManagement from "@/pages/UserManagement";
-import ReportManagement from "@/pages/ReportManagement";
+import AdminLocations from "@/pages/AdminLocations";
+import AdminPosts from "@/pages/AdminPosts";
 
 export const routes: RouteObject[] = [
   {
@@ -112,36 +112,20 @@ export const routes: RouteObject[] = [
     ),
   },
   {
-    path: "/admin",
+    path: "/admin/locations",
     element: (
       <ProtectedRoute requiredRoles={["ADMIN"]}>
-        <AdminDashboard />
+        <AdminLocations />
       </ProtectedRoute>
     ),
   },
   {
-    path: "/admin/users",
+    path: "/admin/posts",
     element: (
       <ProtectedRoute requiredRoles={["ADMIN"]}>
-        <AdminUsers />
+        <AdminPosts />
       </ProtectedRoute>
     ),
-  },
-  {
-    path: "/manage/user",
-    element: <UserManagement />,
-  },
-  {
-    path: "/manage/report",
-    element: <ReportManagement />,
-  },
-  {
-    path: "/manage/user",
-    element: <UserManagement />,
-  },
-  {
-    path: "/manage/report",
-    element: <ReportManagement />,
   },
   {
     path: "/",

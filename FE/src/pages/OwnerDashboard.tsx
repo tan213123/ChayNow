@@ -1,116 +1,64 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { toast } from "sonner";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import OwnerLayout from "@/components/OwnerLayout";
-import {
-  getRestaurant,
-  getRestaurantReviews,
-  getRestaurants,
-} from "@/services/restaurant.service";
-import {
-  getSelectedRestaurantId,
-  setSelectedRestaurantId,
-} from "@/lib/ownerRestaurant";
-import type {
-  RestaurantResponse,
-  ReviewResponse,
-} from "@/types/restaurant";
+import { restaurants } from "@/data/restaurants";
 
-const fallbackImage =
-  "https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=1200&q=80";
+const defaultRestaurant = restaurants[0];
+
+type OwnerRestaurant = typeof defaultRestaurant;
+type OwnerEvent = {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  discount?: string;
+  charityTime?: string;
+  createdAt: string;
+};
 
 export default function OwnerDashboard() {
-  const [restaurant, setRestaurant] = useState<RestaurantResponse | null>(null);
-  const [reviews, setReviews] = useState<ReviewResponse[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadDashboard = async () => {
-      let restaurantId = getSelectedRestaurantId();
-
-      if (!restaurantId) {
-        const restaurants = await getRestaurants();
-        restaurantId = restaurants[0]?.id ?? null;
-        if (restaurantId) {
-          setSelectedRestaurantId(restaurantId);
-        }
-      }
-
-      if (!restaurantId) {
-        return;
-      }
-
-      const [restaurantData, reviewData] = await Promise.all([
-        getRestaurant(restaurantId),
-        getRestaurantReviews(restaurantId),
-      ]);
-
-      if (!cancelled) {
-        setRestaurant(restaurantData);
-        setReviews(reviewData);
-      }
-    };
-
-    loadDashboard()
-      .catch((error: unknown) => {
-        if (!cancelled) {
-          toast.error(
-            error instanceof Error
-              ? error.message
-              : "Không thể tải dashboard.",
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const averageRating = useMemo(() => {
-    if (reviews.length === 0) {
-      return 0;
+  const navigate = useNavigate();
+  const [ownerRestaurant] = useState<OwnerRestaurant>(() => {
+    const storedRestaurant = localStorage.getItem("ownerRestaurant");
+    if (!storedRestaurant) {
+      return defaultRestaurant;
     }
-    return (
-      reviews.reduce((total, review) => total + review.rating, 0) /
-      reviews.length
-    );
-  }, [reviews]);
 
-  if (isLoading) {
-    return (
-      <OwnerLayout>
-        <div className="rounded-[2rem] bg-white p-10 text-center text-sm text-slate-500">
-          Đang tải dashboard...
-        </div>
-      </OwnerLayout>
-    );
-  }
+    try {
+      return JSON.parse(storedRestaurant);
+    } catch {
+      localStorage.removeItem("ownerRestaurant");
+      return defaultRestaurant;
+    }
+  });
+  const [ownerEvents] = useState<OwnerEvent[]>(() => {
+    const storedEvents = localStorage.getItem("ownerEvents");
+    if (!storedEvents) {
+      return [];
+    }
 
-  if (!restaurant) {
-    return (
-      <OwnerLayout>
-        <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white p-12 text-center">
-          <h1 className="text-2xl font-bold text-slate-900">
-            Chưa có nhà hàng để quản lý
-          </h1>
-          <Link
-            to="/manage/edit"
-            className="mt-6 inline-flex rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white"
-          >
-            Tạo nhà hàng
-          </Link>
-        </div>
-      </OwnerLayout>
-    );
-  }
+    try {
+      return JSON.parse(storedEvents);
+    } catch {
+      localStorage.removeItem("ownerEvents");
+      return [];
+    }
+  });
+  const [dashboardView, setDashboardView] = useState<"menu" | "events">("menu");
+  const [selectedEvent, setSelectedEvent] = useState<OwnerEvent | null>(null);
+  useEffect(() => {
+    const storedRestaurant = localStorage.getItem("ownerRestaurant");
+    if (!storedRestaurant) {
+      navigate("/manage/restaurants");
+    }
+  }, [navigate]);
+  const handleEditEvent = (event: OwnerEvent) => {
+    localStorage.setItem("editingEvent", JSON.stringify(event));
+    navigate("/manage/events");
+  };
 
   return (
     <OwnerLayout>
