@@ -27,11 +27,13 @@ const roleLabels: Record<Role, string> = {
 const statusLabels: Record<AccountStatus, string> = {
   ACTIVE: "Hoạt động",
   SUSPENDED: "Tạm khóa",
+  PENDING: "Chờ duyệt",
 };
 
 const statusClassNames: Record<AccountStatus, string> = {
   ACTIVE: "bg-emerald-50 text-emerald-700 ring-emerald-100",
   SUSPENDED: "bg-red-50 text-red-700 ring-red-100",
+  PENDING: "bg-amber-50 text-amber-700 ring-amber-100",
 };
 
 const roleClassNames: Record<Role, string> = {

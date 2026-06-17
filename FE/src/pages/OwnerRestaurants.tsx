@@ -1,7 +1,17 @@
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import OwnerLayout from "@/components/OwnerLayout";
-import { restaurants } from "@/data/restaurants";
+import {
+  deleteRestaurant,
+  getRestaurants,
+  getReviews,
+} from "@/services/restaurant.service";
+import { setSelectedRestaurantId } from "@/lib/ownerRestaurant";
+import type {
+  RestaurantResponse,
+  ReviewResponse,
+} from "@/types/restaurant";
 
 export default function OwnerRestaurants() {
   const navigate = useNavigate();
@@ -11,9 +21,30 @@ export default function OwnerRestaurants() {
     navigate("/manage/edit");
   };
 
-  const handleSelectRestaurant = (restaurant: typeof restaurants[number]) => {
-    localStorage.setItem("ownerRestaurant", JSON.stringify(restaurant));
-    navigate("/manage");
+  const handleDelete = async (restaurant: RestaurantResponse) => {
+    const confirmed = window.confirm(
+      `Bạn có chắc muốn ngừng hiển thị "${restaurant.name}" không?`,
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setDeletingId(restaurant.id);
+      await deleteRestaurant(restaurant.id);
+      setRestaurants((current) =>
+        current.filter((item) => item.id !== restaurant.id),
+      );
+      toast.success("Đã cập nhật trạng thái nhà hàng.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Không thể cập nhật trạng thái nhà hàng.",
+      );
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   return (
@@ -21,82 +52,110 @@ export default function OwnerRestaurants() {
       <section className="mx-auto max-w-7xl px-6 py-10">
         <div className="mb-8 flex flex-col gap-6 rounded-[2rem] bg-white p-10 shadow-xl sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-emerald-600">Nhà hàng của tôi</p>
-            <h1 className="mt-3 text-3xl font-extrabold text-slate-900">Quản lý danh sách quán</h1>
+            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-emerald-600">
+              Nhà hàng
+            </p>
+            <h1 className="mt-3 text-3xl font-extrabold text-slate-900">
+              Quản lý danh sách quán
+            </h1>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-              Xem toàn bộ quán bạn đang quản lý, chỉnh sửa thông tin hoặc đăng quán mới.
+              Dữ liệu được tải trực tiếp từ hệ thống. Backend hiện chưa có
+              trường liên kết nhà hàng với tài khoản owner nên danh sách này
+              gồm toàn bộ nhà hàng đang hoạt động.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
             <Button
-              onClick={() => {
-                localStorage.removeItem("ownerRestaurant");
-                navigate("/manage/edit");
-              }}
-              className="rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white hover:bg-emerald-700"
+              onClick={() => navigate("/manage/edit")}
+              className="rounded-2xl bg-emerald-600 px-6 py-3 text-white hover:bg-emerald-700"
             >
               Thêm quán mới
             </Button>
             <Link
               to="/manage"
-              className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+              className="inline-flex items-center rounded-2xl border border-slate-200 px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100"
             >
-              Quay lại Dashboard
+              Dashboard
             </Link>
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          {restaurantList.map((restaurant) => (
-            <article
-              key={restaurant.id}
-              onClick={() => handleSelectRestaurant(restaurant)}
-              role="button"
-              tabIndex={0}
-              className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-            >
-              <div className="relative h-56 overflow-hidden bg-slate-100">
-                <img src={restaurant.image} alt={restaurant.name} className="h-full w-full object-cover" />
-              </div>
-              <div className="p-6">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-xl font-semibold text-slate-900">{restaurant.name}</h2>
-                    <p className="mt-1 text-sm text-slate-500">{restaurant.location}</p>
-                  </div>
-                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                    {restaurant.category}
-                  </span>
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2 text-sm text-slate-500">
-                  <span>{restaurant.hours}</span>
-                  <span>{restaurant.priceRange}</span>
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {restaurant.tags.slice(0, 3).map((tag) => (
-                    <span key={tag} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-                <div className="mt-5 flex items-center justify-between gap-4 text-sm text-slate-600">
-                  <p>{restaurant.rating} ★</p>
-                  <p>{restaurant.reviews} nhận xét</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    handleEdit(restaurant);
-                  }}
-                  className="mt-6 w-full rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-700"
+        {isLoading ? (
+          <div className="rounded-[2rem] bg-white p-10 text-center text-sm text-slate-500">
+            Đang tải danh sách nhà hàng...
+          </div>
+        ) : restaurants.length === 0 ? (
+          <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white p-10 text-center">
+            <p className="font-semibold text-slate-900">Chưa có nhà hàng.</p>
+            <p className="mt-2 text-sm text-slate-500">
+              Tạo địa điểm và nhà hàng đầu tiên từ nút phía trên.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-6 lg:grid-cols-3">
+            {restaurants.map((restaurant) => {
+              const stats = reviewStats.get(restaurant.id);
+              return (
+                <article
+                  key={restaurant.id}
+                  className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm"
                 >
-                  Chỉnh sửa quán
-                </button>
-              </div>
-            </article>
-          ))}
-        </div>
+                  <button
+                    type="button"
+                    onClick={() => selectRestaurant(restaurant.id, "/manage")}
+                    className="block w-full text-left"
+                  >
+                    <img
+                      src={restaurant.mediaList[0]?.url ?? fallbackImage}
+                      alt={restaurant.name}
+                      className="h-52 w-full object-cover"
+                    />
+                    <div className="p-6">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h2 className="text-xl font-semibold text-slate-900">
+                            {restaurant.name}
+                          </h2>
+                          <p className="mt-1 text-sm text-slate-500">
+                            {restaurant.placeName ?? restaurant.address}
+                          </p>
+                        </div>
+                        <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                          {restaurant.typeRestaurantName}
+                        </span>
+                      </div>
+                      <div className="mt-5 flex justify-between text-sm text-slate-600">
+                        <span>{stats?.average.toFixed(1) ?? "0.0"} ★</span>
+                        <span>{stats?.count ?? 0} đánh giá</span>
+                      </div>
+                    </div>
+                  </button>
+
+                  <div className="flex gap-3 px-6 pb-6">
+                    <Button
+                      onClick={() =>
+                        selectRestaurant(
+                          restaurant.id,
+                          `/manage/edit?id=${restaurant.id}`,
+                        )
+                      }
+                      className="flex-1 rounded-2xl bg-emerald-600 text-white hover:bg-emerald-700"
+                    >
+                      Chỉnh sửa
+                    </Button>
+                    <Button
+                      onClick={() => handleDelete(restaurant)}
+                      disabled={deletingId === restaurant.id}
+                      className="rounded-2xl border border-rose-200 bg-white text-rose-700 hover:bg-rose-50"
+                    >
+                      {deletingId === restaurant.id ? "Đang xóa..." : "Xóa"}
+                    </Button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
       </section>
     </OwnerLayout>
   );

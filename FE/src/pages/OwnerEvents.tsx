@@ -1,11 +1,5 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import OwnerLayout from "@/components/OwnerLayout";
-
-const eventTypes = [
-  { id: "discount", label: "Giảm giá", icon: "🏷️" },
-  { id: "charity", label: "Từ thiện", icon: "♥" },
-];
 
 export default function OwnerEvents() {
   const navigate = useNavigate();
