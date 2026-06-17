@@ -122,6 +122,39 @@ export interface CreateMenuRequest {
 
 export type UpdateMenuRequest = Partial<CreateMenuRequest>;
 
+export type EventType = "CHARITY" | "DISCOUNT";
+
+export type EventStatus = "UPCOMING" | "ACTIVE" | "EXPIRED" | "HIDDEN";
+
+export interface EventResponse {
+  id: number;
+  restaurantId: number;
+  restaurantName: string | null;
+  creatorId: number | null;
+  creatorName: string | null;
+  title: string;
+  description: string | null;
+  imageUrl: string | null;
+  eventType: EventType | null;
+  startDate: string | null;
+  endDate: string | null;
+  status: EventStatus | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateEventRequest {
+  title: string;
+  description?: string;
+  imageUrl?: string;
+  eventType: EventType;
+  startDate: string;
+  endDate: string;
+  status?: EventStatus;
+}
+
+export type UpdateEventRequest = Partial<CreateEventRequest>;
+
 export interface ApiResponse<T> {
   success: boolean;
   message: string;

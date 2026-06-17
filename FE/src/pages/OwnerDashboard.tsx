@@ -224,6 +224,17 @@ export default function OwnerDashboard() {
               Tạo, chỉnh sửa và ngừng hiển thị món ăn của nhà hàng đang chọn.
             </p>
           </Link>
+          <Link
+            to="/manage/events"
+            className="rounded-[2rem] border border-sky-200 bg-sky-50 p-7"
+          >
+            <h2 className="text-lg font-semibold text-sky-900">
+              Quản lý sự kiện
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-sky-700">
+              Tạo chương trình từ thiện, giảm giá và cập nhật trạng thái theo từng nhà hàng.
+            </p>
+          </Link>
         </div>
       </div>
     </OwnerLayout>
