@@ -28,7 +28,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -96,11 +96,12 @@ public class AdminRestaurantControllerTest {
                         .param("size", "10")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[0].id").value(1L))
-                .andExpect(jsonPath("$.content[0].name").value("Chay Quan"))
-                .andExpect(jsonPath("$.content[0].status").value("PENDING"))
-                .andExpect(jsonPath("$.content[0].placeName").value("District 1"))
-                .andExpect(jsonPath("$.content[0].ownerName").value("Owner Name"));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.content[0].id").value(1L))
+                .andExpect(jsonPath("$.data.content[0].name").value("Chay Quan"))
+                .andExpect(jsonPath("$.data.content[0].status").value("PENDING"))
+                .andExpect(jsonPath("$.data.content[0].placeName").value("District 1"))
+                .andExpect(jsonPath("$.data.content[0].ownerName").value("Owner Name"));
     }
 
     @Test
@@ -114,11 +115,12 @@ public class AdminRestaurantControllerTest {
         when(adminRestaurantService.approveRestaurant(eq(1L)))
                 .thenReturn(dto);
 
-        mockMvc.perform(put("/api/admin/restaurants/1/approve")
+        mockMvc.perform(patch("/api/admin/restaurants/1/approve")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1L))
-                .andExpect(jsonPath("$.status").value("APPROVED"));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.id").value(1L))
+                .andExpect(jsonPath("$.data.status").value("APPROVED"));
     }
 
     @Test
@@ -136,11 +138,12 @@ public class AdminRestaurantControllerTest {
         when(adminRestaurantService.rejectRestaurant(eq(1L), any(RejectRestaurantRequestDTO.class)))
                 .thenReturn(responseDTO);
 
-        mockMvc.perform(put("/api/admin/restaurants/1/reject")
+        mockMvc.perform(patch("/api/admin/restaurants/1/reject")
                         .content(objectMapper.writeValueAsString(requestDTO))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1L))
-                .andExpect(jsonPath("$.status").value("REJECTED"));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.id").value(1L))
+                .andExpect(jsonPath("$.data.status").value("REJECTED"));
     }
 }

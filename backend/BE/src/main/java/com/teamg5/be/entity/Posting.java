@@ -68,4 +68,7 @@ public class Posting extends BaseEntity {
 
     @Column(name = "approved_at")
     private LocalDateTime approvedAt;
+
+    @Column(name = "rejected_at")
+    private LocalDateTime rejectedAt;
 }

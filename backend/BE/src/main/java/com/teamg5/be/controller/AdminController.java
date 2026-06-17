@@ -12,7 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -31,7 +31,7 @@ public class AdminController {
         summary = "Tìm kiếm và lọc danh sách người dùng (Phân trang)",
         description = "API này dành cho Admin để quản lý danh sách người dùng. Hỗ trợ tìm kiếm theo Tên (fullName) hoặc Email (chấp nhận tìm kiếm một phần, không phân biệt hoa thường), lọc theo vai trò (role: USER, OWNER, ADMIN), lọc theo trạng thái tài khoản (status: ACTIVE, SUSPENDED, PENDING) và phân trang dữ liệu."
     )
-    public ResponseEntity<PageResponse<AdminUserResponseDTO>> getAllUsers(
+    public ResponseEntity<ApiResponse<PageResponse<AdminUserResponseDTO>>> getAllUsers(
             @Parameter(description = "Số trang cần lấy (bắt đầu từ 0)", example = "0")
             @RequestParam(name = "page", defaultValue = "0") int page,
 
@@ -48,10 +48,14 @@ public class AdminController {
             @RequestParam(name = "status", required = false, defaultValue = "") String status
     ) {
         PageResponse<AdminUserResponseDTO> response = adminUserService.getAllUsers(page, size, keyword, role, status);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.<PageResponse<AdminUserResponseDTO>>builder()
+                .success(true)
+                .message("Get all users successfully")
+                .data(response)
+                .build());
     }
 
-    @PutMapping("/users/{id}/suspend")
+    @PatchMapping("/users/{id}/suspend")
     @Operation(summary = "Đình chỉ người dùng", description = "Thay đổi trạng thái tài khoản của người dùng thành SUSPENDED.")
     public ResponseEntity<ApiResponse<Void>> suspendUser(
             @PathVariable(name = "id") Long id
@@ -63,7 +67,7 @@ public class AdminController {
                 .build());
     }
 
-    @PutMapping("/users/{id}/activate")
+    @PatchMapping("/users/{id}/activate")
     @Operation(summary = "Kích hoạt người dùng", description = "Thay đổi trạng thái tài khoản của người dùng thành ACTIVE.")
     public ResponseEntity<ApiResponse<Void>> activateUser(
             @PathVariable(name = "id") Long id

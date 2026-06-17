@@ -36,7 +36,10 @@ public enum ErrorCode {
             "ERR_REVIEW_ALREADY_EXISTS",
             "You are comment this restaurant",
             HttpStatus.BAD_REQUEST
-    );
+    ),
+    POSTING_NOT_FOUND("ERR_POSTING_NOT_FOUND", "Cannot find this posting", HttpStatus.NOT_FOUND),
+    PLACE_NOT_FOUND("ERR_PLACE_NOT_FOUND", "Cannot find this place/location", HttpStatus.NOT_FOUND),
+    PLACE_ALREADY_EXISTS("ERR_PLACE_ALREADY_EXISTS", "This place already exists", HttpStatus.BAD_REQUEST);
     
 
     private final String code;

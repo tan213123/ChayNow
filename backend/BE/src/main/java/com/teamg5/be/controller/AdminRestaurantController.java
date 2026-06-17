@@ -1,13 +1,15 @@
 package com.teamg5.be.controller;
 
 import com.teamg5.be.dto.AdminRestaurantResponseDTO;
+import com.teamg5.be.dto.ApiResponse;
 import com.teamg5.be.dto.PageResponseDTO;
 import com.teamg5.be.dto.RejectRestaurantRequestDTO;
 import com.teamg5.be.service.AdminRestaurantService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -30,7 +32,7 @@ public class AdminRestaurantController {
         summary = "Lấy danh sách địa điểm/nhà hàng (Phân trang, Tìm kiếm, Lọc)",
         description = "API này dành cho Admin để xem danh sách nhà hàng. Hỗ trợ tìm kiếm theo tên hoặc địa chỉ, lọc theo trạng thái duyệt (PENDING, APPROVED, REJECTED), lọc theo khu vực (placeId) và phân trang dữ liệu."
     )
-    public PageResponseDTO<AdminRestaurantResponseDTO> getAllRestaurantsForAdmin(
+    public ResponseEntity<ApiResponse<PageResponseDTO<AdminRestaurantResponseDTO>>> getAllRestaurantsForAdmin(
             @Parameter(description = "Từ khóa tìm kiếm (tên hoặc địa chỉ nhà hàng)", example = "chay")
             @RequestParam(required = false) String keyword,
 
@@ -46,32 +48,47 @@ public class AdminRestaurantController {
             @Parameter(description = "Số lượng phần tử trên mỗi trang (tối đa 50, mặc định là 10)", example = "10")
             @RequestParam(defaultValue = "10") int size
     ) {
-        return adminRestaurantService.getAllRestaurants(keyword, status, placeId, page, size);
+        PageResponseDTO<AdminRestaurantResponseDTO> response = adminRestaurantService.getAllRestaurants(keyword, status, placeId, page, size);
+        return ResponseEntity.ok(ApiResponse.<PageResponseDTO<AdminRestaurantResponseDTO>>builder()
+                .success(true)
+                .message("Get all restaurants successfully")
+                .data(response)
+                .build());
     }
 
-    @PutMapping("/{restaurantId}/approve")
+    @PatchMapping("/{restaurantId}/approve")
     @Operation(
         summary = "Duyệt địa điểm/nhà hàng",
         description = "API này cho phép Admin duyệt một nhà hàng đang ở trạng thái PENDING thành APPROVED. Sau khi duyệt, nhà hàng sẽ được phép hiển thị trên trang public."
     )
-    public AdminRestaurantResponseDTO approveRestaurant(
+    public ResponseEntity<ApiResponse<AdminRestaurantResponseDTO>> approveRestaurant(
             @Parameter(description = "ID của nhà hàng cần duyệt", example = "1")
             @PathVariable Long restaurantId
     ) {
-        return adminRestaurantService.approveRestaurant(restaurantId);
+        AdminRestaurantResponseDTO response = adminRestaurantService.approveRestaurant(restaurantId);
+        return ResponseEntity.ok(ApiResponse.<AdminRestaurantResponseDTO>builder()
+                .success(true)
+                .message("Restaurant approved successfully")
+                .data(response)
+                .build());
     }
 
-    @PutMapping("/{restaurantId}/reject")
+    @PatchMapping("/{restaurantId}/reject")
     @Operation(
         summary = "Từ chối duyệt địa điểm/nhà hàng",
         description = "API này cho phép Admin từ chối duyệt một nhà hàng và chuyển trạng thái thành REJECTED. Yêu cầu nhập lý do từ chối."
     )
-    public AdminRestaurantResponseDTO rejectRestaurant(
+    public ResponseEntity<ApiResponse<AdminRestaurantResponseDTO>> rejectRestaurant(
             @Parameter(description = "ID của nhà hàng cần từ chối", example = "1")
             @PathVariable Long restaurantId,
 
             @RequestBody RejectRestaurantRequestDTO request
     ) {
-        return adminRestaurantService.rejectRestaurant(restaurantId, request);
+        AdminRestaurantResponseDTO response = adminRestaurantService.rejectRestaurant(restaurantId, request);
+        return ResponseEntity.ok(ApiResponse.<AdminRestaurantResponseDTO>builder()
+                .success(true)
+                .message("Restaurant rejected successfully")
+                .data(response)
+                .build());
     }
 }

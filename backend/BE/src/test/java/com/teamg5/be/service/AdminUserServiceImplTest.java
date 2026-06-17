@@ -103,7 +103,7 @@ public class AdminUserServiceImplTest {
         assertEquals("ACTIVE", dto.getStatus());
         assertEquals(5, dto.getReviewCount());
         assertEquals("avatar.png", dto.getAvatarUrl());
-        assertEquals("06--06--2026", dto.getJoinedDate());
+        assertEquals("06-06-2026", dto.getJoinedDate());
     }
 
     @Test

@@ -22,7 +22,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -81,16 +81,17 @@ public class AdminControllerTest {
                         .param("status", "ACTIVE")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[0].id").value(1L))
-                .andExpect(jsonPath("$.content[0].fullName").value("Test Admin"))
-                .andExpect(jsonPath("$.content[0].email").value("admin@test.com"));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.content[0].id").value(1L))
+                .andExpect(jsonPath("$.data.content[0].fullName").value("Test Admin"))
+                .andExpect(jsonPath("$.data.content[0].email").value("admin@test.com"));
     }
 
     @Test
     public void suspendUser_Success() throws Exception {
         doNothing().when(adminUserService).suspendUser(2L);
 
-        mockMvc.perform(put("/api/admin/users/2/suspend")
+        mockMvc.perform(patch("/api/admin/users/2/suspend")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -103,7 +104,7 @@ public class AdminControllerTest {
     public void activateUser_Success() throws Exception {
         doNothing().when(adminUserService).activateUser(2L);
 
-        mockMvc.perform(put("/api/admin/users/2/activate")
+        mockMvc.perform(patch("/api/admin/users/2/activate")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))

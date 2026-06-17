@@ -52,4 +52,35 @@ public class TypeRestaurantService {
 
         return TypeRestaurantResponse.from(typeRestaurant);
     }
+
+    @Transactional
+    public TypeRestaurantResponse updateTypeRestaurant(Long id, CreateTypeRestaurantRequest request) {
+        TypeRestaurant typeRestaurant = typeRestaurantRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.TYPE_RESTAURANT_NOT_FOUND));
+
+        if (!typeRestaurant.getName().equalsIgnoreCase(request.getName())) {
+            boolean existed = typeRestaurantRepository.existsByName(request.getName());
+            if (existed) {
+                throw new AppException(ErrorCode.TYPE_RESTAURANT_ALREADY_EXISTS);
+            }
+        }
+
+        typeRestaurant.setName(request.getName());
+        typeRestaurant.setDescription(request.getDescription());
+
+        TypeRestaurant saved = typeRestaurantRepository.save(typeRestaurant);
+        return TypeRestaurantResponse.from(saved);
+    }
+
+    @Transactional
+    public void deleteTypeRestaurant(Long id) {
+        TypeRestaurant typeRestaurant = typeRestaurantRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.TYPE_RESTAURANT_NOT_FOUND));
+
+        if (typeRestaurant.getRestaurants() != null && !typeRestaurant.getRestaurants().isEmpty()) {
+            throw new AppException(ErrorCode.INVALID_INPUT);
+        }
+
+        typeRestaurantRepository.delete(typeRestaurant);
+    }
 }
