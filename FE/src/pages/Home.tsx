@@ -8,19 +8,99 @@ const tabs = ["Địa điểm ăn chay", "Món ăn nổi bật", "Sự kiện"] 
 type Tab = (typeof tabs)[number];
 
 const categoryFilters = ["Tất cả", "Cao Cấp", "Bình Dân", "Từ Thiện"];
+const locationFilters = ["Tất cả", "Quận 1", "Quận 3", "Phú Nhuận"];
+const priceFilters = ["Tất cả", "Dưới 100k", "100k - 200k", "Trên 200k"];
+const ratingFilters = ["Tất cả", "⭐ 4+ sao", "⭐ 4.5+ sao"];
+
+const dishTypes = [
+  "Tất cả",
+  "Cơm",
+  "Bún",
+  "Phở",
+  "Hủ tiếu",
+  "Mì",
+  "Miến",
+  "Cháo",
+  "Bánh",
+  "Cuốn",
+  "Gỏi / Salad",
+  "Súp / Canh",
+  "Lẩu",
+  "Món ăn vặt",
+  "Đồ uống",
+  "Tráng miệng",
+];
 
 export default function Home() {
   const [selectedTab, setSelectedTab] = useState<Tab>(tabs[0]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Tất cả");
+  const [selectedLocation, setSelectedLocation] = useState("Tất cả");
+  const [selectedPrice, setSelectedPrice] = useState("Tất cả");
+  const [selectedRating, setSelectedRating] = useState("Tất cả");
+  const [selectedDishType, setSelectedDishType] = useState("Tất cả");
+
+  const matchPrice = (rangeStr: string, priceFilter: string) => {
+    if (priceFilter === "Tất cả") return true;
+    const numbers = rangeStr.replace(/\./g, "").match(/\d+/g)?.map(Number);
+    if (!numbers || numbers.length === 0) return true;
+    const min = numbers[0];
+    const max = numbers[1] || min;
+    
+    if (priceFilter === "Dưới 100k") {
+      return min < 100000;
+    } else if (priceFilter === "100k - 200k") {
+      return (
+        (min >= 100000 && min <= 200000) ||
+        (max >= 100000 && max <= 200000) ||
+        (min <= 100000 && max >= 200000)
+      );
+    } else if (priceFilter === "Trên 200k") {
+      return max > 200000;
+    }
+    return true;
+  };
 
   const filteredRestaurants = restaurants.filter((r) => {
     const matchSearch =
       r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       r.location.toLowerCase().includes(searchQuery.toLowerCase());
+      
     const matchCategory =
       selectedCategory === "Tất cả" || r.category === selectedCategory;
-    return matchSearch && matchCategory;
+      
+    const matchLocation =
+      selectedLocation === "Tất cả" ||
+      r.location.toLowerCase().includes(selectedLocation.toLowerCase());
+      
+    const matchPriceRange = matchPrice(r.priceRange, selectedPrice);
+    
+    let matchRating = true;
+    if (selectedRating === "⭐ 4+ sao") {
+      matchRating = r.rating >= 4.0;
+    } else if (selectedRating === "⭐ 4.5+ sao") {
+      matchRating = r.rating >= 4.5;
+    }
+    
+    return (
+      matchSearch &&
+      matchCategory &&
+      matchLocation &&
+      matchPriceRange &&
+      matchRating
+    );
+  });
+
+  const filteredDishes = popularDishes.filter((dish) => {
+    const matchSearch =
+      dish.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      dish.restaurant.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchType =
+      selectedDishType === "Tất cả" ||
+      dish.type.toLowerCase() === selectedDishType.toLowerCase();
+      
+    return matchSearch && matchType;
   });
 
   const renderCards = () => {
@@ -32,7 +112,13 @@ export default function Home() {
               <p className="text-4xl">🔍</p>
               <p className="mt-4 text-slate-500">Không tìm thấy kết quả phù hợp</p>
               <button
-                onClick={() => { setSearchQuery(""); setSelectedCategory("Tất cả"); }}
+                onClick={() => {
+                  setSearchQuery("");
+                  setSelectedCategory("Tất cả");
+                  setSelectedLocation("Tất cả");
+                  setSelectedPrice("Tất cả");
+                  setSelectedRating("Tất cả");
+                }}
                 className="mt-3 text-sm font-medium text-emerald-600 hover:underline"
               >
                 Xoá bộ lọc
@@ -95,30 +181,46 @@ export default function Home() {
     if (selectedTab === "Món ăn nổi bật") {
       return (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {popularDishes.map((dish) => (
-            <article
-              key={dish.id}
-              className="group overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl"
-            >
-              <div className="relative h-48 overflow-hidden bg-slate-100">
-                <img
-                  src={dish.image}
-                  alt={dish.name}
-                  className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                <span className="absolute bottom-3 left-3 rounded-full bg-white/90 px-2.5 py-1 text-xs font-bold text-amber-600 backdrop-blur-sm">
-                  {dish.likes} ♥
-                </span>
-              </div>
-              <div className="space-y-2 p-4">
-                <p className="text-xs font-semibold uppercase tracking-widest text-emerald-600">{dish.type}</p>
-                <h3 className="font-bold text-slate-900 leading-snug">{dish.name}</h3>
-                <p className="text-sm text-slate-500">{dish.restaurant}</p>
-                <p className="text-xs text-slate-400">{dish.date}</p>
-              </div>
-            </article>
-          ))}
+          {filteredDishes.length === 0 ? (
+            <div className="col-span-4 py-20 text-center">
+              <p className="text-4xl">🔍</p>
+              <p className="mt-4 text-slate-500">Không tìm thấy món ăn phù hợp</p>
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setSelectedDishType("Tất cả");
+                }}
+                className="mt-3 text-sm font-medium text-emerald-600 hover:underline"
+              >
+                Xoá bộ lọc
+              </button>
+            </div>
+          ) : (
+            filteredDishes.map((dish) => (
+              <article
+                key={dish.id}
+                className="group overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl"
+              >
+                <div className="relative h-48 overflow-hidden bg-slate-100">
+                  <img
+                    src={dish.image}
+                    alt={dish.name}
+                    className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                  <span className="absolute bottom-3 left-3 rounded-full bg-white/90 px-2.5 py-1 text-xs font-bold text-amber-600 backdrop-blur-sm">
+                    {dish.likes} ♥
+                  </span>
+                </div>
+                <div className="space-y-2 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-emerald-600">{dish.type}</p>
+                  <h3 className="font-bold text-slate-900 leading-snug">{dish.name}</h3>
+                  <p className="text-sm text-slate-500">{dish.restaurant}</p>
+                  <p className="text-xs text-slate-400">{dish.date}</p>
+                </div>
+              </article>
+            ))
+          )}
         </div>
       );
     }
@@ -164,7 +266,7 @@ export default function Home() {
 
   const counts = {
     "Địa điểm ăn chay": filteredRestaurants.length,
-    "Món ăn nổi bật": popularDishes.length,
+    "Món ăn nổi bật": filteredDishes.length,
     "Sự kiện": events.length,
   };
 
@@ -220,22 +322,162 @@ export default function Home() {
 
       {/* Main Content */}
       <section className="mx-auto max-w-7xl px-6 py-10">
-        {/* Category Filter (only for restaurants tab) */}
+        {/* Restaurant Filter Panel (only for Địa điểm ăn chay) */}
         {selectedTab === "Địa điểm ăn chay" && (
-          <div className="mb-6 flex flex-wrap gap-2">
-            {categoryFilters.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  selectedCategory === cat
-                    ? "bg-emerald-600 text-white shadow-sm"
-                    : "bg-white border border-slate-200 text-slate-600 hover:border-emerald-300 hover:text-emerald-700"
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
+          <div className="mb-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <span>⚡</span> Bộ lọc tìm kiếm
+              </h2>
+              {(selectedCategory !== "Tất cả" ||
+                selectedLocation !== "Tất cả" ||
+                selectedPrice !== "Tất cả" ||
+                selectedRating !== "Tất cả" ||
+                searchQuery !== "") && (
+                <button
+                  onClick={() => {
+                    setSelectedCategory("Tất cả");
+                    setSelectedLocation("Tất cả");
+                    setSelectedPrice("Tất cả");
+                    setSelectedRating("Tất cả");
+                    setSearchQuery("");
+                  }}
+                  className="self-start text-xs font-bold text-rose-600 hover:underline sm:self-auto flex items-center gap-1"
+                >
+                  <span>✕</span> Xoá bộ lọc
+                </button>
+              )}
+            </div>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+              {/* Khu vực filter */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Khu vực
+                </label>
+                <select
+                  value={selectedLocation}
+                  onChange={(e) => setSelectedLocation(e.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm focus:border-emerald-500 focus:outline-none transition"
+                >
+                  {locationFilters.map((loc) => (
+                    <option key={loc} value={loc}>
+                      {loc === "Tất cả" ? "Tất cả khu vực" : loc}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Danh mục filter */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Danh mục
+                </label>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm focus:border-emerald-500 focus:outline-none transition"
+                >
+                  {categoryFilters.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat === "Tất cả" ? "Tất cả danh mục" : cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Mức giá filter */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Mức giá
+                </label>
+                <select
+                  value={selectedPrice}
+                  onChange={(e) => setSelectedPrice(e.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm focus:border-emerald-500 focus:outline-none transition"
+                >
+                  {priceFilters.map((pr) => (
+                    <option key={pr} value={pr}>
+                      {pr === "Tất cả" ? "Tất cả mức giá" : pr}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Đánh giá filter */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Đánh giá
+                </label>
+                <select
+                  value={selectedRating}
+                  onChange={(e) => setSelectedRating(e.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm focus:border-emerald-500 focus:outline-none transition"
+                >
+                  {ratingFilters.map((rt) => (
+                    <option key={rt} value={rt}>
+                      {rt === "Tất cả" ? "Tất cả đánh giá" : rt}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Dish Type Filter (only for Món ăn nổi bật) */}
+        {selectedTab === "Món ăn nổi bật" && (
+          <div className="mb-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <span>🍽️</span> Chọn loại món ăn
+              </h2>
+              {selectedDishType !== "Tất cả" && (
+                <button
+                  onClick={() => setSelectedDishType("Tất cả")}
+                  className="text-xs font-bold text-rose-600 hover:underline"
+                >
+                  Xoá chọn
+                </button>
+              )}
+            </div>
+            <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-200">
+              {dishTypes.map((type) => {
+                // Find matching emoji for chip/tag
+                let emoji = "🥗";
+                if (type === "Cơm") emoji = "🍚";
+                else if (type === "Bún") emoji = "🍜";
+                else if (type === "Phở") emoji = "🍲";
+                else if (type === "Hủ tiếu") emoji = "🥢";
+                else if (type === "Mì") emoji = "🍝";
+                else if (type === "Miến") emoji = "🍜";
+                else if (type === "Cháo") emoji = "🥣";
+                else if (type === "Bánh") emoji = "🥖";
+                else if (type === "Cuốn") emoji = "🌯";
+                else if (type === "Gỏi / Salad") emoji = "🥗";
+                else if (type === "Súp / Canh") emoji = "🍲";
+                else if (type === "Lẩu") emoji = "🍲";
+                else if (type === "Món ăn vặt") emoji = "🍡";
+                else if (type === "Đồ uống") emoji = "☕";
+                else if (type === "Tráng miệng") emoji = "🍰";
+                else if (type === "Tất cả") emoji = "🌈";
+
+                const isSelected = selectedDishType === type;
+                return (
+                  <button
+                    key={type}
+                    onClick={() => setSelectedDishType(type)}
+                    className={`flex items-center gap-1.5 whitespace-nowrap rounded-full px-5 py-2.5 text-sm font-semibold transition ${
+                      isSelected
+                        ? "bg-emerald-600 text-white shadow-md"
+                        : "bg-white border border-slate-200 text-slate-600 hover:border-emerald-300 hover:text-emerald-700 shadow-sm"
+                    }`}
+                  >
+                    <span>{emoji}</span>
+                    <span>{type}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
 
