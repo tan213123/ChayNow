@@ -1,5 +1,9 @@
 import apiService from "@/services/api.service";
-import type { ApiResponse, Role, AccountStatus } from "@/types/auth";
+import type { AccountStatus, ApiResponse, Role } from "@/types/auth";
+
+export * from "@/services/adminUser.service";
+export * from "@/services/adminRestaurant.service";
+export * from "@/services/adminPosting.service";
 
 export interface AdminUser {
   id: number;
@@ -29,14 +33,18 @@ export interface FetchUsersParams {
   status?: AccountStatus | "ALL";
 }
 
-type AdminUsersApiResponse = AdminUsersResponse | ApiResponse<AdminUsersResponse>;
+type AdminUsersApiResponse =
+  | AdminUsersResponse
+  | ApiResponse<AdminUsersResponse>;
 
 const isWrappedResponse = (
   response: AdminUsersApiResponse,
 ): response is ApiResponse<AdminUsersResponse> =>
   "success" in response && "data" in response;
 
-export const getAdminUsers = async (params: FetchUsersParams): Promise<AdminUsersResponse> => {
+export const getAdminUsers = async (
+  params: FetchUsersParams,
+): Promise<AdminUsersResponse> => {
   const queryParams: Record<string, string | number> = {};
 
   if (params.page !== undefined) {
@@ -55,9 +63,12 @@ export const getAdminUsers = async (params: FetchUsersParams): Promise<AdminUser
     queryParams.status = params.status;
   }
 
-  const response = await apiService.get<unknown, AdminUsersApiResponse>("/api/admin/users", {
-    params: queryParams,
-  });
+  const response = await apiService.get<unknown, AdminUsersApiResponse>(
+    "/api/admin/users",
+    {
+      params: queryParams,
+    },
+  );
 
   return isWrappedResponse(response) ? response.data : response;
 };
@@ -69,4 +80,3 @@ export const suspendUser = async (id: number): Promise<void> => {
 export const activeUser = async (id: number): Promise<void> => {
   await apiService.patch(`/api/admin/users/${id}/activate`);
 };
-

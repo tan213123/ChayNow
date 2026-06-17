@@ -4,14 +4,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { login as loginApi } from "@/services/auth.service";
 import { useAuthStore } from "@/store/authStore";
-import type { Role } from "@/types/auth";
-
-const roleLabels: Record<Role, string> = {
-  ADMIN: "Quản trị viên",
-  OWNER: "Chủ quán",
-  USER: "Người dùng",
-};
-
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -40,16 +32,6 @@ export default function Login() {
       });
 
       login(loginResponse);
-
-      // Temporary compatibility for pages that still read the old authUser key.
-      localStorage.setItem(
-        "authUser",
-        JSON.stringify({
-          email: loginResponse.user.email,
-          label: roleLabels[loginResponse.user.role],
-        }),
-      );
-
       toast.success("Đăng nhập thành công.");
       
       const destination =

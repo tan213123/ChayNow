@@ -12,13 +12,12 @@ const roleLabels: Record<Role, string> = {
 export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const user = useAuthStore((state) => state.user);
-  const logout = useAuthStore((state) => state.logout);
+  const { isAuthenticated, logout, user } = useAuthStore();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
-    localStorage.removeItem("authUser");
+    setMenuOpen(false);
     navigate("/login");
   };
 
@@ -43,8 +42,11 @@ export default function Navbar() {
       : []),
   ];
 
-  const getInitials = (email: string) => {
-    return email.slice(0, 2).toUpperCase();
+  const isLoggedIn = isAuthenticated && Boolean(user);
+
+  const getInitials = () => {
+    const source = user?.fullName || user?.email || "";
+    return source.slice(0, 2).toUpperCase();
   };
 
   return (
@@ -75,7 +77,7 @@ export default function Navbar() {
         </nav>
 
         <div className="flex items-center gap-3">
-          {user ? (
+          {isLoggedIn && user ? (
             <div className="flex items-center gap-3">
               <Link
                 to="/profile"
@@ -86,7 +88,7 @@ export default function Navbar() {
                 }`}
               >
                 <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-xs font-bold text-white">
-                  {getInitials(user.email)}
+                  {getInitials()}
                 </span>
                 <span className="font-medium">{roleLabels[user.role]}</span>
               </Link>
@@ -156,7 +158,7 @@ export default function Navbar() {
             </Link>
           ))}
           <div className="border-t border-slate-100 pt-2">
-            {user ? (
+            {isLoggedIn && user ? (
               <div className="space-y-2">
                 <Link
                   to="/profile"
@@ -164,15 +166,12 @@ export default function Navbar() {
                   className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50"
                 >
                   <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-xs font-bold text-white">
-                    {getInitials(user.email)}
+                    {getInitials()}
                   </span>
                   Hồ sơ cá nhân
                 </Link>
                 <button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    handleLogout();
-                  }}
+                  onClick={handleLogout}
                   className="w-full rounded-2xl px-4 py-3 text-left text-sm font-medium text-red-600 transition hover:bg-red-50"
                 >
                   Đăng xuất

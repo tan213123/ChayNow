@@ -136,13 +136,17 @@ export default function OwnerReviews() {
 
         <div className="grid gap-6 md:grid-cols-3">
           <div className="rounded-[2rem] bg-white p-6 shadow-sm">
-            <p className="text-sm font-semibold text-slate-500">Điểm trung bình</p>
+            <p className="text-sm font-semibold text-slate-500">
+              Điểm trung bình
+            </p>
             <p className="mt-4 text-4xl font-extrabold text-slate-900">
               {average.toFixed(1)}
             </p>
           </div>
           <div className="rounded-[2rem] bg-white p-6 shadow-sm">
-            <p className="text-sm font-semibold text-slate-500">Tổng đánh giá</p>
+            <p className="text-sm font-semibold text-slate-500">
+              Tổng đánh giá
+            </p>
             <p className="mt-4 text-4xl font-extrabold text-slate-900">
               {reviews.length}
             </p>

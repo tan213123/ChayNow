@@ -2,7 +2,7 @@ package com.teamg5.be.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.teamg5.be.dto.ApiResponse;
 import com.teamg5.be.dto.CreateRestaurantRequest;
@@ -69,6 +69,26 @@ public class RestaurantController {
             
     ) {
         List<RestaurantResponse> response = restaurantService.getAllRestaurant();
+        return ResponseEntity.ok(response);
+    }
+    @GetMapping("/mine")
+    @Operation(summary = "Lấy danh sách nhà hàng của user hiện tại")
+    public ResponseEntity<List<RestaurantResponse>> getMyRestaurants() {
+        List<RestaurantResponse> response =
+                restaurantService.getMyRestaurants();
+
+        return ResponseEntity.ok(response);
+    }
+    @GetMapping("/by-user/{userId}")
+    //@PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Admin lấy danh sách nhà hàng của một user")
+    public ResponseEntity<List<RestaurantResponse>>
+    getRestaurantsByUserId(
+            @PathVariable Long userId
+    ) {
+        List<RestaurantResponse> response =
+                restaurantService.getRestaurantsByUserId(userId);
+
         return ResponseEntity.ok(response);
     }
 }

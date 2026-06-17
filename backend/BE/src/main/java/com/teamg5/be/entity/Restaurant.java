@@ -51,6 +51,11 @@ public class Restaurant extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "place_id")
     private Place place;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id", nullable = false)
+    private User owner;
+    
     
      // cập nhật trạng tháy hiện tại đống của hay mở của (optional)
     // @Enumerated(EnumType.STRING)
@@ -84,4 +89,5 @@ public class Restaurant extends BaseEntity {
     @OneToMany(mappedBy = "restaurant", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Event> events = new ArrayList<>();
+ 
 }
