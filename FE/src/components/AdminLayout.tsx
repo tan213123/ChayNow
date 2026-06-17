@@ -45,12 +45,6 @@ const adminNavItems = [
     enabled: true,
   },
   {
-    to: "/admin/attributes",
-    label: "Quản lý thuộc tính",
-    icon: SlidersHorizontal,
-    enabled: false,
-  },
-  {
     to: "/admin/reports",
     label: "Xử lý báo cáo",
     icon: AlertTriangle,
@@ -58,7 +52,10 @@ const adminNavItems = [
   },
 ];
 
-export default function AdminLayout({ children, title = "Dashboard" }: AdminLayoutProps) {
+export default function AdminLayout({
+  children,
+  title = "Dashboard",
+}: AdminLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout, user } = useAuthStore();
@@ -81,7 +78,10 @@ export default function AdminLayout({ children, title = "Dashboard" }: AdminLayo
     <main className="min-h-screen bg-slate-50 text-slate-950">
       <header className="sticky top-0 z-40 h-20 border-b border-slate-200 bg-white shadow-sm">
         <div className="flex h-full items-center justify-between px-8">
-          <Link to="/admin" className="flex w-72 items-center gap-3 text-emerald-700">
+          <Link
+            to="/admin"
+            className="flex w-72 items-center gap-3 text-emerald-700"
+          >
             <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50">
               <Sprout className="h-7 w-7" />
             </span>
@@ -145,7 +145,9 @@ export default function AdminLayout({ children, title = "Dashboard" }: AdminLayo
                   >
                     <span className="flex items-center gap-4">
                       <Icon className="h-6 w-6" />
-                      <span className="text-base font-medium">{item.label}</span>
+                      <span className="text-base font-medium">
+                        {item.label}
+                      </span>
                     </span>
                   </button>
                 );
@@ -155,10 +157,11 @@ export default function AdminLayout({ children, title = "Dashboard" }: AdminLayo
                 <Link
                   key={item.to}
                   to={item.to}
-                  className={`flex items-center gap-4 rounded-xl px-5 py-4 text-base font-semibold transition ${isActive
-                    ? "bg-emerald-50 text-emerald-700"
-                    : "text-slate-700 hover:bg-slate-50 hover:text-slate-950"
-                    }`}
+                  className={`flex items-center gap-4 rounded-xl px-5 py-4 text-base font-semibold transition ${
+                    isActive
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "text-slate-700 hover:bg-slate-50 hover:text-slate-950"
+                  }`}
                 >
                   <Icon className="h-6 w-6" />
                   {item.label}
@@ -172,7 +175,6 @@ export default function AdminLayout({ children, title = "Dashboard" }: AdminLayo
               <BarChart3 className="h-4 w-4" />
               Khu vực quản trị
             </div>
-
           </div>
         </aside>
 

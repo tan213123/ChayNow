@@ -1,5 +1,6 @@
 import { Search, ShieldCheck } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import AdminLayout from "@/components/AdminLayout";
 import type { AccountStatus, Role } from "@/types/auth";
 import {
@@ -40,6 +41,10 @@ const roleClassNames: Record<Role, string> = {
   USER: "bg-purple-50 text-purple-700",
 };
 
+const getErrorMessage = (error: unknown, fallback: string) => {
+  return error instanceof Error ? error.message : fallback;
+};
+
 export default function AdminUsers() {
   const [usersList, setUsersList] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,6 +62,7 @@ export default function AdminUsers() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [targetUser, setTargetUser] = useState<AdminUser | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const actionInFlightRef = useRef(false);
 
   // debounce search
   useEffect(() => {
@@ -93,22 +99,35 @@ export default function AdminUsers() {
   }, [page, size, debouncedQuery, roleFilter, statusFilter]);
 
   const handleConfirmAction = async () => {
-    if (!targetUser) return;
+    if (!targetUser || actionInFlightRef.current) return;
+
+    const userId = targetUser.id;
+    const userName = targetUser.fullName;
+    const isActivating = targetUser.status === "SUSPENDED";
+
+    actionInFlightRef.current = true;
     setActionLoading(true);
 
     try {
-      if (targetUser.status === "SUSPENDED") {
-        await activeUser(targetUser.id);
+      if (isActivating) {
+        await activeUser(userId);
       } else {
-        await suspendUser(targetUser.id);
+        await suspendUser(userId);
       }
 
+      toast.success(
+        isActivating
+          ? `Activated account "${userName}" successfully.`
+          : `Suspended account "${userName}" successfully.`,
+      );
       setConfirmOpen(false);
       setTargetUser(null);
-      fetchUsers();
-    } catch (err: any) {
-      alert(err?.message || "Đã xảy ra lỗi khi thực hiện thao tác.");
+      await fetchUsers();
+    } catch (err) {
+      console.error("Admin user status update failed:", err);
+      toast.error(getErrorMessage(err, "Unable to update account status. Please try again."));
     } finally {
+      actionInFlightRef.current = false;
       setActionLoading(false);
     }
   };
@@ -272,7 +291,8 @@ export default function AdminUsers() {
                             setTargetUser(user);
                             setConfirmOpen(true);
                           }}
-                          className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${user.status === "SUSPENDED"
+                          disabled={actionLoading && targetUser?.id === user.id}
+                          className={`rounded-xl border px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${user.status === "SUSPENDED"
                             ? "border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-300"
                             : "border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
                             }`}
