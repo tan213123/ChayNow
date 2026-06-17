@@ -1,6 +1,7 @@
 package com.teamg5.be.service;
 
 import com.teamg5.be.dto.AdminUserResponseDTO;
+import com.teamg5.be.dto.CreateAdminRequest;
 import com.teamg5.be.service.impl.AdminUserServiceImpl;
 import com.teamg5.be.entity.AccountStatus;
 import com.teamg5.be.entity.Role;
@@ -39,6 +40,9 @@ public class AdminUserServiceImplTest {
     private UserRepository userRepository;
 
     @Mock
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @Mock
     private SecurityContext securityContext;
 
     @Mock
@@ -49,7 +53,7 @@ public class AdminUserServiceImplTest {
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        adminUserService = new AdminUserServiceImpl(userRepository);
+        adminUserService = new AdminUserServiceImpl(userRepository, passwordEncoder);
         SecurityContextHolder.setContext(securityContext);
 
         currentUser = User.builder()
@@ -220,5 +224,82 @@ public class AdminUserServiceImplTest {
         // Act & Assert
         AppException exception = assertThrows(AppException.class, () -> adminUserService.activateUser(99L));
         assertEquals(ErrorCode.USER_NOT_FOUND, exception.getErrorCode());
+    }
+
+    @Test
+    public void createAdmin_Success() {
+        // Arrange
+        CreateAdminRequest request = new CreateAdminRequest();
+        request.setEmail("new_admin@chaynow.com");
+        request.setPassword("admin123");
+        request.setFullName("New Admin");
+        request.setPhone("0987654321");
+
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn(currentUser);
+        when(userRepository.existsByEmail("new_admin@chaynow.com")).thenReturn(false);
+        when(passwordEncoder.encode("admin123")).thenReturn("encodedPassword");
+
+        User savedUser = User.builder()
+                .email("new_admin@chaynow.com")
+                .fullName("New Admin")
+                .password("encodedPassword")
+                .role(Role.ADMIN)
+                .status(AccountStatus.ACTIVE)
+                .phone("0987654321")
+                .build();
+        savedUser.setId(3L);
+        savedUser.setCreatedAt(LocalDateTime.now());
+
+        when(userRepository.save(any(User.class))).thenReturn(savedUser);
+
+        // Act
+        AdminUserResponseDTO response = adminUserService.createAdmin(request);
+
+        // Assert
+        assertNotNull(response);
+        assertEquals(3L, response.getId());
+        assertEquals("New Admin", response.getFullName());
+        assertEquals("new_admin@chaynow.com", response.getEmail());
+        assertEquals("ADMIN", response.getRole());
+        assertEquals("ACTIVE", response.getStatus());
+    }
+
+    @Test
+    public void createAdmin_Forbidden_NotAdmin() {
+        // Arrange
+        CreateAdminRequest request = new CreateAdminRequest();
+        User customerUser = User.builder()
+                .email("customer@chaynow.com")
+                .fullName("Customer")
+                .role(Role.USER)
+                .status(AccountStatus.ACTIVE)
+                .build();
+
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn(customerUser);
+
+        // Act & Assert
+        AppException exception = assertThrows(AppException.class, () -> adminUserService.createAdmin(request));
+        assertEquals(ErrorCode.FORBIDDEN, exception.getErrorCode());
+    }
+
+    @Test
+    public void createAdmin_EmailAlreadyInUse() {
+        // Arrange
+        CreateAdminRequest request = new CreateAdminRequest();
+        request.setEmail("existing@chaynow.com");
+
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn(currentUser);
+        when(userRepository.existsByEmail("existing@chaynow.com")).thenReturn(true);
+
+        // Act & Assert
+        AppException exception = assertThrows(AppException.class, () -> adminUserService.createAdmin(request));
+        assertEquals(ErrorCode.INVALID_INPUT, exception.getErrorCode());
+        assertTrue(exception.getMessage().contains("Email is already in use"));
     }
 }

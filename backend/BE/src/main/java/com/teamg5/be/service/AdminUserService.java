@@ -2,6 +2,7 @@ package com.teamg5.be.service;
 
 import com.teamg5.be.dto.AdminUserResponseDTO;
 import com.teamg5.be.dto.PageResponse;
+import com.teamg5.be.dto.CreateAdminRequest;
 
 public interface AdminUserService {
     PageResponse<AdminUserResponseDTO> getAllUsers(
@@ -14,4 +15,5 @@ public interface AdminUserService {
 
     void suspendUser(Long userId);
     void activateUser(Long userId);
+    AdminUserResponseDTO createAdmin(CreateAdminRequest request);
 }

@@ -215,6 +215,7 @@ public class AdminFoodPostServiceImpl implements AdminFoodPostService {
                 .categoryName(p.getCategory())
                 .likesCount(p.getLikeCount())
                 .status(p.getStatus())
+                .rejectedReason("REJECTED".equalsIgnoreCase(p.getStatus()) ? p.getRejectReason() : null)
                 .createdAt(p.getCreatedAt())
                 .build();
     }

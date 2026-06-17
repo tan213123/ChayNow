@@ -25,6 +25,7 @@ public class AdminFoodPostListItemResponse {
 
     private Integer likesCount;
     private String status;
+    private String rejectedReason;
 
     private LocalDateTime createdAt;
 }

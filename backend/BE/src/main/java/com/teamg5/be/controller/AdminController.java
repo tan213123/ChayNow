@@ -13,9 +13,12 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import com.teamg5.be.dto.CreateAdminRequest;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -76,6 +79,19 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.<Void>builder()
                 .success(true)
                 .message("User activated successfully")
+                .build());
+    }
+
+    @PostMapping("/create")
+    @Operation(summary = "Tạo tài khoản Admin mới", description = "Được thực hiện bởi một Admin khác đã đăng nhập.")
+    public ResponseEntity<ApiResponse<AdminUserResponseDTO>> createAdmin(
+            @jakarta.validation.Valid @RequestBody CreateAdminRequest request
+    ) {
+        AdminUserResponseDTO response = adminUserService.createAdmin(request);
+        return ResponseEntity.ok(ApiResponse.<AdminUserResponseDTO>builder()
+                .success(true)
+                .message("Admin account created successfully")
+                .data(response)
                 .build());
     }
 }

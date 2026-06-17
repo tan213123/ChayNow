@@ -18,6 +18,8 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.teamg5.be.dto.CreateAdminRequest;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import com.teamg5.be.utils.DateUtils;
 
 @Service
@@ -25,6 +27,7 @@ import com.teamg5.be.utils.DateUtils;
 public class AdminUserServiceImpl implements AdminUserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public PageResponse<AdminUserResponseDTO> getAllUsers(
@@ -139,5 +142,44 @@ public class AdminUserServiceImpl implements AdminUserService {
 
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    private void verifyAdmin() {
+        User currentUser = getCurrentUser();
+        if (currentUser.getRole() != Role.ADMIN) {
+            throw new AppException(ErrorCode.FORBIDDEN);
+        }
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public AdminUserResponseDTO createAdmin(CreateAdminRequest request) {
+        verifyAdmin();
+
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new AppException(ErrorCode.INVALID_INPUT, "Email is already in use");
+        }
+
+        User newAdmin = User.builder()
+                .email(request.getEmail().trim())
+                .fullName(request.getFullName().trim())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .role(Role.ADMIN)
+                .status(AccountStatus.ACTIVE)
+                .phone(request.getPhone() != null ? request.getPhone().trim() : null)
+                .build();
+
+        User saved = userRepository.save(newAdmin);
+
+        return AdminUserResponseDTO.builder()
+                .id(saved.getId())
+                .fullName(saved.getFullName())
+                .email(saved.getEmail())
+                .avatarUrl(saved.getAvatarUrl())
+                .role(saved.getRole() != null ? saved.getRole().name() : null)
+                .status(saved.getStatus() != null ? saved.getStatus().name() : null)
+                .reviewCount(0)
+                .joinedDate(saved.getCreatedAt() != null ? DateUtils.formatLocalDateTimeDoubleDash(saved.getCreatedAt()) : DateUtils.formatLocalDateTimeDoubleDash(java.time.LocalDateTime.now()))
+                .build();
     }
 }
