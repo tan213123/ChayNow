@@ -6,8 +6,10 @@ import com.teamg5.be.entity.Place;
 
 import jakarta.persistence.Column;
 import jakarta.validation.constraints.Pattern;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
@@ -17,6 +19,8 @@ import java.util.List;
 @Getter
 @Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class UpdateRestaurantRequest {
   
     private String Name;
