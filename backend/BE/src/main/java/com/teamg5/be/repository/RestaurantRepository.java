@@ -1,4 +1,5 @@
 package com.teamg5.be.repository;
+
 import com.teamg5.be.entity.Restaurant;
 import com.teamg5.be.entity.RestaurantStatus;
 import org.springframework.data.domain.Page;
@@ -44,4 +45,6 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
             Long restaurantId,
             Long ownerId
     );
+
+    long countByStatus(RestaurantStatus status);
 }

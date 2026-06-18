@@ -28,4 +28,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
             @Param("status") AccountStatus status,
             Pageable pageable
     );
+
+    long countByRole(Role role);
 }

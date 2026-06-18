@@ -5,6 +5,9 @@ import com.teamg5.be.dto.ReportDetailResponse;
 import com.teamg5.be.dto.ReportListItemResponse;
 import com.teamg5.be.dto.ReportStatsResponse;
 
+import com.teamg5.be.dto.ResolveReportRequest;
+import com.teamg5.be.dto.ReportActionResponse;
+
 public interface AdminReportService {
     PageResponseDTO<ReportListItemResponse> getAllReports(
             String status,
@@ -17,4 +20,6 @@ public interface AdminReportService {
     ReportStatsResponse getStats();
 
     ReportDetailResponse getReportDetail(Long id);
+
+    ReportActionResponse resolveReport(Long reportId, ResolveReportRequest request);
 }

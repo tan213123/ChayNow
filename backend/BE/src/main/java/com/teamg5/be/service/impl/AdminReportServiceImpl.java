@@ -225,4 +225,84 @@ public class AdminReportServiceImpl implements AdminReportService {
 
         return builder.build();
     }
+
+    @Override
+    @Transactional
+    public ReportActionResponse resolveReport(Long reportId, ResolveReportRequest request) {
+        User admin = verifyAdmin();
+
+        Report report = reportRepository.findById(reportId)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Report not found with id: " + reportId));
+
+        if (report.getStatus() != ReportStatus.PENDING) {
+            throw new AppException(ErrorCode.INVALID_INPUT, "Report is already resolved or rejected");
+        }
+
+        String action = request.getAction().trim().toUpperCase();
+        ReportStatus newStatus;
+        String message;
+
+        if ("ACCEPT".equals(action)) {
+            newStatus = ReportStatus.RESOLVED;
+            message = "Report accepted and violating content removed. Warning issued to the user.";
+
+            // Remove/disable violating content
+            User contentCreator = null;
+            if (report.getTargetType() == ReportTargetType.REVIEW) {
+                Review review = reviewRepository.findById(report.getTargetId()).orElse(null);
+                if (review != null) {
+                    contentCreator = review.getUser();
+                    reviewRepository.delete(review);
+                }
+            } else if (report.getTargetType() == ReportTargetType.POST) {
+                Posting post = postingRepository.findById(report.getTargetId()).orElse(null);
+                if (post != null) {
+                    contentCreator = post.getUser();
+                    post.setStatus("REJECTED");
+                    post.setRejectReason("Nội dung vi phạm tiêu chuẩn cộng đồng (bị báo cáo)");
+                    post.setRejectedAt(java.time.LocalDateTime.now());
+                    postingRepository.save(post);
+                }
+            } else if (report.getTargetType() == ReportTargetType.RESTAURANT) {
+                Restaurant restaurant = restaurantRepository.findById(report.getTargetId()).orElse(null);
+                if (restaurant != null) {
+                    contentCreator = restaurant.getOwner();
+                    restaurant.setStatus(RestaurantStatus.REJECTED);
+                    restaurant.setRejectReason("Nhà hàng vi phạm tiêu chuẩn cộng đồng (bị báo cáo)");
+                    restaurant.setActive(false);
+                    restaurantRepository.save(restaurant);
+                }
+            }
+
+            // Issue warning to creator
+            if (contentCreator != null) {
+                contentCreator.setWarningCount(contentCreator.getWarningCount() + 1);
+                if (contentCreator.getWarningCount() >= 3) {
+                    contentCreator.setStatus(AccountStatus.SUSPENDED);
+                    message += " Creator has reached 3 warnings and is now SUSPENDED.";
+                }
+                userRepository.save(contentCreator);
+            }
+        } else if ("REJECT".equals(action)) {
+            newStatus = ReportStatus.REJECTED;
+            message = "Report rejected.";
+        } else {
+            throw new AppException(ErrorCode.INVALID_INPUT, "Invalid action: " + action + ". Must be ACCEPT or REJECT");
+        }
+
+        report.setStatus(newStatus);
+        report.setResolvedBy(admin);
+        report.setResolvedAt(java.time.LocalDateTime.now());
+        if (request.getDetails() != null) {
+            report.setDetails(request.getDetails());
+        }
+        reportRepository.save(report);
+
+        return ReportActionResponse.builder()
+                .reportId(report.getId())
+                .status(newStatus.name())
+                .message(message)
+                .resolvedAt(report.getResolvedAt())
+                .build();
+    }
 }

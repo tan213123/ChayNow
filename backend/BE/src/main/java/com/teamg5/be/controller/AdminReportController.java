@@ -13,6 +13,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import com.teamg5.be.dto.ResolveReportRequest;
+import com.teamg5.be.dto.ReportActionResponse;
+
 @RestController
 @RequestMapping("/api/admin/reports")
 @RequiredArgsConstructor
@@ -67,6 +70,20 @@ public class AdminReportController {
             @PathVariable Long id
     ) {
         ReportDetailResponse response = adminReportService.getReportDetail(id);
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{id}/resolve")
+    @Operation(
+        summary = "Xử lý báo cáo vi phạm",
+        description = "Chấp nhận (ACCEPT) hoặc Từ chối (REJECT) báo cáo vi phạm. Nếu chấp nhận, nội dung vi phạm sẽ bị gỡ bỏ và người tạo nội dung sẽ bị cảnh cáo."
+    )
+    public ResponseEntity<ReportActionResponse> resolveReport(
+            @Parameter(description = "ID của báo cáo vi phạm", example = "1")
+            @PathVariable Long id,
+            @jakarta.validation.Valid @RequestBody ResolveReportRequest request
+    ) {
+        ReportActionResponse response = adminReportService.resolveReport(id, request);
         return ResponseEntity.ok(response);
     }
 }

@@ -5,8 +5,15 @@ import com.teamg5.be.service.AdminUserService;
 import com.teamg5.be.entity.AccountStatus;
 import com.teamg5.be.entity.Role;
 import com.teamg5.be.entity.User;
+import com.teamg5.be.entity.RestaurantStatus;
+import com.teamg5.be.entity.ReportStatus;
 import com.teamg5.be.repository.UserRepository;
+import com.teamg5.be.repository.RestaurantRepository;
+import com.teamg5.be.repository.ReviewRepository;
+import com.teamg5.be.repository.PostingRepository;
+import com.teamg5.be.repository.ReportRepository;
 import com.teamg5.be.dto.PageResponse;
+import com.teamg5.be.dto.DashboardStatsResponse;
 import com.teamg5.be.exception.AppException;
 import com.teamg5.be.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +35,10 @@ public class AdminUserServiceImpl implements AdminUserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final RestaurantRepository restaurantRepository;
+    private final ReviewRepository reviewRepository;
+    private final PostingRepository postingRepository;
+    private final ReportRepository reportRepository;
 
     @Override
     public PageResponse<AdminUserResponseDTO> getAllUsers(
@@ -180,6 +191,43 @@ public class AdminUserServiceImpl implements AdminUserService {
                 .status(saved.getStatus() != null ? saved.getStatus().name() : null)
                 .reviewCount(0)
                 .joinedDate(saved.getCreatedAt() != null ? DateUtils.formatLocalDateTimeDoubleDash(saved.getCreatedAt()) : DateUtils.formatLocalDateTimeDoubleDash(java.time.LocalDateTime.now()))
+                .build();
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public DashboardStatsResponse getDashboardStats() {
+        verifyAdmin();
+
+        long totalUsers = userRepository.countByRole(Role.USER);
+        long totalOwners = userRepository.countByRole(Role.OWNER);
+        long totalAdmins = userRepository.countByRole(Role.ADMIN);
+
+        long totalRestaurants = restaurantRepository.count();
+        long pendingRestaurants = restaurantRepository.countByStatus(RestaurantStatus.PENDING);
+        long approvedRestaurants = restaurantRepository.countByStatus(RestaurantStatus.APPROVED);
+        long rejectedRestaurants = restaurantRepository.countByStatus(RestaurantStatus.REJECTED);
+
+        long totalReviews = reviewRepository.count();
+        long totalPostings = postingRepository.count();
+
+        long pendingReports = reportRepository.countByStatus(ReportStatus.PENDING);
+        long resolvedReports = reportRepository.countByStatus(ReportStatus.RESOLVED);
+        long rejectedReports = reportRepository.countByStatus(ReportStatus.REJECTED);
+
+        return DashboardStatsResponse.builder()
+                .totalUsers(totalUsers)
+                .totalOwners(totalOwners)
+                .totalAdmins(totalAdmins)
+                .totalRestaurants(totalRestaurants)
+                .pendingRestaurants(pendingRestaurants)
+                .approvedRestaurants(approvedRestaurants)
+                .rejectedRestaurants(rejectedRestaurants)
+                .totalReviews(totalReviews)
+                .totalPostings(totalPostings)
+                .pendingReports(pendingReports)
+                .resolvedReports(resolvedReports)
+                .rejectedReports(rejectedReports)
                 .build();
     }
 }

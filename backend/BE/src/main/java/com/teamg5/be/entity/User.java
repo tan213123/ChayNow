@@ -54,6 +54,10 @@ public class User extends BaseEntity implements UserDetails {
 
     private String bio;
 
+    @Column(name = "warning_count")
+    @Builder.Default
+    private int warningCount = 0;
+
     @jakarta.persistence.OneToMany(mappedBy = "user", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
     @lombok.Builder.Default
     private List<FavouritePlace> favouritePlaces = new java.util.ArrayList<>();

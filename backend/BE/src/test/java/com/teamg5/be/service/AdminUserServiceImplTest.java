@@ -7,6 +7,10 @@ import com.teamg5.be.entity.AccountStatus;
 import com.teamg5.be.entity.Role;
 import com.teamg5.be.entity.User;
 import com.teamg5.be.repository.UserRepository;
+import com.teamg5.be.repository.RestaurantRepository;
+import com.teamg5.be.repository.ReviewRepository;
+import com.teamg5.be.repository.PostingRepository;
+import com.teamg5.be.repository.ReportRepository;
 import com.teamg5.be.dto.PageResponse;
 import com.teamg5.be.exception.AppException;
 import com.teamg5.be.exception.ErrorCode;
@@ -43,6 +47,18 @@ public class AdminUserServiceImplTest {
     private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     @Mock
+    private RestaurantRepository restaurantRepository;
+
+    @Mock
+    private ReviewRepository reviewRepository;
+
+    @Mock
+    private PostingRepository postingRepository;
+
+    @Mock
+    private ReportRepository reportRepository;
+
+    @Mock
     private SecurityContext securityContext;
 
     @Mock
@@ -53,7 +69,14 @@ public class AdminUserServiceImplTest {
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        adminUserService = new AdminUserServiceImpl(userRepository, passwordEncoder);
+        adminUserService = new AdminUserServiceImpl(
+                userRepository,
+                passwordEncoder,
+                restaurantRepository,
+                reviewRepository,
+                postingRepository,
+                reportRepository
+        );
         SecurityContextHolder.setContext(securityContext);
 
         currentUser = User.builder()

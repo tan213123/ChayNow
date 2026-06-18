@@ -39,6 +39,18 @@ public class Event extends BaseEntity {
     private LocalDate endDate;
 
     @Column(length = 50)
+    private String type; // DISCOUNT, CHARITY
+
+    @Column(name = "discount_percent")
+    private Integer discountPercent;
+
+    @Column(length = 255)
+    private String period;
+
+    @Column(name = "charity_time", length = 255)
+    private String charityTime;
+
+    @Column(length = 50)
     private String status; // UPCOMING, ACTIVE, EXPIRED, HIDDEN
 
     @ManyToOne(fetch = FetchType.LAZY)

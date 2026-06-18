@@ -4,6 +4,8 @@ import com.teamg5.be.dto.AdminUserResponseDTO;
 import com.teamg5.be.dto.PageResponse;
 import com.teamg5.be.dto.CreateAdminRequest;
 
+import com.teamg5.be.dto.DashboardStatsResponse;
+
 public interface AdminUserService {
     PageResponse<AdminUserResponseDTO> getAllUsers(
             int page,
@@ -16,4 +18,5 @@ public interface AdminUserService {
     void suspendUser(Long userId);
     void activateUser(Long userId);
     AdminUserResponseDTO createAdmin(CreateAdminRequest request);
+    DashboardStatsResponse getDashboardStats();
 }

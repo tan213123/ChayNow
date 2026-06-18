@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.teamg5.be.dto.CreateAdminRequest;
+import com.teamg5.be.dto.DashboardStatsResponse;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -91,6 +92,17 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.<AdminUserResponseDTO>builder()
                 .success(true)
                 .message("Admin account created successfully")
+                .data(response)
+                .build());
+    }
+
+    @GetMapping("/dashboard/stats")
+    @Operation(summary = "Lấy dữ liệu thống kê tổng quan hệ thống cho Admin Dashboard")
+    public ResponseEntity<ApiResponse<DashboardStatsResponse>> getDashboardStats() {
+        DashboardStatsResponse response = adminUserService.getDashboardStats();
+        return ResponseEntity.ok(ApiResponse.<DashboardStatsResponse>builder()
+                .success(true)
+                .message("Get dashboard statistics successfully")
                 .data(response)
                 .build());
     }
