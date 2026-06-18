@@ -24,6 +24,15 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import org.junit.jupiter.api.AfterEach;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.teamg5.be.entity.User;
+import com.teamg5.be.entity.Place;
+import com.teamg5.be.repository.PlaceRepository;
+import com.teamg5.be.repository.UserRepository;
+
 public class RestaurantServiceTest {
 
     @InjectMocks
@@ -35,9 +44,31 @@ public class RestaurantServiceTest {
     @Mock
     private TypeRestaurantRepository typeRestaurantRepository;
 
+    @Mock
+    private PlaceRepository placeRepository;
+
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private SecurityContext securityContext;
+
+    @Mock
+    private Authentication authentication;
+
+    private User currentUser;
+
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
+        SecurityContextHolder.setContext(securityContext);
+        currentUser = User.builder().email("owner@test.com").fullName("Owner Name").build();
+        currentUser.setId(100L);
+    }
+
+    @AfterEach
+    public void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -49,6 +80,7 @@ public class RestaurantServiceTest {
         request.setPhoneNumber("0987654321");
         request.setDescription("Good food");
         request.setTypeRestaurantId(1L);
+        request.setPlaceId(2L);
         request.setMediaUrls(List.of("url1", "url2"));
 
         TypeRestaurant type = TypeRestaurant.builder()
@@ -57,17 +89,29 @@ public class RestaurantServiceTest {
                 .build();
         type.setId(1L);
 
+        Place place = Place.builder()
+                .name("Quận 1")
+                .active(true)
+                .build();
+        place.setId(2L);
+
         Restaurant savedRestaurant = Restaurant.builder()
                 .name("Vegan Paradise")
                 .address("123 Green St")
                 .phoneNumber("0987654321")
                 .description("Good food")
                 .typeRestaurant(type)
+                .place(place)
                 .mediaList(new ArrayList<>())
                 .build();
         savedRestaurant.setId(10L);
 
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn(currentUser);
+
         when(typeRestaurantRepository.findById(1L)).thenReturn(Optional.of(type));
+        when(placeRepository.findByIdAndActiveTrue(2L)).thenReturn(Optional.of(place));
         when(restaurantRepository.save(any(Restaurant.class))).thenAnswer(invocation -> {
             Restaurant r = invocation.getArgument(0);
             r.setId(10L);
@@ -92,6 +136,10 @@ public class RestaurantServiceTest {
         CreateRestaurantRequest request = new CreateRestaurantRequest();
         request.setTypeRestaurantId(1L);
 
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn(currentUser);
+
         when(typeRestaurantRepository.findById(1L)).thenReturn(Optional.empty());
 
         // Act & Assert
@@ -113,7 +161,7 @@ public class RestaurantServiceTest {
                 .build();
         restaurant.setId(10L);
 
-        when(restaurantRepository.findById(10L)).thenReturn(Optional.of(restaurant));
+        when(restaurantRepository.findByIdAndActiveTrue(10L)).thenReturn(Optional.of(restaurant));
 
         // Act
         RestaurantResponse response = restaurantService.getRestaurantById(10L);
@@ -127,7 +175,7 @@ public class RestaurantServiceTest {
     @Test
     public void getRestaurantById_NotFound_ThrowsException() {
         // Arrange
-        when(restaurantRepository.findById(10L)).thenReturn(Optional.empty());
+        when(restaurantRepository.findByIdAndActiveTrue(10L)).thenReturn(Optional.empty());
 
         // Act & Assert
         AppException exception = assertThrows(AppException.class, () -> restaurantService.getRestaurantById(10L));
@@ -147,7 +195,7 @@ public class RestaurantServiceTest {
                 .build();
         restaurant.setId(10L);
 
-        when(restaurantRepository.findAll()).thenReturn(Collections.singletonList(restaurant));
+        when(restaurantRepository.findAllByActiveTrue()).thenReturn(Collections.singletonList(restaurant));
 
         // Act
         List<RestaurantResponse> responses = restaurantService.getAllRestaurant();

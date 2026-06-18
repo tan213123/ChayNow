@@ -220,7 +220,7 @@ public class ReviewServiceTest {
                 .build();
         review.setId(100L);
 
-        when(restaurantRepository.existsById(10L)).thenReturn(true);
+        when(restaurantRepository.findByIdAndActiveTrue(10L)).thenReturn(Optional.of(restaurant));
         when(reviewRepository.findByRestaurant_Id(10L)).thenReturn(Collections.singletonList(review));
 
         // Act
@@ -235,7 +235,7 @@ public class ReviewServiceTest {
     @Test
     public void getReviewsByRestaurant_NotFound_ThrowsException() {
         // Arrange
-        when(restaurantRepository.existsById(10L)).thenReturn(false);
+        when(restaurantRepository.findByIdAndActiveTrue(10L)).thenReturn(Optional.empty());
 
         // Act & Assert
         AppException exception = assertThrows(AppException.class, () -> reviewService.getReviewsByRestaurant(10L));

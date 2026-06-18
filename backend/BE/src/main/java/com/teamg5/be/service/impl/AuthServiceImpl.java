@@ -86,4 +86,32 @@ public class AuthServiceImpl implements AuthService {
                 .status(user.getStatus())
                 .build();
     }
+    // đăng kí cho chủ quán
+       @Override
+    public TokenResponse registerOwner(RegisterRequest request) {
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new AppException(ErrorCode.USER_ALREADY_EXISTS);
+        }
+
+        User user = User.builder()
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .fullName(request.getFullName())
+                .role(Role.OWNER)
+                .build();
+        User savedUser = userRepository.save(user);
+
+        String token = jwtService.generateToken(savedUser);
+        return TokenResponse.builder()
+                .accessToken(token)
+                .tokenType("Bearer")
+                .expiresIn(jwtExpiration / 1000)
+                .email(savedUser.getEmail())
+                .fullName(savedUser.getFullName())
+                .role(savedUser.getRole())
+                .id(savedUser.getId())
+                .avtUrl(savedUser.getAvatarUrl())
+                .status(savedUser.getStatus())
+                .build();
+    }
 }

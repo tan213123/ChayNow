@@ -39,7 +39,22 @@ public enum ErrorCode {
     ),
     POSTING_NOT_FOUND("ERR_POSTING_NOT_FOUND", "Cannot find this posting", HttpStatus.NOT_FOUND),
     PLACE_NOT_FOUND("ERR_PLACE_NOT_FOUND", "Cannot find this place/location", HttpStatus.NOT_FOUND),
-    PLACE_ALREADY_EXISTS("ERR_PLACE_ALREADY_EXISTS", "This place already exists", HttpStatus.BAD_REQUEST);
+    PLACE_ALREADY_EXISTS("ERR_PLACE_ALREADY_EXISTS", "This place already exists", HttpStatus.BAD_REQUEST),
+    PLACE_IN_USE(
+            "ERR_PLACE_IN_USE",
+            "The location cannot be deleted because the restaurant is still operating.",
+            HttpStatus.BAD_REQUEST
+    ),
+    REVIEW_NOT_FOUND(
+            "REVIEW_NOT_FOUND",
+            "This review cannot be found",
+            HttpStatus.BAD_REQUEST
+    ),
+    MENU_NOT_FOUND(
+            "ERR_MENU_NOT_FOUND",
+            "This food cannot be found",
+            HttpStatus.NOT_FOUND
+    );
     
 
     private final String code;

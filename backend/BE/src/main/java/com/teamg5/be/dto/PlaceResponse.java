@@ -1,13 +1,13 @@
 package com.teamg5.be.dto;
 
+import java.time.LocalDateTime;
+
 import com.teamg5.be.entity.Place;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.time.LocalDateTime;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 @Getter
 @Setter
@@ -19,9 +19,6 @@ public class PlaceResponse {
     private String name;
     private String district;
     private String city;
-    private String address;
-    private Double latitude;
-    private Double longitude;
     private String mapUrl;
     private Boolean active;
     private LocalDateTime createdAt;
@@ -34,9 +31,6 @@ public class PlaceResponse {
                 .name(place.getName())
                 .district(place.getDistrict())
                 .city(place.getCity())
-                .address(place.getAddress())
-                .latitude(place.getLatitude())
-                .longitude(place.getLongitude())
                 .mapUrl(place.getMapUrl())
                 .active(place.getActive())
                 .createdAt(place.getCreatedAt())

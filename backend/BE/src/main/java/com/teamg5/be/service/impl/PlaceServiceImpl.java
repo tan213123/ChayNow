@@ -14,6 +14,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.teamg5.be.dto.PlaceRequest;
+import com.teamg5.be.dto.UpdatePlaceRequest;
+import com.teamg5.be.repository.RestaurantRepository;
+import org.springframework.util.StringUtils;
+
 import java.util.List;
 
 @Service
@@ -21,6 +26,7 @@ import java.util.List;
 public class PlaceServiceImpl implements PlaceService {
 
     private final PlaceRepository placeRepository;
+    private final RestaurantRepository restaurantRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -67,9 +73,6 @@ public class PlaceServiceImpl implements PlaceService {
                 .name(request.getName())
                 .district(request.getDistrict())
                 .city(request.getCity())
-                .address(request.getAddress())
-                .latitude(request.getLatitude())
-                .longitude(request.getLongitude())
                 .mapUrl(request.getMapUrl())
                 .active(request.getActive() != null ? request.getActive() : true)
                 .build();
@@ -94,9 +97,6 @@ public class PlaceServiceImpl implements PlaceService {
         place.setName(request.getName());
         place.setDistrict(request.getDistrict());
         place.setCity(request.getCity());
-        place.setAddress(request.getAddress());
-        place.setLatitude(request.getLatitude());
-        place.setLongitude(request.getLongitude());
         place.setMapUrl(request.getMapUrl());
         if (request.getActive() != null) {
             place.setActive(request.getActive());
@@ -129,5 +129,76 @@ public class PlaceServiceImpl implements PlaceService {
         }
 
         placeRepository.delete(place);
+    }
+
+    // Dev branch methods implementation
+    @Override
+    @Transactional
+    public PlaceResponse createPlace(PlaceRequest request) {
+        Place place = Place.builder()
+                .name(request.getName().trim())
+                .district(request.getDistrict())
+                .city(request.getCity())
+                .mapUrl(request.getMapUrl())
+                .active(true)
+                .build();
+
+        Place savedPlace = placeRepository.save(place);
+        return PlaceResponse.from(savedPlace);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PlaceResponse getPlaceById(Long placeId) {
+        Place place = placeRepository.findByIdAndActiveTrue(placeId)
+                .orElseThrow(() -> new AppException(ErrorCode.PLACE_NOT_FOUND));
+        return PlaceResponse.from(place);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PlaceResponse> getAllPlaces() {
+        return placeRepository.findAllByActiveTrue()
+                .stream()
+                .map(PlaceResponse::from)
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public PlaceResponse updatePlace(Long placeId, UpdatePlaceRequest request) {
+        Place place = placeRepository.findByIdAndActiveTrue(placeId)
+                .orElseThrow(() -> new AppException(ErrorCode.PLACE_NOT_FOUND));
+
+        if (StringUtils.hasText(request.getName())) {
+            place.setName(request.getName().trim());
+        }
+        if (StringUtils.hasText(request.getDistrict())) {
+            place.setDistrict(request.getDistrict().trim());
+        }
+        if (StringUtils.hasText(request.getCity())) {
+            place.setCity(request.getCity().trim());
+        }
+        if (StringUtils.hasText(request.getMapUrl())) {
+            place.setMapUrl(request.getMapUrl().trim());
+        }
+
+        Place savedPlace = placeRepository.save(place);
+        return PlaceResponse.from(savedPlace);
+    }
+
+    @Override
+    @Transactional
+    public void softDeletePlace(Long placeId) {
+        Place place = placeRepository.findByIdAndActiveTrue(placeId)
+                .orElseThrow(() -> new AppException(ErrorCode.PLACE_NOT_FOUND));
+
+        boolean hasActiveRestaurant = restaurantRepository.existsByPlace_IdAndActiveTrue(placeId);
+        if (hasActiveRestaurant) {
+            throw new AppException(ErrorCode.PLACE_IN_USE);
+        }
+
+        place.setActive(false);
+        placeRepository.save(place);
     }
 }

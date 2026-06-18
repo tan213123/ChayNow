@@ -7,6 +7,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+import java.util.Optional;
+
 public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
 
     @Query("""
@@ -24,6 +27,21 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
             @Param("placeId") Long placeId,
             Pageable pageable
     );
+
+    Optional<Restaurant> findByIdAndActiveTrue(Long id);
+
+    List<Restaurant> findAllByActiveTrue();
+
+    List<Restaurant> findAllByActiveFalse();
+
+    boolean existsByPlace_IdAndActiveTrue(Long placeId);
+
+    // Lấy tất cả nhà hàng của một user
+    List<Restaurant> findAllByOwner_IdAndActiveTrue(Long ownerId);
+
+    // Lấy một nhà hàng thuộc đúng user
+    Optional<Restaurant> findByIdAndOwner_IdAndActiveTrue(
+            Long restaurantId,
+            Long ownerId
+    );
 }
-
-

@@ -7,4 +7,5 @@ import com.teamg5.be.dto.TokenResponse;
 public interface AuthService {
     TokenResponse register(RegisterRequest request);
     TokenResponse login(LoginRequest request);
+    TokenResponse registerOwner(RegisterRequest request);
 }

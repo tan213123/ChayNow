@@ -518,9 +518,6 @@ public class DatabaseSeeder implements CommandLineRunner {
                         .name(name)
                         .district(district)
                         .city(city)
-                        .address(address)
-                        .latitude(lat)
-                        .longitude(lng)
                         .active(true)
                         .build()));
     }

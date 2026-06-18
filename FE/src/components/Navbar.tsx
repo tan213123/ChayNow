@@ -1,60 +1,65 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuthStore } from "@/store/authStore";
+import type { Role } from "@/types/auth";
 
-type AuthUser = {
-  email: string;
-  label: string;
+const roleLabels: Record<Role, string> = {
+  ADMIN: "Quản trị viên",
+  OWNER: "Chủ quán",
+  USER: "Người dùng",
 };
 
 export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const { isAuthenticated, logout, user } = useAuthStore();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  useEffect(() => {
-    const authData = localStorage.getItem("authUser");
-    if (authData) {
-      try {
-        setAuthUser(JSON.parse(authData));
-      } catch {
-        localStorage.removeItem("authUser");
-      }
-    }
-  }, [location.pathname]);
-
   const handleLogout = () => {
-    localStorage.removeItem("authUser");
-    setAuthUser(null);
+    logout();
+    setMenuOpen(false);
     navigate("/login");
   };
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => {
+    return (
+      location.pathname === path ||
+      (path !== "/" && location.pathname.startsWith(`${path}/`))
+    );
+  };
 
   const navLinks = [
-    { to: "/", label: "Trang chủ", icon: "🏠" },
-    { to: "/favorites", label: "Yêu thích", icon: "♥" },
-    ...(authUser?.label === "Chủ quán" ? [{ to: "/manage", label: "Quản lý quán", icon: "🏪" }] : []),
+    { to: "/", label: "Trang chủ", icon: "⌂" },
+    { to: "/favorites", label: "Yêu thích", icon: "♡" },
+    ...(user?.role === "OWNER"
+      ? [
+          { to: "/manage", label: "Dashboard", icon: "▦" },
+          { to: "/manage/restaurants", label: "Quản lý quán", icon: "▣" },
+          { to: "/manage/new-dish", label: "Thực đơn", icon: "☰" },
+          { to: "/manage/events", label: "Sự kiện", icon: "*" },
+          { to: "/manage/reviews", label: "Đánh giá", icon: "★" },
+        ]
+      : []),
   ];
 
-  // Get user initials
-  const getInitials = (email: string) => {
-    return email.slice(0, 2).toUpperCase();
+  const isLoggedIn = isAuthenticated && Boolean(user);
+
+  const getInitials = () => {
+    const source = user?.fullName || user?.email || "";
+    return source.slice(0, 2).toUpperCase();
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur-xl shadow-sm">
+    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-3 text-emerald-700 group">
+        <Link to="/" className="group flex items-center gap-3 text-emerald-700">
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-xl transition-transform group-hover:scale-110">
-            🌱
+            ♧
           </div>
-          <span className="font-bold text-lg tracking-tight">ChayNow</span>
+          <span className="text-lg font-bold tracking-tight">ChayNow</span>
         </Link>
 
-        {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-1 text-sm">
+        <nav className="hidden items-center gap-1 text-sm md:flex">
           {navLinks.map((link) => (
             <Link
               key={link.to}
@@ -71,63 +76,72 @@ export default function Navbar() {
           ))}
         </nav>
 
-        {/* Right side */}
         <div className="flex items-center gap-3">
-          {authUser ? (
+          {isLoggedIn && user ? (
             <div className="flex items-center gap-3">
               <Link
                 to="/profile"
-                className={`hidden sm:flex items-center gap-2 rounded-full px-4 py-2 text-sm transition-all ${
+                className={`hidden items-center gap-2 rounded-full px-4 py-2 text-sm transition-all sm:flex ${
                   isActive("/profile")
                     ? "bg-emerald-50 text-emerald-700"
                     : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                 }`}
               >
                 <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-xs font-bold text-white">
-                  {getInitials(authUser.email)}
+                  {getInitials()}
                 </span>
-                <span className="font-medium">{authUser.label}</span>
+                <span className="font-medium">{roleLabels[user.role]}</span>
               </Link>
               <button
                 onClick={handleLogout}
-                className="hidden sm:block rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                className="hidden rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 sm:block"
               >
                 Đăng xuất
               </button>
             </div>
           ) : (
-            <div className="hidden sm:flex items-center gap-3">
+            <div className="hidden items-center gap-3 sm:flex">
               <Link
                 to="/login"
-                className="text-sm font-medium text-slate-700 hover:text-slate-900 transition"
+                className="text-sm font-medium text-slate-700 transition hover:text-slate-900"
               >
                 Đăng nhập
               </Link>
               <Link
                 to="/register"
-                className="rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 transition"
+                className="rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
               >
                 Đăng ký
               </Link>
             </div>
           )}
 
-          {/* Mobile hamburger */}
           <button
-            className="md:hidden flex flex-col gap-1.5 p-2 rounded-xl hover:bg-slate-100 transition"
+            className="flex flex-col gap-1.5 rounded-xl p-2 transition hover:bg-slate-100 md:hidden"
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label="Toggle menu"
           >
-            <span className={`block h-0.5 w-5 bg-slate-700 transition-all ${menuOpen ? "rotate-45 translate-y-2" : ""}`} />
-            <span className={`block h-0.5 w-5 bg-slate-700 transition-all ${menuOpen ? "opacity-0" : ""}`} />
-            <span className={`block h-0.5 w-5 bg-slate-700 transition-all ${menuOpen ? "-rotate-45 -translate-y-2" : ""}`} />
+            <span
+              className={`block h-0.5 w-5 bg-slate-700 transition-all ${
+                menuOpen ? "translate-y-2 rotate-45" : ""
+              }`}
+            />
+            <span
+              className={`block h-0.5 w-5 bg-slate-700 transition-all ${
+                menuOpen ? "opacity-0" : ""
+              }`}
+            />
+            <span
+              className={`block h-0.5 w-5 bg-slate-700 transition-all ${
+                menuOpen ? "-translate-y-2 -rotate-45" : ""
+              }`}
+            />
           </button>
         </div>
       </div>
 
-      {/* Mobile Menu */}
       {menuOpen && (
-        <div className="md:hidden border-t border-slate-100 bg-white px-6 py-4 space-y-2 shadow-lg">
+        <div className="space-y-2 border-t border-slate-100 bg-white px-6 py-4 shadow-lg md:hidden">
           {navLinks.map((link) => (
             <Link
               key={link.to}
@@ -143,8 +157,8 @@ export default function Navbar() {
               {link.label}
             </Link>
           ))}
-          <div className="pt-2 border-t border-slate-100">
-            {authUser ? (
+          <div className="border-t border-slate-100 pt-2">
+            {isLoggedIn && user ? (
               <div className="space-y-2">
                 <Link
                   to="/profile"
@@ -152,13 +166,13 @@ export default function Navbar() {
                   className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50"
                 >
                   <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-xs font-bold text-white">
-                    {getInitials(authUser.email)}
+                    {getInitials()}
                   </span>
                   Hồ sơ cá nhân
                 </Link>
                 <button
-                  onClick={() => { setMenuOpen(false); handleLogout(); }}
-                  className="w-full text-left rounded-2xl px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition"
+                  onClick={handleLogout}
+                  className="w-full rounded-2xl px-4 py-3 text-left text-sm font-medium text-red-600 transition hover:bg-red-50"
                 >
                   Đăng xuất
                 </button>
@@ -168,14 +182,14 @@ export default function Navbar() {
                 <Link
                   to="/login"
                   onClick={() => setMenuOpen(false)}
-                  className="flex-1 text-center rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  className="flex-1 rounded-2xl border border-slate-200 px-4 py-3 text-center text-sm font-semibold text-slate-700 hover:bg-slate-50"
                 >
                   Đăng nhập
                 </Link>
                 <Link
                   to="/register"
                   onClick={() => setMenuOpen(false)}
-                  className="flex-1 text-center rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700"
+                  className="flex-1 rounded-2xl bg-emerald-600 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-emerald-700"
                 >
                   Đăng ký
                 </Link>
