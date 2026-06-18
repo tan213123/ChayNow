@@ -64,15 +64,16 @@ export const getApiErrorMessage = (
 };
 
 const config: AxiosRequestConfig = {
+ 
   timeout: 10000,
   headers: {
-    "Content-Type": "application/json"
+    "Content-Type": "application/json",
   },
 };
 
 const apiService: AxiosInstance = axios.create(config);
 
-const publicEndpoints = ["/auth/login", "/auth/register"];
+const publicEndpoints = ["/api/auth/login", "/api/auth/register"];
 
 const isPublicEndpoint = (url?: string) => {
   if (!url) {
