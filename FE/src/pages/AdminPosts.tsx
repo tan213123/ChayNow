@@ -1,8 +1,19 @@
-import { Calendar, Check, Heart, Search, Store, Tag, X } from "lucide-react";
+import {
+  Calendar,
+  Check,
+  Heart,
+  MessageCircle,
+  Search,
+  Store,
+  Tag,
+  User,
+  X,
+} from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
+import { getApiErrorMessage } from "@/services/api.service";
 import {
   Dialog,
   DialogContent,
@@ -54,10 +65,6 @@ const foodStatusTabs: { value: FoodPostStatus | "ALL"; label: string }[] = [
 const fallbackImage =
   "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=400&q=80";
 
-const getErrorMessage = (error: unknown, fallback: string) => {
-  return error instanceof Error ? error.message : fallback;
-};
-
 const formatDate = (dateString?: string) => {
   if (!dateString) return "N/A";
   try {
@@ -83,9 +90,10 @@ export default function AdminPosts() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
-  const [size] = useState(6);
+  const [size, setSize] = useState(6);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
+  const [last, setLast] = useState(true);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string | "ALL">("ALL");
@@ -151,10 +159,13 @@ export default function AdminPosts() {
       });
 
       setPostsList(data.content || []);
-      setTotalPages(data.totalPages || 0);
-      setTotalElements(data.totalElements || 0);
+      setPage(data.page ?? page);
+      setSize(data.size ?? size);
+      setTotalPages(data.totalPages ?? 0);
+      setTotalElements(data.totalElements ?? 0);
+      setLast(data.last ?? true);
     } catch (err) {
-      setError(getErrorMessage(err, "Không thể tải bài đăng của chủ quán."));
+      setError(getApiErrorMessage(err, "Không thể tải bài đăng của chủ quán."));
     } finally {
       setLoading(false);
     }
@@ -175,7 +186,7 @@ export default function AdminPosts() {
       setFoodTotalElements(data.pagination?.totalItems ?? null);
       setFoodTotalPages(data.pagination?.totalPages ?? 0);
     } catch (err) {
-      setFoodError(getErrorMessage(err, "Không thể tải bài chia sẻ món ăn."));
+      setFoodError(getApiErrorMessage(err, "Không thể tải bài chia sẻ món ăn."));
     } finally {
       setFoodLoading(false);
     }
@@ -195,12 +206,12 @@ export default function AdminPosts() {
     setActionLoading(true);
     try {
       await approvePosting(activePost.id);
-      toast.success(`Đã duyệt bài đăng "${activePost.name}".`);
+      toast.success(`Đã duyệt bài đăng "${activePost.title}".`);
       setApproveOpen(false);
       setActivePost(null);
       fetchPosts();
     } catch (err) {
-      toast.error(getErrorMessage(err, "Không thể duyệt bài đăng."));
+      toast.error(getApiErrorMessage(err, "Không thể duyệt bài đăng."));
     } finally {
       setActionLoading(false);
     }
@@ -215,13 +226,13 @@ export default function AdminPosts() {
     setActionLoading(true);
     try {
       await rejectPosting(activePost.id, rejectReason.trim());
-      toast.success(`Đã từ chối bài đăng "${activePost.name}".`);
+      toast.success(`Đã từ chối bài đăng "${activePost.title}".`);
       setRejectOpen(false);
       setActivePost(null);
       setRejectReason("");
       fetchPosts();
     } catch (err) {
-      toast.error(getErrorMessage(err, "Không thể từ chối bài đăng."));
+      toast.error(getApiErrorMessage(err, "Không thể từ chối bài đăng."));
     } finally {
       setActionLoading(false);
     }
@@ -249,7 +260,7 @@ export default function AdminPosts() {
       setFoodRejectReason("");
       await fetchFoodPosts();
     } catch (err) {
-      toast.error(getErrorMessage(err, "Không thể cập nhật bài chia sẻ."));
+      toast.error(getApiErrorMessage(err, "Không thể cập nhật bài chia sẻ."));
     } finally {
       setFoodActionLoadingId(null);
     }
@@ -367,8 +378,9 @@ export default function AdminPosts() {
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {postsList.map((post) => {
                   const displayImage =
-                    post.image || post.imageUrl || fallbackImage;
-                  const displayType = post.type || "Món chay";
+                    post.thumbnailUrl ||
+                    post.restaurantThumbnailUrl ||
+                    fallbackImage;
 
                   return (
                     <article
@@ -378,10 +390,11 @@ export default function AdminPosts() {
                       <div className="relative h-56 shrink-0 overflow-hidden bg-slate-100">
                         <img
                           src={displayImage}
-                          alt={post.name}
+                          alt={post.title}
                           className="h-full w-full object-cover"
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src = fallbackImage;
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = fallbackImage;
                           }}
                         />
                       </div>
@@ -390,16 +403,16 @@ export default function AdminPosts() {
                         <div className="space-y-2">
                           <div className="flex items-center justify-between text-xs text-slate-400">
                             <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 font-bold text-emerald-700">
-                              {displayType}
+                              {post.category || "Chưa phân loại"}
                             </span>
                             <span className="flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
-                              {formatDate(post.createdDate || post.createdAt)}
+                              {formatDate(post.createdAt)}
                             </span>
                           </div>
 
                           <h2 className="line-clamp-1 text-xl font-extrabold text-slate-900">
-                            {post.name}
+                            {post.title}
                           </h2>
 
                           {post.restaurantName && (
@@ -409,11 +422,32 @@ export default function AdminPosts() {
                             </p>
                           )}
 
-                          {post.description && (
-                            <p className="line-clamp-2 text-sm leading-relaxed text-slate-600">
-                              {post.description}
+                          {post.authorName && (
+                            <p className="flex items-center gap-1 text-sm text-slate-500">
+                              <User className="h-4 w-4 shrink-0 text-slate-400" />
+                              {post.authorName}
                             </p>
                           )}
+
+                          {post.content && (
+                            <p className="line-clamp-2 text-sm leading-relaxed text-slate-600">
+                              {post.content}
+                            </p>
+                          )}
+
+                          <div className="flex items-center gap-4 text-xs font-semibold text-slate-500">
+                            <span className="flex items-center gap-1">
+                              <Heart className="h-4 w-4 text-red-400" />
+                              {post.likeCount}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <MessageCircle className="h-4 w-4 text-blue-400" />
+                              {post.commentCount}
+                            </span>
+                            <span className="ml-auto rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase text-slate-600">
+                              {post.status}
+                            </span>
+                          </div>
 
                           {post.status === "REJECTED" && post.rejectReason && (
                             <div className="rounded-xl border border-red-100 bg-red-50/50 p-3 text-xs italic text-red-700">
@@ -482,7 +516,7 @@ export default function AdminPosts() {
                   </Button>
                   <Button
                     variant="outline"
-                    disabled={page >= totalPages - 1}
+                    disabled={last}
                     onClick={() => setPage((p) => p + 1)}
                     className="rounded-xl px-4 py-2"
                   >
@@ -557,7 +591,8 @@ export default function AdminPosts() {
                         alt={post.title}
                         className="h-full w-full object-cover"
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = fallbackImage;
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = fallbackImage;
                         }}
                       />
                     </div>
@@ -683,7 +718,7 @@ export default function AdminPosts() {
             <DialogTitle>Duyệt bài đăng chủ quán</DialogTitle>
             <DialogDescription className="text-slate-500">
               Duyệt{" "}
-              <strong className="text-slate-900">"{activePost?.name}"</strong>?
+              <strong className="text-slate-900">"{activePost?.title}"</strong>?
             </DialogDescription>
           </DialogHeader>
 
@@ -719,7 +754,7 @@ export default function AdminPosts() {
             <DialogTitle>Từ chối bài đăng chủ quán</DialogTitle>
             <DialogDescription className="text-slate-500">
               Nhập lý do từ chối cho{" "}
-              <strong className="text-slate-900">"{activePost?.name}"</strong>.
+              <strong className="text-slate-900">"{activePost?.title}"</strong>.
             </DialogDescription>
           </DialogHeader>
 

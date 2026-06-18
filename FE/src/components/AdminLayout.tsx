@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   LogOut,
   Shield,
-  SlidersHorizontal,
   Sprout,
   Store,
   Users,
@@ -75,8 +74,8 @@ export default function AdminLayout({
       .toUpperCase() || "AD";
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-950">
-      <header className="sticky top-0 z-40 h-20 border-b border-slate-200 bg-white shadow-sm">
+    <main className="flex h-screen flex-col overflow-hidden bg-slate-50 text-slate-950">
+      <header className="z-40 h-20 shrink-0 border-b border-slate-200 bg-white shadow-sm">
         <div className="flex h-full items-center justify-between px-8">
           <Link
             to="/admin"
@@ -125,8 +124,8 @@ export default function AdminLayout({
         </div>
       </header>
 
-      <div className="grid min-h-[calc(100vh-5rem)] grid-cols-[320px_1fr]">
-        <aside className="border-r border-slate-200 bg-white px-5 py-6">
+      <div className="grid min-h-0 flex-1 grid-cols-[320px_1fr] overflow-hidden">
+        <aside className="h-full overflow-hidden border-r border-slate-200 bg-white px-5 py-6">
           <nav className="space-y-3">
             {adminNavItems.map((item) => {
               const Icon = item.icon;
@@ -178,7 +177,9 @@ export default function AdminLayout({
           </div>
         </aside>
 
-        <section className="px-8 py-10">{children}</section>
+        <section className="min-w-0 overflow-y-auto px-8 py-10">
+          {children}
+        </section>
       </div>
     </main>
   );

@@ -44,6 +44,13 @@ export interface FetchUsersParams {
   status?: AccountStatus | "ALL";
 }
 
+export interface CreateAdminAccountPayload {
+  email: string;
+  password: string;
+  fullName: string;
+  phone: string;
+}
+
 export const getAdminUsers = async (
   params: FetchUsersParams,
 ): Promise<AdminUsersResponse> => {
@@ -71,4 +78,10 @@ export const suspendUser = async (id: number): Promise<unknown> => {
 
 export const activeUser = async (id: number): Promise<unknown> => {
   return apiService.patch<unknown, unknown>(`/api/admin/users/${id}/activate`);
+};
+
+export const createAdminAccount = async (
+  payload: CreateAdminAccountPayload,
+): Promise<unknown> => {
+  return apiService.post<unknown, unknown>("/api/admin/create", payload);
 };

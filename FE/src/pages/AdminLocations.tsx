@@ -1,5 +1,5 @@
-import { Search, Eye, Check, X, AlertTriangle, Calendar, Star, MapPin, Phone, Clock, DollarSign, Tag } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Search, Eye, Check, X, Calendar, Star, MapPin, Store, User } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import AdminLayout from "@/components/AdminLayout";
 import {
@@ -18,6 +18,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { getApiErrorMessage } from "@/services/api.service";
+
+const fallbackImage =
+  "https://images.unsplash.com/photo-1466637574441-749b8f19452f?auto=format&fit=crop&w=600&q=80";
 
 const staticPlaces = [
   { id: 1, name: "Quận 1" },
@@ -43,9 +47,10 @@ export default function AdminLocations() {
 
   // Pagination states
   const [page, setPage] = useState(0);
-  const [size] = useState(6);
+  const [size, setSize] = useState(6);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
+  const [last, setLast] = useState(true);
 
   // Filter states
   const [query, setQuery] = useState("");
@@ -72,7 +77,7 @@ export default function AdminLocations() {
     return () => clearTimeout(handler);
   }, [query]);
 
-  const fetchRestaurants = async () => {
+  const fetchRestaurants = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -85,18 +90,21 @@ export default function AdminLocations() {
       });
 
       setRestaurantsList(data.content || []);
-      setTotalPages(data.totalPages || 0);
-      setTotalElements(data.totalElements || 0);
-    } catch (err: any) {
-      setError(err?.message || "Đã xảy ra lỗi khi tải danh sách địa điểm.");
+      setPage(data.page ?? page);
+      setSize(data.size ?? size);
+      setTotalPages(data.totalPages ?? 0);
+      setTotalElements(data.totalElements ?? 0);
+      setLast(data.last ?? true);
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Đã xảy ra lỗi khi tải danh sách địa điểm."));
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, size, debouncedQuery, placeFilter, statusFilter]);
 
   useEffect(() => {
-    fetchRestaurants();
-  }, [page, size, debouncedQuery, placeFilter, statusFilter]);
+    void Promise.resolve().then(fetchRestaurants);
+  }, [fetchRestaurants]);
 
   const handleApprove = async () => {
     if (!activeRestaurant) return;
@@ -107,8 +115,8 @@ export default function AdminLocations() {
       setApproveOpen(false);
       setActiveRestaurant(null);
       fetchRestaurants();
-    } catch (err: any) {
-      toast.error(err?.message || "Không thể duyệt nhà hàng. Vui lòng thử lại.");
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, "Không thể duyệt nhà hàng. Vui lòng thử lại."));
     } finally {
       setActionLoading(false);
     }
@@ -128,8 +136,8 @@ export default function AdminLocations() {
       setActiveRestaurant(null);
       setRejectReason("");
       fetchRestaurants();
-    } catch (err: any) {
-      toast.error(err?.message || "Không thể từ chối nhà hàng. Vui lòng thử lại.");
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, "Không thể từ chối nhà hàng. Vui lòng thử lại."));
     } finally {
       setActionLoading(false);
     }
@@ -242,11 +250,8 @@ export default function AdminLocations() {
         ) : (
           <div className="grid gap-6 md:grid-cols-2">
             {restaurantsList.map((restaurant) => {
-              const displayImage = restaurant.image || restaurant.avatarUrl || "https://images.unsplash.com/photo-1466637574441-749b8f19452f?auto=format&fit=crop&w=400&q=80";
-              const ratingVal = restaurant.rating || 5.0;
-              const reviewsVal = restaurant.reviews !== undefined ? restaurant.reviews : (restaurant.reviewCount || 0);
-              const displayLocation = restaurant.location || restaurant.address || "Chưa có địa chỉ";
-              const displayTags = restaurant.tags && restaurant.tags.length > 0 ? restaurant.tags : ["Chay Á"];
+              const displayImage = restaurant.thumbnailUrl || fallbackImage;
+              const ratingVal = restaurant.rating ?? 0;
 
               return (
                 <article
@@ -260,7 +265,8 @@ export default function AdminLocations() {
                       alt={restaurant.name}
                       className="h-full w-full object-cover"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1466637574441-749b8f19452f?auto=format&fit=crop&w=400&q=80";
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = fallbackImage;
                       }}
                     />
                   </div>
@@ -272,41 +278,41 @@ export default function AdminLocations() {
                         <h2 className="font-extrabold text-lg text-slate-900 line-clamp-1">
                           {restaurant.name}
                         </h2>
-                        {restaurant.category && (
-                          <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 uppercase">
-                            {restaurant.category}
-                          </span>
-                        )}
+                        <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 uppercase">
+                          {restaurant.status}
+                        </span>
                       </div>
 
                       <p className="text-slate-500 text-sm line-clamp-1 flex items-center gap-1">
                         <MapPin className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                        {displayLocation}
+                        {restaurant.address || "Chưa có địa chỉ"}
                       </p>
 
                       <div className="flex items-center gap-1.5 text-sm">
                         <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
                         <span className="font-bold text-slate-800">{ratingVal.toFixed(1)}</span>
                         <span className="text-slate-400">•</span>
-                        <span className="text-slate-500">{reviewsVal} đánh giá</span>
+                        <span className="text-slate-500">{restaurant.reviewCount} đánh giá</span>
                       </div>
 
-                      {/* Tags */}
-                      <div className="flex flex-wrap gap-1.5 pt-1">
-                        {displayTags.slice(0, 3).map((tag, idx) => (
-                          <span
-                            key={idx}
-                            className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
+                      {restaurant.placeName && (
+                        <p className="flex items-center gap-1 text-sm text-slate-500">
+                          <Store className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                          {restaurant.placeName}
+                        </p>
+                      )}
+
+                      {restaurant.ownerName && (
+                        <p className="flex items-center gap-1 text-sm text-slate-500">
+                          <User className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                          {restaurant.ownerName}
+                        </p>
+                      )}
 
                       {/* Created Date */}
                       <p className="text-slate-400 text-xs flex items-center gap-1 pt-1">
                         <Calendar className="h-3 w-3" />
-                        Tạo: {formatDate(restaurant.createdDate || restaurant.createdAt)}
+                        Tạo: {formatDate(restaurant.createdAt)}
                       </p>
                     </div>
 
@@ -375,7 +381,7 @@ export default function AdminLocations() {
               </Button>
               <Button
                 variant="outline"
-                disabled={page >= totalPages - 1}
+                disabled={last}
                 onClick={() => setPage((p) => p + 1)}
                 className="rounded-xl px-4 py-2"
               >
@@ -394,11 +400,9 @@ export default function AdminLocations() {
               <DialogHeader>
                 <DialogTitle className="text-2xl font-extrabold text-slate-950 flex items-center justify-between pr-4">
                   {activeRestaurant.name}
-                  {activeRestaurant.category && (
-                    <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
-                      {activeRestaurant.category}
-                    </span>
-                  )}
+                  <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
+                    {activeRestaurant.status}
+                  </span>
                 </DialogTitle>
                 <DialogDescription className="text-slate-500">
                   Chi tiết thông tin địa điểm gửi lên hệ thống.
@@ -409,9 +413,13 @@ export default function AdminLocations() {
                 {/* Cover image */}
                 <div className="h-48 overflow-hidden rounded-2xl bg-slate-100">
                   <img
-                    src={activeRestaurant.image || activeRestaurant.avatarUrl || "https://images.unsplash.com/photo-1466637574441-749b8f19452f?auto=format&fit=crop&w=600&q=80"}
+                    src={activeRestaurant.thumbnailUrl || fallbackImage}
                     alt={activeRestaurant.name}
                     className="h-full w-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = fallbackImage;
+                    }}
                   />
                 </div>
 
@@ -421,82 +429,41 @@ export default function AdminLocations() {
                     <MapPin className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
                     <div>
                       <p className="font-semibold text-slate-900">Địa chỉ</p>
-                      <p className="text-slate-600">{activeRestaurant.location || activeRestaurant.address || "N/A"}</p>
+                      <p className="text-slate-600">{activeRestaurant.address || "N/A"}</p>
                     </div>
                   </div>
 
                   <div className="flex items-start gap-2.5">
-                    <Phone className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
+                    <Store className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-semibold text-slate-900">Số điện thoại</p>
-                      <p className="text-slate-600">{activeRestaurant.phone || "N/A"}</p>
+                      <p className="font-semibold text-slate-900">Khu vực</p>
+                      <p className="text-slate-600">{activeRestaurant.placeName || "N/A"}</p>
                     </div>
                   </div>
 
                   <div className="flex items-start gap-2.5">
-                    <Clock className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
+                    <User className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-semibold text-slate-900">Giờ hoạt động</p>
-                      <p className="text-slate-600">{activeRestaurant.hours || "N/A"}</p>
+                      <p className="font-semibold text-slate-900">Chủ quán</p>
+                      <p className="text-slate-600">{activeRestaurant.ownerName || "N/A"}</p>
                     </div>
                   </div>
 
                   <div className="flex items-start gap-2.5">
-                    <DollarSign className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
+                    <Star className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-semibold text-slate-900">Mức giá</p>
-                      <p className="text-slate-600">{activeRestaurant.priceRange || "N/A"}</p>
+                      <p className="font-semibold text-slate-900">Đánh giá</p>
+                      <p className="text-slate-600">
+                        {(activeRestaurant.rating ?? 0).toFixed(1)} ({activeRestaurant.reviewCount})
+                      </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Tags section */}
-                {activeRestaurant.tags && activeRestaurant.tags.length > 0 && (
-                  <div className="space-y-1.5">
-                    <p className="text-sm font-semibold text-slate-900 flex items-center gap-1.5">
-                      <Tag className="h-4 w-4 text-slate-400" />
-                      Nhãn / Danh mục ăn chay
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {activeRestaurant.tags.map((tag, idx) => (
-                        <span
-                          key={idx}
-                          className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Intro / Description */}
-                {activeRestaurant.intro && (
-                  <div className="rounded-2xl bg-slate-50 p-4">
-                    <p className="text-sm font-semibold text-slate-900">Mô tả quán</p>
-                    <p className="mt-1 text-sm text-slate-600 leading-relaxed">
-                      {activeRestaurant.intro}
-                    </p>
-                  </div>
-                )}
-
-                {/* Reject Reason Alert (if Rejected) */}
-                {activeRestaurant.status === "REJECTED" && activeRestaurant.rejectReason && (
-                  <div className="rounded-2xl border border-red-100 bg-red-50/50 p-4 text-sm text-red-800">
-                    <p className="font-bold flex items-center gap-1.5">
-                      <AlertTriangle className="h-4 w-4 text-red-500" />
-                      Lý do từ chối duyệt:
-                    </p>
-                    <p className="mt-1 text-red-700 italic">
-                      "{activeRestaurant.rejectReason}"
-                    </p>
-                  </div>
-                )}
-
                 {/* General status info */}
                 <div className="flex items-center justify-between text-xs text-slate-400 pt-3 border-t border-slate-100">
                   <p>Trạng thái hiện tại: <span className="font-bold uppercase text-slate-600">{activeRestaurant.status}</span></p>
-                  <p>Ngày tạo: {formatDate(activeRestaurant.createdDate || activeRestaurant.createdAt)}</p>
+                  <p>Ngày tạo: {formatDate(activeRestaurant.createdAt)}</p>
                 </div>
               </div>
 
