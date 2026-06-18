@@ -33,11 +33,7 @@ export default function Navbar() {
     { to: "/favorites", label: "Yêu thích", icon: "♡" },
     ...(user?.role === "OWNER"
       ? [
-          { to: "/manage", label: "Dashboard", icon: "▦" },
-          { to: "/manage/restaurants", label: "Quản lý quán", icon: "▣" },
-          { to: "/manage/new-dish", label: "Thực đơn", icon: "☰" },
-          { to: "/manage/events", label: "Sự kiện", icon: "*" },
-          { to: "/manage/reviews", label: "Đánh giá", icon: "★" },
+          { to: "/manage", label: "Quản lý quán", icon: "▣" },
         ]
       : []),
   ];

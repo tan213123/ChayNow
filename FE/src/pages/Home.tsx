@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import { restaurants, popularDishes, events, communityPosts } from "@/data/restaurants";
+import { Search } from "lucide-react";
 
 const tabs = ["Địa điểm ăn chay", "Món ăn nổi bật", "Sự kiện", "Bài đăng cộng đồng"] as const;
 type Tab = (typeof tabs)[number];
@@ -497,8 +498,9 @@ export default function Home() {
                 placeholder="Tìm kiếm quán ăn, địa chỉ..."
                 className="min-w-0 flex-1 rounded-3xl border border-white/30 bg-white/95 px-6 py-4 text-slate-900 shadow-lg outline-none placeholder:text-slate-400 focus:border-white focus:ring-4 focus:ring-white/20 transition"
               />
-              <Button className="min-w-[130px] rounded-3xl bg-slate-900 px-6 py-4 text-sm font-bold text-white hover:bg-slate-800 shadow-lg transition">
-                🔍 Tìm kiếm
+              <Button className="min-w-[140px] h-auto rounded-3xl bg-slate-950 hover:bg-slate-900 border border-white/10 px-6 py-4 text-sm font-bold text-white hover:scale-[1.02] hover:shadow-xl hover:shadow-slate-950/20 active:scale-[0.98] active:translate-y-0 transition-all duration-200 flex items-center justify-center gap-2 group">
+                <Search className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform duration-200" />
+                <span>Tìm kiếm</span>
               </Button>
             </div>
             <div className="flex flex-wrap gap-6 pt-2">
