@@ -20,23 +20,16 @@ export type RestaurantStatus = "PENDING" | "APPROVED" | "REJECTED";
 export interface AdminRestaurant {
   id: number;
   name: string;
-  location?: string;
-  address?: string;
-  phone?: string;
-  hours?: string;
-  priceRange?: string;
-  rating?: number;
-  reviews?: number;
-  reviewCount?: number;
-  category?: string;
-  tags?: string[];
-  image?: string;
-  avatarUrl?: string | null;
-  intro?: string;
-  createdDate?: string;
-  createdAt?: string;
+  address?: string | null;
+  thumbnailUrl?: string | null;
+  rating?: number | null;
+  reviewCount: number;
   status: RestaurantStatus;
-  rejectReason?: string;
+  placeId?: number | null;
+  placeName?: string | null;
+  ownerId?: number | null;
+  ownerName?: string | null;
+  createdAt: string;
 }
 
 export interface AdminRestaurantsResponse {

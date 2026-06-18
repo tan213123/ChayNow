@@ -1,12 +1,15 @@
 import { Search, ShieldCheck } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import AdminLayout from "@/components/AdminLayout";
 import type { AccountStatus, Role } from "@/types/auth";
 import {
   getAdminUsers,
   suspendUser,
   activeUser,
+  createAdminAccount,
   type AdminUser,
+  type CreateAdminAccountPayload,
 } from "@/services/admin.service";
 import {
   Dialog,
@@ -17,6 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { getApiErrorMessage } from "@/services/api.service";
 
 const roleLabels: Record<Role, string> = {
   ADMIN: "Quản trị viên",
@@ -42,8 +46,12 @@ const roleClassNames: Record<Role, string> = {
   USER: "bg-purple-50 text-purple-700",
 };
 
-const getErrorMessage = (error: unknown, fallback: string) =>
-  error instanceof Error ? error.message : fallback;
+const initialCreateAdminForm: CreateAdminAccountPayload = {
+  email: "",
+  password: "",
+  fullName: "",
+  phone: "",
+};
 
 export default function AdminUsers() {
   const [usersList, setUsersList] = useState<AdminUser[]>([]);
@@ -62,6 +70,12 @@ export default function AdminUsers() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [targetUser, setTargetUser] = useState<AdminUser | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const actionInFlightRef = useRef(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createForm, setCreateForm] = useState<CreateAdminAccountPayload>(
+    initialCreateAdminForm,
+  );
 
   // debounce search
   useEffect(() => {
@@ -86,38 +100,78 @@ export default function AdminUsers() {
       });
 
       setUsersList(data.content || []);
-    } catch (error: unknown) {
-      setError(
-        getErrorMessage(error, "Đã xảy ra lỗi khi lấy danh sách người dùng."),
-      );
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Đã xảy ra lỗi khi lấy danh sách người dùng."));
     } finally {
       setLoading(false);
     }
-  }, [debouncedQuery, page, roleFilter, size, statusFilter]);
+  }, [page, size, debouncedQuery, roleFilter, statusFilter]);
 
   useEffect(() => {
-    // Fetching remote data is the synchronization performed by this effect.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void fetchUsers();
+    void Promise.resolve().then(fetchUsers);
   }, [fetchUsers]);
 
+  const resetCreateForm = () => {
+    setCreateForm(initialCreateAdminForm);
+  };
+
+  const handleCreateAdmin = async () => {
+    const payload = {
+      email: createForm.email.trim(),
+      password: createForm.password,
+      fullName: createForm.fullName.trim(),
+      phone: createForm.phone.trim(),
+    };
+
+    if (!payload.email || !payload.password || !payload.fullName || !payload.phone) {
+      toast.error("Vui lòng nhập đầy đủ email, mật khẩu, họ tên và số điện thoại.");
+      return;
+    }
+
+    setCreateLoading(true);
+    try {
+      await createAdminAccount(payload);
+      toast.success(`Đã tạo tài khoản admin "${payload.fullName}" thành công.`);
+      setCreateOpen(false);
+      resetCreateForm();
+      await fetchUsers();
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, "Không thể tạo tài khoản admin. Vui lòng thử lại."));
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
   const handleConfirmAction = async () => {
-    if (!targetUser) return;
+    if (!targetUser || actionInFlightRef.current) return;
+
+    const userId = targetUser.id;
+    const userName = targetUser.fullName;
+    const isActivating = targetUser.status === "SUSPENDED";
+
+    actionInFlightRef.current = true;
     setActionLoading(true);
 
     try {
-      if (targetUser.status === "SUSPENDED") {
-        await activeUser(targetUser.id);
+      if (isActivating) {
+        await activeUser(userId);
       } else {
-        await suspendUser(targetUser.id);
+        await suspendUser(userId);
       }
 
+      toast.success(
+        isActivating
+          ? `Activated account "${userName}" successfully.`
+          : `Suspended account "${userName}" successfully.`,
+      );
       setConfirmOpen(false);
       setTargetUser(null);
-      void fetchUsers();
-    } catch (error: unknown) {
-      alert(getErrorMessage(error, "Đã xảy ra lỗi khi thực hiện thao tác."));
+      await fetchUsers();
+    } catch (err) {
+      console.error("Admin user status update failed:", err);
+      toast.error(getApiErrorMessage(err, "Unable to update account status. Please try again."));
     } finally {
+      actionInFlightRef.current = false;
       setActionLoading(false);
     }
   };
@@ -137,7 +191,11 @@ export default function AdminUsers() {
             </p>
           </div>
 
-          <button className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700">
+          <button
+            type="button"
+            onClick={() => setCreateOpen(true)}
+            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700"
+          >
             <ShieldCheck className="h-5 w-5" />
             Tạo tài khoản
           </button>
@@ -281,7 +339,8 @@ export default function AdminUsers() {
                             setTargetUser(user);
                             setConfirmOpen(true);
                           }}
-                          className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${user.status === "SUSPENDED"
+                          disabled={actionLoading && targetUser?.id === user.id}
+                          className={`rounded-xl border px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${user.status === "SUSPENDED"
                             ? "border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-300"
                             : "border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
                             }`}
@@ -299,6 +358,121 @@ export default function AdminUsers() {
           </div>
         </div>
       </div>
+
+      <Dialog
+        open={createOpen}
+        onOpenChange={(open) => {
+          if (createLoading) return;
+          setCreateOpen(open);
+          if (!open) resetCreateForm();
+        }}
+      >
+        <DialogContent className="sm:max-w-lg rounded-2xl border border-slate-200 bg-white p-6 text-slate-950 shadow-xl">
+          <DialogHeader>
+            <DialogTitle>Tạo tài khoản Admin</DialogTitle>
+            <DialogDescription className="text-slate-500">
+              Nhập thông tin tài khoản quản trị mới cho hệ thống.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form
+            className="mt-4 grid gap-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void handleCreateAdmin();
+            }}
+          >
+            <label className="grid gap-2 text-sm font-semibold text-slate-700">
+              Email
+              <input
+                type="email"
+                value={createForm.email}
+                onChange={(event) =>
+                  setCreateForm((current) => ({
+                    ...current,
+                    email: event.target.value,
+                  }))
+                }
+                disabled={createLoading}
+                placeholder="admin_new@chaynow.com"
+                className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 font-normal outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-50"
+              />
+            </label>
+
+            <label className="grid gap-2 text-sm font-semibold text-slate-700">
+              Mật khẩu
+              <input
+                type="password"
+                value={createForm.password}
+                onChange={(event) =>
+                  setCreateForm((current) => ({
+                    ...current,
+                    password: event.target.value,
+                  }))
+                }
+                disabled={createLoading}
+                placeholder="Nhập mật khẩu"
+                className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 font-normal outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-50"
+              />
+            </label>
+
+            <label className="grid gap-2 text-sm font-semibold text-slate-700">
+              Họ và tên
+              <input
+                value={createForm.fullName}
+                onChange={(event) =>
+                  setCreateForm((current) => ({
+                    ...current,
+                    fullName: event.target.value,
+                  }))
+                }
+                disabled={createLoading}
+                placeholder="System Admin 2"
+                className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 font-normal outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-50"
+              />
+            </label>
+
+            <label className="grid gap-2 text-sm font-semibold text-slate-700">
+              Số điện thoại
+              <input
+                type="tel"
+                value={createForm.phone}
+                onChange={(event) =>
+                  setCreateForm((current) => ({
+                    ...current,
+                    phone: event.target.value,
+                  }))
+                }
+                disabled={createLoading}
+                placeholder="0987654321"
+                className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 font-normal outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-50"
+              />
+            </label>
+
+            <DialogFooter className="mt-2 flex flex-row justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setCreateOpen(false);
+                  resetCreateForm();
+                }}
+                disabled={createLoading}
+                className="rounded-xl"
+              >
+                Hủy
+              </Button>
+              <Button
+                type="submit"
+                disabled={createLoading}
+                className="rounded-xl bg-emerald-600 text-white hover:bg-emerald-700"
+              >
+                {createLoading ? "Đang tạo..." : "Tạo tài khoản"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* CONFIRM DIALOG */}
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
