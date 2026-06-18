@@ -1,5 +1,5 @@
 import { Search, ShieldCheck } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import AdminLayout from "@/components/AdminLayout";
 import type { AccountStatus, Role } from "@/types/auth";
@@ -28,11 +28,13 @@ const roleLabels: Record<Role, string> = {
 const statusLabels: Record<AccountStatus, string> = {
   ACTIVE: "Hoạt động",
   SUSPENDED: "Tạm khóa",
+  PENDING: "Chờ duyệt",
 };
 
 const statusClassNames: Record<AccountStatus, string> = {
   ACTIVE: "bg-emerald-50 text-emerald-700 ring-emerald-100",
   SUSPENDED: "bg-red-50 text-red-700 ring-red-100",
+  PENDING: "bg-amber-50 text-amber-700 ring-amber-100",
 };
 
 const roleClassNames: Record<Role, string> = {
@@ -56,8 +58,9 @@ export default function AdminUsers() {
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<Role | "ALL">("ALL");
-  const [statusFilter, setStatusFilter] =
-    useState<AccountStatus | "ALL">("ALL");
+  const [statusFilter, setStatusFilter] = useState<AccountStatus | "ALL">(
+    "ALL",
+  );
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [targetUser, setTargetUser] = useState<AdminUser | null>(null);
@@ -74,7 +77,7 @@ export default function AdminUsers() {
     return () => clearTimeout(handler);
   }, [query]);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -87,16 +90,20 @@ export default function AdminUsers() {
       });
 
       setUsersList(data.content || []);
-    } catch (err: any) {
-      setError(err?.message || "Đã xảy ra lỗi khi lấy danh sách người dùng.");
+    } catch (error: unknown) {
+      setError(
+        getErrorMessage(error, "Đã xảy ra lỗi khi lấy danh sách người dùng."),
+      );
     } finally {
       setLoading(false);
     }
-  };
+  }, [debouncedQuery, page, roleFilter, size, statusFilter]);
 
   useEffect(() => {
-    fetchUsers();
-  }, [page, size, debouncedQuery, roleFilter, statusFilter]);
+    // Fetching remote data is the synchronization performed by this effect.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchUsers();
+  }, [fetchUsers]);
 
   const handleConfirmAction = async () => {
     if (!targetUser || actionInFlightRef.current) return;
@@ -125,7 +132,12 @@ export default function AdminUsers() {
       await fetchUsers();
     } catch (err) {
       console.error("Admin user status update failed:", err);
-      toast.error(getErrorMessage(err, "Unable to update account status. Please try again."));
+      toast.error(
+        getErrorMessage(
+          err,
+          "Unable to update account status. Please try again.",
+        ),
+      );
     } finally {
       actionInFlightRef.current = false;
       setActionLoading(false);
@@ -221,7 +233,10 @@ export default function AdminUsers() {
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-red-600">
+                    <td
+                      colSpan={5}
+                      className="px-6 py-12 text-center text-red-600"
+                    >
                       {error}
                     </td>
                   </tr>
@@ -292,14 +307,13 @@ export default function AdminUsers() {
                             setConfirmOpen(true);
                           }}
                           disabled={actionLoading && targetUser?.id === user.id}
-                          className={`rounded-xl border px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${user.status === "SUSPENDED"
-                            ? "border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-300"
-                            : "border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
-                            }`}
+                          className={`rounded-xl border px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                            user.status === "SUSPENDED"
+                              ? "border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-300"
+                              : "border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
+                          }`}
                         >
-                          {user.status === "SUSPENDED"
-                            ? "Kích hoạt"
-                            : "Khóa"}
+                          {user.status === "SUSPENDED" ? "Kích hoạt" : "Khóa"}
                         </button>
                       </td>
                     </tr>
@@ -323,13 +337,9 @@ export default function AdminUsers() {
 
             <DialogDescription className="text-slate-500">
               Bạn có chắc chắn muốn{" "}
-              {targetUser?.status === "SUSPENDED"
-                ? "kích hoạt lại"
-                : "khóa"}{" "}
+              {targetUser?.status === "SUSPENDED" ? "kích hoạt lại" : "khóa"}{" "}
               tài khoản của{" "}
-              <strong className="text-slate-900">
-                {targetUser?.fullName}
-              </strong>{" "}
+              <strong className="text-slate-900">{targetUser?.fullName}</strong>{" "}
               ({targetUser?.email}) không?
             </DialogDescription>
           </DialogHeader>
@@ -351,16 +361,15 @@ export default function AdminUsers() {
             <Button
               type="button"
               variant={
-                targetUser?.status === "SUSPENDED"
-                  ? "default"
-                  : "destructive"
+                targetUser?.status === "SUSPENDED" ? "default" : "destructive"
               }
               onClick={handleConfirmAction}
               disabled={actionLoading}
-              className={`rounded-xl px-4 py-2 font-semibold ${targetUser?.status === "SUSPENDED"
+              className={`rounded-xl px-4 py-2 font-semibold ${
+                targetUser?.status === "SUSPENDED"
                   ? "bg-emerald-600 text-white hover:bg-emerald-700"
                   : "bg-red-600 text-white hover:bg-red-700"
-                }`}
+              }`}
             >
               {actionLoading ? "Đang xử lý..." : "Xác nhận"}
             </Button>

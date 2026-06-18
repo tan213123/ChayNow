@@ -18,14 +18,10 @@ export default defineConfig({
     proxy: {
       "/api": {
         target:
-          "https://a077-2001-ee0-4f0d-98b0-8415-cbc-ac31-8ff.ngrok-free.app",
+          "https://dceb-2001-ee0-4f0d-98b0-70f7-c61a-65f8-9e0e.ngrok-free.app",
 
         changeOrigin: true,
         secure: false,
-
-        headers: {
-          "ngrok-skip-browser-warning": "true",
-        },
       },
     },
   },
