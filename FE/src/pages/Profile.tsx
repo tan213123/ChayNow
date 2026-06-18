@@ -30,7 +30,6 @@ const achievements = [
 export default function Profile() {
   const user = useAuthStore((state) => state.user);
   const [activeTab, setActiveTab] = useState<"overview" | "favorites" | "activity" | "settings">("overview");
-  const [editMode, setEditMode] = useState(false);
   const [name, setName] = useState(user?.fullName || "Nguyễn Văn A");
   const [bio, setBio] = useState(user?.bio || "Yêu thích ẩm thực chay, tìm kiếm những quán ngon tại TPHCM 🌱");
   const [phone, setPhone] = useState(user?.phone || "0901 234 567");
@@ -73,12 +72,6 @@ export default function Profile() {
                   <p className="mt-2 text-sm text-emerald-100/90">{bio}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => setEditMode(!editMode)}
-                    className="rounded-full border border-white/30 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/20"
-                  >
-                    {editMode ? "Huỷ" : "Chỉnh sửa hồ sơ"}
-                  </button>
                   {user.role === "OWNER" && (
                     <Link
                       to="/manage/restaurants"
