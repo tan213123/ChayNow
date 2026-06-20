@@ -25,6 +25,7 @@ export const routes: RouteObject[] = [
     path: "/login",
     element: <Login />,
   },
+
   {
     path: "/register",
     element: <Register />,
@@ -129,6 +130,7 @@ export const routes: RouteObject[] = [
       </ProtectedRoute>
     ),
   },
+  
   {
     path: "/admin/locations",
     element: (
