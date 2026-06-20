@@ -11,7 +11,7 @@ import {
 } from "@/services/event.service";
 import {
   getRestaurant,
-  getRestaurants,
+  getMyRestaurants,
 } from "@/services/restaurant.service";
 import {
   getSelectedRestaurantId,
@@ -101,7 +101,7 @@ export default function OwnerEvents() {
       let restaurantId = getSelectedRestaurantId();
 
       if (!restaurantId) {
-        const restaurants = await getRestaurants();
+        const restaurants = await getMyRestaurants();
         restaurantId = restaurants[0]?.id ?? null;
         if (restaurantId) {
           setSelectedRestaurantId(restaurantId);

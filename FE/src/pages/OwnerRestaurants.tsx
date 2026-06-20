@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import OwnerLayout from "@/components/OwnerLayout";
 import {
   deleteRestaurant,
-  getRestaurants,
+  getMyRestaurants,
   getReviews,
 } from "@/services/restaurant.service";
 import { setSelectedRestaurantId } from "@/lib/ownerRestaurant";
@@ -27,7 +27,7 @@ export default function OwnerRestaurants() {
   useEffect(() => {
     let cancelled = false;
 
-    Promise.all([getRestaurants(), getReviews()])
+    Promise.all([getMyRestaurants(), getReviews()])
       .then(([restaurantData, reviewData]) => {
         if (!cancelled) {
           setRestaurants(restaurantData);
@@ -120,9 +120,7 @@ export default function OwnerRestaurants() {
               Quản lý danh sách quán
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-              Dữ liệu được tải trực tiếp từ hệ thống. Backend hiện chưa có
-              trường liên kết nhà hàng với tài khoản owner nên danh sách này
-              gồm toàn bộ nhà hàng đang hoạt động.
+              Danh sách các nhà hàng do bạn làm chủ và quản lý trực tiếp.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">

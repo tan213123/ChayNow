@@ -5,7 +5,7 @@ import OwnerLayout from "@/components/OwnerLayout";
 import {
   getRestaurant,
   getRestaurantReviews,
-  getRestaurants,
+  getMyRestaurants,
 } from "@/services/restaurant.service";
 import {
   getSelectedRestaurantId,
@@ -31,7 +31,7 @@ export default function OwnerDashboard() {
       let restaurantId = getSelectedRestaurantId();
 
       if (!restaurantId) {
-        const restaurants = await getRestaurants();
+        const restaurants = await getMyRestaurants();
         restaurantId = restaurants[0]?.id ?? null;
         if (restaurantId) {
           setSelectedRestaurantId(restaurantId);

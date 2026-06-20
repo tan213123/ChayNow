@@ -45,6 +45,11 @@ export const getRestaurants = async (): Promise<RestaurantResponse[]> =>
     "/api/restaurant",
   );
 
+export const getMyRestaurants = async (): Promise<RestaurantResponse[]> =>
+  apiService.get<RestaurantResponse[], RestaurantResponse[]>(
+    "/api/restaurant/mine",
+  );
+
 export const createRestaurant = async (
   data: CreateRestaurantRequest,
 ): Promise<RestaurantResponse> =>
