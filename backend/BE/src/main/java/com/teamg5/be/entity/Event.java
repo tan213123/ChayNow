@@ -12,6 +12,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import java.time.LocalDate;
 
 @Entity
@@ -40,6 +42,10 @@ public class Event extends BaseEntity {
 
     @Column(length = 50)
     private String status; // UPCOMING, ACTIVE, EXPIRED, HIDDEN
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "event_type", length = 50)
+    private EventType eventType;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "restaurant_id")
