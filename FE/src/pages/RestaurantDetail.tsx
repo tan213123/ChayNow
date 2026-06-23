@@ -9,17 +9,20 @@ import {
   getRestaurant,
   getRestaurantReviews,
 } from "@/services/restaurant.service";
+import { getRestaurantEvents } from "@/services/event.service";
 import { useAuthStore } from "@/store/authStore";
 import type {
   RestaurantResponse,
   ReviewResponse,
+  EventResponse,
 } from "@/types/restaurant";
 
-const tabLabels = ["Thông tin", "Thực đơn", "Đánh giá", "Giới thiệu"] as const;
+const tabLabels = ["Thông tin", "Sự kiện", "Thực đơn", "Đánh giá", "Giới thiệu"] as const;
 type Tab = (typeof tabLabels)[number];
 
 const tabIcons: Record<Tab, string> = {
   "Thông tin": "ℹ️",
+  "Sự kiện": "🎉",
   "Thực đơn": "🍽️",
   "Đánh giá": "⭐",
   "Giới thiệu": "📖",
@@ -33,6 +36,7 @@ export default function RestaurantDetail() {
   const [apiRestaurant, setApiRestaurant] =
     useState<RestaurantResponse | null>(null);
   const [apiReviews, setApiReviews] = useState<ReviewResponse[]>([]);
+  const [apiEvents, setApiEvents] = useState<EventResponse[]>([]);
   const [isLoading, setIsLoading] = useState(usesApi && Boolean(accessToken));
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
@@ -56,11 +60,16 @@ export default function RestaurantDetail() {
     Promise.all([
       getRestaurant(restaurantId),
       getRestaurantReviews(restaurantId),
+      getRestaurantEvents(restaurantId).catch((err) => {
+        console.error("Failed to load events", err);
+        return [] as EventResponse[];
+      }),
     ])
-      .then(([restaurantResponse, reviewsResponse]) => {
+      .then(([restaurantResponse, reviewsResponse, eventsResponse]) => {
         if (!cancelled) {
           setApiRestaurant(restaurantResponse);
           setApiReviews(reviewsResponse);
+          setApiEvents(eventsResponse);
         }
       })
       .catch((error: unknown) => {
@@ -305,6 +314,95 @@ export default function RestaurantDetail() {
                         <p className="text-sm font-medium text-slate-900">{restaurant.priceRange}</p>
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {/* Sự kiện Tab */}
+                {activeTab === "Sự kiện" && (
+                  <div className="space-y-6">
+                    {apiEvents.filter((e) => e.status !== "HIDDEN").length === 0 ? (
+                      <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white p-12 text-center">
+                        <div className="text-4xl">🎉</div>
+                        <p className="mt-3 font-semibold text-slate-900">
+                          Hiện tại nhà hàng chưa có sự kiện nào.
+                        </p>
+                        <p className="mt-2 text-sm text-slate-500">
+                          Hãy quay lại sau để cập nhật các chương trình mới nhất của nhà hàng nhé!
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid gap-6 md:grid-cols-2">
+                        {apiEvents
+                          .filter((e) => e.status !== "HIDDEN")
+                          .map((event) => {
+                            const statusLabels: Record<string, string> = {
+                              UPCOMING: "Sắp diễn ra",
+                              ACTIVE: "Đang diễn ra",
+                              EXPIRED: "Đã kết thúc",
+                            };
+                            const statusStyles: Record<string, string> = {
+                              UPCOMING: "bg-sky-50 text-sky-700 border border-sky-200",
+                              ACTIVE: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+                              EXPIRED: "bg-slate-100 text-slate-600 border border-slate-200",
+                            };
+                            const typeLabels: Record<string, string> = {
+                              CHARITY: "Từ thiện",
+                              DISCOUNT: "Giảm giá",
+                            };
+
+                            const fallbackImage =
+                              "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80";
+                            const formattedStart = event.startDate
+                              ? new Intl.DateTimeFormat("vi-VN").format(new Date(event.startDate))
+                              : "Chưa cập nhật";
+                            const formattedEnd = event.endDate
+                              ? new Intl.DateTimeFormat("vi-VN").format(new Date(event.endDate))
+                              : "Chưa cập nhật";
+
+                            return (
+                              <article
+                                key={event.id}
+                                className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm hover:shadow-md transition duration-300 flex flex-col"
+                              >
+                                <div className="relative h-48 w-full overflow-hidden bg-slate-100">
+                                  <img
+                                    src={event.imageUrl || fallbackImage}
+                                    alt={event.title}
+                                    className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
+                                  />
+                                  <span className="absolute left-4 top-4 rounded-xl bg-black/50 px-3.5 py-1.5 text-xs font-bold text-white backdrop-blur-sm">
+                                    {typeLabels[event.eventType || ""] || "Sự kiện"}
+                                  </span>
+                                </div>
+                                <div className="p-6 flex-1 flex flex-col justify-between">
+                                  <div className="space-y-3">
+                                    <div className="flex items-start justify-between gap-3">
+                                      <h3 className="text-lg font-bold text-slate-900 leading-snug">
+                                        {event.title}
+                                      </h3>
+                                      <span
+                                        className={`rounded-full px-3 py-1 text-xs font-semibold border ${
+                                          statusStyles[event.status || ""] ||
+                                          "bg-slate-50 text-slate-500 border-slate-200"
+                                        }`}
+                                      >
+                                        {statusLabels[event.status || ""] || event.status}
+                                      </span>
+                                    </div>
+                                    <p className="text-xs font-semibold text-emerald-600 flex items-center gap-1">
+                                      📅 {formattedStart} - {formattedEnd}
+                                    </p>
+                                    <p className="text-sm leading-relaxed text-slate-600 line-clamp-3">
+                                      {event.description ||
+                                        "Nhà hàng chưa cung cấp mô tả chi tiết cho sự kiện này."}
+                                    </p>
+                                  </div>
+                                </div>
+                              </article>
+                            );
+                          })}
+                      </div>
+                    )}
                   </div>
                 )}
 

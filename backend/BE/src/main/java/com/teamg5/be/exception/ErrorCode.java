@@ -59,6 +59,16 @@ public enum ErrorCode {
         "ERR_MENU_NOT_FOUND",
         "This food cannot be found",
         HttpStatus.NOT_FOUND
+        ),
+        EVENT_NOT_FOUND(
+        "ERR_EVENT_NOT_FOUND",
+        "This event cannot be found",
+        HttpStatus.NOT_FOUND
+        ),
+        EVENT_FORBIDDEN(
+        "ERR_EVENT_FORBIDDEN",
+        "You do not have permission to manage this event",
+        HttpStatus.FORBIDDEN
         );
 
     
