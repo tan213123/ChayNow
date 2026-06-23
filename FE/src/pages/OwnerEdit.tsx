@@ -100,9 +100,10 @@ export default function OwnerEdit() {
         return;
       }
 
+      const restaurantAddress = restaurant.address ?? "";
       setForm({
         name: restaurant.name,
-        address: restaurant.address ?? "",
+        address: restaurantAddress,
         phoneNumber: restaurant.phoneNumber ?? "",
         description: restaurant.description ?? "",
         typeRestaurantId: String(restaurant.typeRestaurantId),
@@ -119,9 +120,12 @@ export default function OwnerEdit() {
             name: place.name,
             district: place.district,
             city: place.city,
-            address: place.address,
+            address: restaurantAddress || place.address,
             mapUrl: place.mapUrl ?? "",
           });
+          if (!restaurantAddress && place.address) {
+            setField("address", place.address);
+          }
         }
       }
     };
@@ -149,6 +153,11 @@ export default function OwnerEdit() {
 
   const setField = (key: keyof RestaurantForm, value: string) => {
     setForm((current) => ({ ...current, [key]: value }));
+  };
+
+  const setDisplayAddress = (value: string) => {
+    setForm((current) => ({ ...current, address: value }));
+    setPlaceDraft((current) => ({ ...current, address: value }));
   };
 
   const setPlaceField = (key: keyof PlaceRequest, value: string) => {
@@ -216,11 +225,15 @@ export default function OwnerEdit() {
 
     try {
       const place = await getPlace(Number(value));
+      const displayAddress = form.address || place.address;
+      if (!form.address && place.address) {
+        setField("address", place.address);
+      }
       setPlaceDraft({
         name: place.name,
         district: place.district,
         city: place.city,
-        address: place.address,
+        address: displayAddress,
         mapUrl: place.mapUrl ?? "",
       });
     } catch (error) {
@@ -450,7 +463,7 @@ export default function OwnerEdit() {
               Địa chỉ hiển thị
               <input
                 value={form.address}
-                onChange={(event) => setField("address", event.target.value)}
+                onChange={(event) => setDisplayAddress(event.target.value)}
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-normal outline-none focus:border-emerald-500"
               />
             </label>
@@ -555,7 +568,7 @@ export default function OwnerEdit() {
               onClick={() => {
                 setIsNewPlace(true);
                 setField("placeId", "");
-                setPlaceDraft(emptyPlace);
+                setPlaceDraft({ ...emptyPlace, address: form.address });
               }}
               className="rounded-2xl border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100"
             >
@@ -598,9 +611,13 @@ export default function OwnerEdit() {
                   >
                     {label}
                     <input
-                      value={placeDraft[key] ?? ""}
+                      value={
+                        key === "address" ? form.address : (placeDraft[key] ?? "")
+                      }
                       onChange={(event) =>
-                        setPlaceField(key, event.target.value)
+                        key === "address"
+                          ? setDisplayAddress(event.target.value)
+                          : setPlaceField(key, event.target.value)
                       }
                       className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-normal outline-none focus:border-sky-500"
                     />
