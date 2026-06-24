@@ -40,7 +40,6 @@ export interface CreateRestaurantRequest {
   typeRestaurantId: number;
   openTime: string;
   closedTime: string;
-  mediaUrls?: string[];
 }
 
 export interface UpdateRestaurantRequest {
@@ -52,7 +51,7 @@ export interface UpdateRestaurantRequest {
   typeRestaurantId?: number;
   openTime?: string;
   closedTime?: string;
-  mediaUrls?: string[];
+  mediaIds?: number[];
 }
 
 export interface PlaceResponse {
@@ -85,6 +84,7 @@ export interface ReviewResponse {
   typeRestaurantId: number;
   typeRestaurantName: string;
   restaurantMedia: MediaResponse[];
+  mediaList?: MediaResponse[];
   rating: number;
   context: string;
 }

@@ -18,6 +18,7 @@ import {
   updatePlace,
 } from "@/services/place.service";
 import { setSelectedRestaurantId } from "@/lib/ownerRestaurant";
+import { mediaService } from "@/services/media.service";
 import type {
   PlaceRequest,
   PlaceResponse,
@@ -339,13 +340,6 @@ export default function OwnerEdit() {
       return;
     }
 
-    if (imageFile) {
-      toast.error(
-        "Backend chưa có API upload ảnh. Vui lòng bỏ ảnh mới trước khi lưu nhà hàng.",
-      );
-      return;
-    }
-
     const phoneNumber = form.phoneNumber.replace(/\s/g, "");
     if (phoneNumber && !/^(0|\+84)[0-9]{8,10}$/.test(phoneNumber)) {
       toast.error("Số điện thoại không đúng định dạng.");
@@ -361,7 +355,6 @@ export default function OwnerEdit() {
       typeRestaurantId: Number(form.typeRestaurantId),
       openTime: form.openTime,
       closedTime: form.closedTime,
-      mediaUrls: form.mediaUrl.trim() ? [form.mediaUrl.trim()] : [],
     };
 
     try {
@@ -369,13 +362,18 @@ export default function OwnerEdit() {
       const restaurant = isEditing
         ? await updateRestaurant(restaurantId, payload)
         : await createRestaurant(payload);
+
+      if (imageFile) {
+        await mediaService.upload(imageFile, restaurant.id);
+      }
+
       setSelectedRestaurantId(restaurant.id);
       toast.success(
         isEditing
           ? "Cập nhật nhà hàng thành công."
           : "Tạo nhà hàng thành công.",
       );
-      navigate("/manage");
+      navigate(`/restaurant/${restaurant.id}`);
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Không thể lưu nhà hàng.",
@@ -534,9 +532,8 @@ export default function OwnerEdit() {
                 </div>
               ) : null}
               {imageFile ? (
-                <p className="text-xs font-normal text-amber-700">
-                  Đã chọn: {imageFile.name}. Backend hiện chưa có API upload
-                  file nên ảnh mới chưa thể lưu lên hệ thống.
+                <p className="text-xs font-normal text-emerald-700">
+                  Đã chọn: {imageFile.name}. Ảnh này sẽ được tải lên khi bạn lưu nhà hàng.
                 </p>
               ) : null}
             </div>

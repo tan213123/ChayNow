@@ -65,6 +65,16 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
     }
 
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse<Object>> handleHttpMessageNotReadableException(org.springframework.http.converter.HttpMessageNotReadableException ex) {
+        ApiResponse<Object> response = ApiResponse.builder()
+                .success(false)
+                .message("Định dạng dữ liệu không hợp lệ. Vui lòng kiểm tra lại (ví dụ: định dạng giờ phải là HH:mm).")
+                .code(ErrorCode.INVALID_INPUT.getCode())
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Object>> handleGeneralException(Exception ex) {
         ApiResponse<Object> response = ApiResponse.builder()
