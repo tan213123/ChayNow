@@ -55,17 +55,23 @@ export default function RestaurantDetail() {
     if (!isValidId) return;
 
     let cancelled = false;
-    setIsLoading(true);
-    setLoadError(null);
 
-    Promise.all([
-      getRestaurant(restaurantId),
-      getRestaurantReviews(restaurantId),
-      getRestaurantEvents(restaurantId).catch((err) => {
-        console.error("Failed to load events", err);
-        return [] as EventResponse[];
-      }),
-    ])
+    Promise.resolve()
+      .then(() => {
+        if (!cancelled) {
+          setIsLoading(true);
+          setLoadError(null);
+        }
+
+        return Promise.all([
+          getRestaurant(restaurantId),
+          getRestaurantReviews(restaurantId),
+          getRestaurantEvents(restaurantId).catch((err) => {
+            console.error("Failed to load events", err);
+            return [] as EventResponse[];
+          }),
+        ]);
+      })
       .then(([restaurantResponse, reviewsResponse, eventsResponse]) => {
         if (!cancelled) {
           setApiRestaurant(restaurantResponse);

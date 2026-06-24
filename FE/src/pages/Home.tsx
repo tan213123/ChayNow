@@ -59,7 +59,6 @@ export default function Home() {
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
-    setDataLoading(true);
     Promise.allSettled([getRestaurants(), getEvents(), getMenus()]).then(
       ([restResult, eventsResult, menusResult]) => {
         if (restResult.status === "fulfilled") setApiRestaurants(restResult.value);

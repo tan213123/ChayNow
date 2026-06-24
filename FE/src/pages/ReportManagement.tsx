@@ -1,7 +1,7 @@
 
 import Navbar from "@/components/Navbar";
 import { AlertTriangle, CheckCircle2, Clock3, XCircle } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   getAdminReports,
   getAdminReportStats,
@@ -25,7 +25,7 @@ export default function ReportManagement() {
 
   const [loading, setLoading] = useState(false);
 
-  const loadReports = async () => {
+  const loadReports = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -48,11 +48,11 @@ export default function ReportManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter]);
 
   useEffect(() => {
-    loadReports();
-  }, [statusFilter]);
+    void Promise.resolve().then(loadReports);
+  }, [loadReports]);
 
   const handleResolve = async (
     id: number,

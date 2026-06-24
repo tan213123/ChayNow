@@ -76,6 +76,10 @@ export default function OwnerEdit() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState("");
 
+  const setField = (key: keyof RestaurantForm, value: string) => {
+    setForm((current) => ({ ...current, [key]: value }));
+  };
+
   useEffect(() => {
     let cancelled = false;
 
@@ -151,10 +155,6 @@ export default function OwnerEdit() {
       cancelled = true;
     };
   }, [isEditing, restaurantId]);
-
-  const setField = (key: keyof RestaurantForm, value: string) => {
-    setForm((current) => ({ ...current, [key]: value }));
-  };
 
   const setDisplayAddress = (value: string) => {
     setForm((current) => ({ ...current, address: value }));
