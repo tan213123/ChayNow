@@ -1,9 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
-import { restaurants, popularDishes, events, communityPosts } from "@/data/restaurants";
+import { communityPosts } from "@/data/restaurants";
 import { Search } from "lucide-react";
+import { getRestaurants } from "@/services/restaurant.service";
+import { getEvents } from "@/services/event.service";
+import { getMenus } from "@/services/menu.service";
+import type { RestaurantResponse, EventResponse, MenuResponse } from "@/types/restaurant";
 
 const tabs = ["Địa điểm ăn chay", "Món ăn nổi bật", "Sự kiện", "Bài đăng cộng đồng"] as const;
 type Tab = (typeof tabs)[number];
@@ -41,6 +45,12 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Tất cả");
 
+  // API data
+  const [apiRestaurants, setApiRestaurants] = useState<RestaurantResponse[]>([]);
+  const [apiEvents, setApiEvents] = useState<EventResponse[]>([]);
+  const [apiMenus, setApiMenus] = useState<MenuResponse[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
+
   // Community posts state
   const [posts, setPosts] = useState<CommunityPost[]>(communityPosts);
   const [showForm, setShowForm] = useState(false);
@@ -48,12 +58,24 @@ export default function Home() {
   const [likedPosts, setLikedPosts] = useState<string[]>([]);
   const [submitted, setSubmitted] = useState(false);
 
-  const filteredRestaurants = restaurants.filter((r) => {
+  useEffect(() => {
+    setDataLoading(true);
+    Promise.allSettled([getRestaurants(), getEvents(), getMenus()]).then(
+      ([restResult, eventsResult, menusResult]) => {
+        if (restResult.status === "fulfilled") setApiRestaurants(restResult.value);
+        if (eventsResult.status === "fulfilled") setApiEvents(eventsResult.value);
+        if (menusResult.status === "fulfilled") setApiMenus(menusResult.value);
+        setDataLoading(false);
+      },
+    );
+  }, []);
+
+  const filteredRestaurants = apiRestaurants.filter((r) => {
     const matchSearch =
       r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.location.toLowerCase().includes(searchQuery.toLowerCase());
+      (r.address ?? "").toLowerCase().includes(searchQuery.toLowerCase());
     const matchCategory =
-      selectedCategory === "Tất cả" || r.category === selectedCategory;
+      selectedCategory === "Tất cả" || r.typeRestaurantName === selectedCategory;
     return matchSearch && matchCategory;
   });
 
@@ -100,7 +122,26 @@ export default function Home() {
 
 
   const renderCards = () => {
+    // Loading skeleton
+    if (dataLoading) {
+      return (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm animate-pulse">
+              <div className="h-56 bg-slate-200" />
+              <div className="space-y-3 p-6">
+                <div className="h-4 w-3/4 rounded-full bg-slate-200" />
+                <div className="h-3 w-1/2 rounded-full bg-slate-200" />
+                <div className="h-10 rounded-2xl bg-slate-200" />
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
     if (selectedTab === "Địa điểm ăn chay") {
+      const FALLBACK_IMG = "https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=1200&q=80";
       return (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredRestaurants.length === 0 ? (
@@ -122,35 +163,31 @@ export default function Home() {
               >
                 <div className="relative h-56 overflow-hidden bg-slate-100">
                   <img
-                    src={item.image}
+                    src={item.mediaList[0]?.url ?? FALLBACK_IMG}
                     alt={item.name}
                     className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 transition group-hover:opacity-100" />
-                  <div className="absolute right-4 top-4 rounded-full bg-white/95 px-3 py-1.5 text-sm font-bold text-amber-600 shadow-md backdrop-blur-sm">
-                    {item.rating} ★
-                  </div>
                   <span className="absolute left-4 top-4 rounded-full bg-emerald-600/90 px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm">
-                    {item.category}
+                    {item.typeRestaurantName}
                   </span>
                 </div>
                 <div className="space-y-4 p-6">
                   <div>
                     <h3 className="text-lg font-bold text-slate-900">{item.name}</h3>
                     <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-500">
-                      <span>📍</span> {item.location}
+                      <span>📍</span> {item.address ?? "Chưa cập nhật"}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {item.tags.map((tag) => (
-                      <span key={tag} className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
-                        {tag}
+                    {item.typeRestaurantName && (
+                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+                        {item.typeRestaurantName}
                       </span>
-                    ))}
+                    )}
                   </div>
                   <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-400">
-                    <span className="flex items-center gap-1"><span>🕐</span> {item.hours}</span>
-                    <span>{item.reviews} đánh giá</span>
+                    <span className="flex items-center gap-1"><span>📞</span> {item.phoneNumber ?? "Chưa cập nhật"}</span>
                   </div>
                   <Link to={`/restaurant/${item.id}`}>
                     <Button className="w-full rounded-2xl bg-emerald-600 py-3 text-sm font-semibold text-white hover:bg-emerald-700 transition">
@@ -166,52 +203,87 @@ export default function Home() {
     }
 
     if (selectedTab === "Món ăn nổi bật") {
+      const DISH_FALLBACK = "https://images.unsplash.com/photo-1512058564366-c9e0de9e8c4f?auto=format&fit=crop&w=1200&q=80";
       return (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {popularDishes.map((dish) => (
-            <article key={dish.id} className="group overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
-              <div className="relative h-48 overflow-hidden bg-slate-100">
-                <img src={dish.image} alt={dish.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-110" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                <span className="absolute bottom-3 left-3 rounded-full bg-white/90 px-2.5 py-1 text-xs font-bold text-amber-600 backdrop-blur-sm">
-                  {dish.likes} ♥
-                </span>
-              </div>
-              <div className="space-y-2 p-4">
-                <p className="text-xs font-semibold uppercase tracking-widest text-emerald-600">{dish.type}</p>
-                <h3 className="font-bold text-slate-900 leading-snug">{dish.name}</h3>
-                <p className="text-sm text-slate-500">{dish.restaurant}</p>
-                <p className="text-xs text-slate-400">{dish.date}</p>
-              </div>
-            </article>
-          ))}
+          {apiMenus.length === 0 ? (
+            <div className="col-span-4 py-20 text-center">
+              <p className="text-4xl">🍽️</p>
+              <p className="mt-4 text-slate-500">Chưa có món ăn nào</p>
+            </div>
+          ) : (
+            apiMenus.map((dish) => (
+              <article key={dish.id} className="group overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
+                <div className="relative h-48 overflow-hidden bg-slate-100">
+                  <img src={dish.imageUrl ?? DISH_FALLBACK} alt={dish.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-110" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                  <span className="absolute bottom-3 left-3 rounded-full bg-white/90 px-2.5 py-1 text-xs font-bold text-emerald-700 backdrop-blur-sm">
+                    {dish.category ?? "Món ăn"}
+                  </span>
+                </div>
+                <div className="space-y-2 p-4">
+                  <h3 className="font-bold text-slate-900 leading-snug">{dish.name}</h3>
+                  <p className="text-sm font-semibold text-emerald-600">
+                    {dish.price != null ? `${dish.price.toLocaleString("vi-VN")}đ` : "Liên hệ"}
+                  </p>
+                  {dish.description && (
+                    <p className="text-xs text-slate-400 line-clamp-2">{dish.description}</p>
+                  )}
+                </div>
+              </article>
+            ))
+          )}
         </div>
       );
     }
 
     if (selectedTab === "Sự kiện") {
+      const EVENT_FALLBACK = "https://images.unsplash.com/photo-1529042410759-befb1204b468?auto=format&fit=crop&w=1200&q=80";
+      const statusLabel: Record<string, string> = { UPCOMING: "Sắp diễn ra", ACTIVE: "Đang diễn ra", EXPIRED: "Đã kết thúc" };
+      const typeLabel: Record<string, string> = { CHARITY: "Từ thiện", DISCOUNT: "Giảm giá" };
+      const visibleEvents = apiEvents.filter((e) => e.status !== "HIDDEN");
       return (
         <div className="grid gap-6 lg:grid-cols-3">
-          {events.map((event) => (
-            <article key={event.id} className="group overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
-              <div className="relative h-52 overflow-hidden bg-slate-100">
-                <img src={event.image} alt={event.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-110" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                <span className="absolute left-4 top-4 rounded-full bg-rose-500 px-3 py-1 text-xs font-bold text-white shadow-sm">{event.badge}</span>
-                <span className={`absolute right-4 top-4 rounded-full px-3 py-1 text-xs font-bold text-white shadow-sm ${event.status === "Đang diễn ra" ? "bg-emerald-600" : "bg-amber-500"}`}>
-                  {event.status}
-                </span>
-              </div>
-              <div className="space-y-3 p-6">
-                <h3 className="font-bold text-slate-900">{event.title}</h3>
-                <p className="text-sm text-slate-500 leading-relaxed">{event.description}</p>
-                <div className="border-t border-slate-100 pt-3 space-y-1 text-xs text-slate-400">
-                  <p className="flex items-center gap-1.5"><span>📍</span> {event.venue}</p>
-                  <p className="flex items-center gap-1.5"><span>📅</span> {event.duration}</p>
+          {visibleEvents.length === 0 ? (
+            <div className="col-span-3 py-20 text-center">
+              <p className="text-4xl">🎉</p>
+              <p className="mt-4 text-slate-500">Chưa có sự kiện nào</p>
+            </div>
+          ) : (
+            visibleEvents.map((event) => (
+              <article key={event.id} className="group overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
+                <div className="relative h-52 overflow-hidden bg-slate-100">
+                  <img src={event.imageUrl ?? EVENT_FALLBACK} alt={event.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-110" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                  {event.eventType && (
+                    <span className="absolute left-4 top-4 rounded-full bg-rose-500 px-3 py-1 text-xs font-bold text-white shadow-sm">
+                      {typeLabel[event.eventType] ?? event.eventType}
+                    </span>
+                  )}
+                  {event.status && (
+                    <span className={`absolute right-4 top-4 rounded-full px-3 py-1 text-xs font-bold text-white shadow-sm ${
+                      event.status === "ACTIVE" ? "bg-emerald-600" : "bg-amber-500"
+                    }`}>
+                      {statusLabel[event.status] ?? event.status}
+                    </span>
+                  )}
                 </div>
-              </div>
-            </article>
-          ))}
+                <div className="space-y-3 p-6">
+                  <h3 className="font-bold text-slate-900">{event.title}</h3>
+                  <p className="text-sm text-slate-500 leading-relaxed line-clamp-2">{event.description}</p>
+                  <div className="border-t border-slate-100 pt-3 space-y-1 text-xs text-slate-400">
+                    <p className="flex items-center gap-1.5"><span>📍</span> {event.restaurantName ?? "Chưa cập nhật"}</p>
+                    {event.startDate && event.endDate && (
+                      <p className="flex items-center gap-1.5"><span>📅</span>
+                        {new Intl.DateTimeFormat("vi-VN").format(new Date(event.startDate))} –{" "}
+                        {new Intl.DateTimeFormat("vi-VN").format(new Date(event.endDate))}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </article>
+            ))
+          )}
         </div>
       );
     }
@@ -451,8 +523,8 @@ export default function Home() {
 
   const counts = {
     "Địa điểm ăn chay": filteredRestaurants.length,
-    "Món ăn nổi bật": popularDishes.length,
-    "Sự kiện": events.length,
+    "Món ăn nổi bật": apiMenus.length,
+    "Sự kiện": apiEvents.filter((e) => e.status !== "HIDDEN").length,
     "Bài đăng cộng đồng": posts.length,
   };
 

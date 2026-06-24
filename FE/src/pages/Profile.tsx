@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
-import { favoriteRestaurants } from "@/data/restaurants";
 import { useAuthStore } from "@/store/authStore";
 import type { Role } from "@/types/auth";
+import { getRestaurants } from "@/services/restaurant.service";
+import type { RestaurantResponse } from "@/types/restaurant";
 
 const roleLabels: Record<Role, string> = {
   ADMIN: "Quản trị viên",
@@ -33,6 +34,17 @@ export default function Profile() {
   const [name, setName] = useState(user?.fullName || "Nguyễn Văn A");
   const [bio, setBio] = useState(user?.bio || "Yêu thích ẩm thực chay, tìm kiếm những quán ngon tại TPHCM 🌱");
   const [phone, setPhone] = useState(user?.phone || "0901 234 567");
+  const [apiRestaurants, setApiRestaurants] = useState<RestaurantResponse[]>([]);
+  const [restLoading, setRestLoading] = useState(true);
+
+  useEffect(() => {
+    getRestaurants()
+      .then((data) => setApiRestaurants(data))
+      .catch(console.error)
+      .finally(() => setRestLoading(false));
+  }, []);
+
+  const FALLBACK_IMG = "https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=1200&q=80";
 
   if (!user) return null;
 
@@ -89,7 +101,7 @@ export default function Profile() {
             {[
               { label: "Địa điểm đã ghé", value: "12" },
               { label: "Đánh giá đã viết", value: "8" },
-              { label: "Yêu thích", value: String(favoriteRestaurants.length) },
+              { label: "Yêu thích", value: restLoading ? "..." : String(apiRestaurants.length) },
               { label: "Điểm cộng đồng", value: "340" },
             ].map((stat) => (
               <div key={stat.label} className="rounded-[1.5rem] bg-white/10 p-4 text-center backdrop-blur-sm">
@@ -199,42 +211,50 @@ export default function Profile() {
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-semibold text-slate-900">Địa điểm yêu thích</h2>
                   <Link to="/favorites" className="text-sm font-medium text-emerald-600 hover:underline">
-                    Xem trang yêu thích →
+                    Xem tất cả →
                   </Link>
                 </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {favoriteRestaurants.map((r) => (
-                    <Link key={r.id} to={`/restaurant/${r.id}`}>
-                      <article className="group overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-                        <div className="relative h-44 overflow-hidden bg-slate-100">
-                          <img
-                            src={r.image}
-                            alt={r.name}
-                            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                          />
-                          <div className="absolute right-3 top-3 rounded-full bg-white px-3 py-1.5 text-sm font-semibold text-slate-900 shadow-sm">
-                            {r.rating} ★
-                          </div>
-                          <button className="absolute left-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-white shadow-sm text-sm">
-                            ♥
-                          </button>
+                {restLoading ? (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {[1, 2].map((i) => (
+                      <div key={i} className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm animate-pulse">
+                        <div className="h-44 bg-slate-200" />
+                        <div className="space-y-2 p-4">
+                          <div className="h-4 w-3/4 rounded-full bg-slate-200" />
+                          <div className="h-3 w-1/2 rounded-full bg-slate-200" />
                         </div>
-                        <div className="p-4">
-                          <h3 className="font-semibold text-slate-900">{r.name}</h3>
-                          <p className="mt-1 text-sm text-slate-500">{r.location}</p>
-                          <div className="mt-2 flex flex-wrap gap-1">
-                            {r.tags.slice(0, 2).map((tag) => (
-                              <span key={tag} className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                                {tag}
-                              </span>
-                            ))}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {apiRestaurants.slice(0, 4).map((r) => (
+                      <Link key={r.id} to={`/restaurant/${r.id}`}>
+                        <article className="group overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+                          <div className="relative h-44 overflow-hidden bg-slate-100">
+                            <img
+                              src={r.mediaList[0]?.url ?? FALLBACK_IMG}
+                              alt={r.name}
+                              className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                            />
                           </div>
-                        </div>
-                      </article>
-                    </Link>
-                  ))}
-                </div>
-                {favoriteRestaurants.length === 0 && (
+                          <div className="p-4">
+                            <h3 className="font-semibold text-slate-900">{r.name}</h3>
+                            <p className="mt-1 text-sm text-slate-500">{r.address ?? "Chưa cập nhật"}</p>
+                            {r.typeRestaurantName && (
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                                  {r.typeRestaurantName}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </article>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+                {!restLoading && apiRestaurants.length === 0 && (
                   <div className="py-20 text-center">
                     <p className="text-4xl">🍃</p>
                     <p className="mt-4 text-slate-500">Chưa có địa điểm yêu thích nào</p>

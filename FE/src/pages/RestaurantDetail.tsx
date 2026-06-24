@@ -3,7 +3,6 @@ import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
-import { restaurants } from "@/data/restaurants";
 import {
   createRestaurantReview,
   getRestaurant,
@@ -32,12 +31,12 @@ export default function RestaurantDetail() {
   const { id } = useParams();
   const accessToken = useAuthStore((state) => state.accessToken);
   const restaurantId = Number(id);
-  const usesApi = Number.isInteger(restaurantId) && restaurantId > 0;
+  const isValidId = Number.isInteger(restaurantId) && restaurantId > 0;
   const [apiRestaurant, setApiRestaurant] =
     useState<RestaurantResponse | null>(null);
   const [apiReviews, setApiReviews] = useState<ReviewResponse[]>([]);
   const [apiEvents, setApiEvents] = useState<EventResponse[]>([]);
-  const [isLoading, setIsLoading] = useState(usesApi && Boolean(accessToken));
+  const [isLoading, setIsLoading] = useState(isValidId);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("Thông tin");
@@ -47,15 +46,11 @@ export default function RestaurantDetail() {
   const [selectedRating, setSelectedRating] = useState(0);
 
   useEffect(() => {
-    if (!usesApi) {
-      return;
-    }
-
-    if (!accessToken) {
-      return;
-    }
+    if (!isValidId) return;
 
     let cancelled = false;
+    setIsLoading(true);
+    setLoadError(null);
 
     Promise.all([
       getRestaurant(restaurantId),
@@ -82,23 +77,16 @@ export default function RestaurantDetail() {
         }
       })
       .finally(() => {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
+        if (!cancelled) setIsLoading(false);
       });
 
     return () => {
       cancelled = true;
     };
-  }, [accessToken, restaurantId, usesApi]);
+  }, [restaurantId, isValidId]);
 
   const restaurant = useMemo(() => {
-    if (!usesApi) {
-      return restaurants.find((item) => item.id === id);
-    }
-    if (!apiRestaurant) {
-      return undefined;
-    }
+    if (!apiRestaurant) return undefined;
 
     const rating =
       apiReviews.length > 0
@@ -115,7 +103,7 @@ export default function RestaurantDetail() {
       rating: Number(rating.toFixed(1)),
       reviews: apiReviews.length,
       category: apiRestaurant.typeRestaurantName,
-      tags: [apiRestaurant.typeRestaurantName],
+      tags: [apiRestaurant.typeRestaurantName].filter(Boolean),
       image:
         apiRestaurant.mediaList[0]?.url ??
         "https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=1200&q=80",
@@ -125,19 +113,19 @@ export default function RestaurantDetail() {
       mapAlt: `Bản đồ ${apiRestaurant.name}`,
       menu: [],
       reviewsList: apiReviews.map((review) => ({
-        name: `Người dùng #${review.userId}`,
+        name: review.userName ?? `Người dùng #${review.userId}`,
         rating: review.rating,
-        date: "",
+        date: review.createdAt
+          ? new Intl.DateTimeFormat("vi-VN").format(new Date(review.createdAt))
+          : "",
         comment: review.context,
       })),
-      features: [apiRestaurant.typeRestaurantName],
+      features: [apiRestaurant.typeRestaurantName].filter(Boolean),
     };
-  }, [apiRestaurant, apiReviews, id, usesApi]);
+  }, [apiRestaurant, apiReviews]);
 
   const handleSubmitReview = async () => {
-    if (!usesApi || !reviewText.trim() || selectedRating === 0) {
-      return;
-    }
+    if (!isValidId || !reviewText.trim() || selectedRating === 0) return;
 
     try {
       setIsSubmittingReview(true);
@@ -151,9 +139,7 @@ export default function RestaurantDetail() {
       toast.success("Gửi đánh giá thành công.");
     } catch (error) {
       toast.error(
-        error instanceof Error
-          ? error.message
-          : "Không thể gửi đánh giá.",
+        error instanceof Error ? error.message : "Không thể gửi đánh giá.",
       );
     } finally {
       setIsSubmittingReview(false);
@@ -182,10 +168,7 @@ export default function RestaurantDetail() {
             <div className="text-5xl">🔍</div>
             <h1 className="mt-4 text-2xl font-bold text-slate-900">Không tìm thấy nhà hàng</h1>
             <p className="mt-3 text-sm text-slate-500">
-              {(usesApi && !accessToken
-                ? "Vui lòng đăng nhập để xem dữ liệu nhà hàng từ hệ thống."
-                : loadError) ??
-                "Địa điểm này không tồn tại hoặc đã bị xoá. Vui lòng quay lại trang chủ."}
+              {loadError ?? "Địa điểm này không tồn tại hoặc đã bị xoá."}
             </p>
             <Link to="/">
               <Button className="mt-6 rounded-2xl bg-emerald-600 px-8 py-3 text-sm font-semibold text-white hover:bg-emerald-700">
@@ -469,18 +452,14 @@ export default function RestaurantDetail() {
                         <Button
                           onClick={handleSubmitReview}
                           disabled={
-                            !usesApi ||
+                            !isValidId ||
                             !reviewText.trim() ||
                             selectedRating === 0 ||
                             isSubmittingReview
                           }
                           className="rounded-2xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
                         >
-                          {usesApi
-                            ? isSubmittingReview
-                              ? "Đang gửi..."
-                              : "Gửi đánh giá"
-                            : "Chỉ áp dụng cho dữ liệu API"}
+                          {isSubmittingReview ? "Đang gửi..." : "Gửi đánh giá"}
                         </Button>
                       </div>
                     </div>
