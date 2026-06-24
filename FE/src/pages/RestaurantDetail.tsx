@@ -9,8 +9,8 @@ import {
   getRestaurantReviews,
 } from "@/services/restaurant.service";
 import { getRestaurantEvents } from "@/services/event.service";
-import { useAuthStore } from "@/store/authStore";
 import { mediaService } from "@/services/media.service";
+import { useAuthStore } from "@/store/authStore";
 import type {
   RestaurantResponse,
   ReviewResponse,
@@ -30,7 +30,6 @@ const tabIcons: Record<Tab, string> = {
 
 export default function RestaurantDetail() {
   const { id } = useParams();
-  const accessToken = useAuthStore((state) => state.accessToken);
   const restaurantId = Number(id);
   const isValidId = Number.isInteger(restaurantId) && restaurantId > 0;
   const [apiRestaurant, setApiRestaurant] =
@@ -38,6 +37,7 @@ export default function RestaurantDetail() {
   const [apiReviews, setApiReviews] = useState<ReviewResponse[]>([]);
   const [apiEvents, setApiEvents] = useState<EventResponse[]>([]);
   const [isLoading, setIsLoading] = useState(isValidId);
+  const { user } = useAuthStore();
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("Thông tin");
@@ -46,6 +46,10 @@ export default function RestaurantDetail() {
   const [hoverRating, setHoverRating] = useState(0);
   const [selectedRating, setSelectedRating] = useState(0);
   const [reviewImages, setReviewImages] = useState<File[]>([]);
+
+  const isOwner = useMemo(() => {
+    return user?.id !== undefined && apiRestaurant?.ownerId !== undefined && user.id === apiRestaurant.ownerId;
+  }, [user, apiRestaurant]);
 
   useEffect(() => {
     if (!isValidId) return;
@@ -113,7 +117,7 @@ export default function RestaurantDetail() {
       address: apiRestaurant.address ?? "Chưa cập nhật địa chỉ",
       phone: apiRestaurant.phoneNumber ?? "Chưa cập nhật",
       mapAlt: `Bản đồ ${apiRestaurant.name}`,
-      menu: [],
+      menu: [] as Array<{ name: string; price: string; category: string }>,
       reviewsList: apiReviews.map((review) => ({
         name: review.userName ?? `Người dùng #${review.userId}`,
         rating: review.rating,
@@ -144,7 +148,7 @@ export default function RestaurantDetail() {
       });
 
       if (reviewImages.length > 0) {
-        await mediaService.uploadMultiple(reviewImages, undefined, createdReview.id);
+        await mediaService.uploadMultiple(reviewImages, restaurantId, createdReview.id);
       }
 
       const freshReviews = await getRestaurantReviews(restaurantId);
@@ -435,85 +439,95 @@ export default function RestaurantDetail() {
                 {activeTab === "Đánh giá" && (
                   <div className="space-y-6">
                     {/* Write Review */}
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                      <p className="font-semibold text-slate-900">Viết đánh giá của bạn</p>
-                      <div className="mt-3 flex items-center gap-1">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <button
-                            key={star}
-                            onMouseEnter={() => setHoverRating(star)}
-                            onMouseLeave={() => setHoverRating(0)}
-                            onClick={() => setSelectedRating(star)}
-                            className="text-2xl transition-transform hover:scale-125"
-                          >
-                            <span className={(hoverRating || selectedRating) >= star ? "text-amber-400" : "text-slate-300"}>
-                              ★
-                            </span>
-                          </button>
-                        ))}
-                        {selectedRating > 0 && (
-                          <span className="ml-2 text-sm font-medium text-slate-600">
-                            {["", "Tệ", "Kém", "Bình thường", "Tốt", "Xuất sắc"][selectedRating]}
-                          </span>
-                        )}
+                    {!user ? (
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-5 text-center text-slate-600">
+                        🔑 Vui lòng <Link to="/login" className="font-semibold text-emerald-600 hover:underline">đăng nhập</Link> để viết đánh giá cho nhà hàng này.
                       </div>
-                      <textarea
-                        rows={3}
-                        value={reviewText}
-                        onChange={(e) => setReviewText(e.target.value)}
-                        placeholder="Chia sẻ trải nghiệm của bạn..."
-                        className="mt-3 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition resize-none"
-                      />
-                      {reviewImages.length > 0 && (
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {reviewImages.map((file, idx) => (
-                            <div key={idx} className="relative h-16 w-16 group">
-                              <img
-                                src={URL.createObjectURL(file)}
-                                alt="preview"
-                                className="h-full w-full rounded-xl object-cover border border-slate-200"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => setReviewImages((current) => current.filter((_, i) => i !== idx))}
-                                className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] text-white shadow hover:bg-rose-600 transition"
-                              >
-                                ✕
-                              </button>
-                            </div>
+                    ) : isOwner ? (
+                      <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-5 text-center text-amber-800">
+                        ⚠️ Bạn là chủ nhà hàng này, do đó không thể đánh giá nhà hàng của chính mình.
+                      </div>
+                    ) : (
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                        <p className="font-semibold text-slate-900">Viết đánh giá của bạn</p>
+                        <div className="mt-3 flex items-center gap-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              onMouseEnter={() => setHoverRating(star)}
+                              onMouseLeave={() => setHoverRating(0)}
+                              onClick={() => setSelectedRating(star)}
+                              className="text-2xl transition-transform hover:scale-125"
+                            >
+                              <span className={(hoverRating || selectedRating) >= star ? "text-amber-400" : "text-slate-300"}>
+                                ★
+                              </span>
+                            </button>
                           ))}
-                        </div>
-                      )}
-                      <div className="mt-3 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          {usesApi && (
-                            <label className="flex items-center gap-1.5 cursor-pointer rounded-xl bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition shadow-sm">
-                              📷 Thêm ảnh
-                              <input
-                                type="file"
-                                multiple
-                                accept="image/*"
-                                onChange={handleReviewImagesChange}
-                                className="sr-only"
-                              />
-                            </label>
+                          {selectedRating > 0 && (
+                            <span className="ml-2 text-sm font-medium text-slate-600">
+                              {["", "Tệ", "Kém", "Bình thường", "Tốt", "Xuất sắc"][selectedRating]}
+                            </span>
                           )}
-                          <span className="text-xs text-slate-400">{reviewText.length}/500 ký tự</span>
                         </div>
-                        <Button
-                          onClick={handleSubmitReview}
-                          disabled={
-                            !isValidId ||
-                            !reviewText.trim() ||
-                            selectedRating === 0 ||
-                            isSubmittingReview
-                          }
-                          className="rounded-2xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
-                        >
-                          {isSubmittingReview ? "Đang gửi..." : "Gửi đánh giá"}
-                        </Button>
+                        <textarea
+                          rows={3}
+                          value={reviewText}
+                          onChange={(e) => setReviewText(e.target.value)}
+                          placeholder="Chia sẻ trải nghiệm của bạn..."
+                          className="mt-3 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition resize-none"
+                        />
+                        {reviewImages.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {reviewImages.map((file, idx) => (
+                              <div key={idx} className="relative h-16 w-16 group">
+                                <img
+                                  src={URL.createObjectURL(file)}
+                                  alt="preview"
+                                  className="h-full w-full rounded-xl object-cover border border-slate-200"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setReviewImages((current) => current.filter((_, i) => i !== idx))}
+                                  className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] text-white shadow hover:bg-rose-600 transition"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <div className="mt-3 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            {isValidId && (
+                              <label className="flex items-center gap-1.5 cursor-pointer rounded-xl bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition shadow-sm">
+                                📷 Thêm ảnh
+                                <input
+                                  type="file"
+                                  multiple
+                                  accept="image/*"
+                                  onChange={handleReviewImagesChange}
+                                  className="sr-only"
+                                />
+                              </label>
+                            )}
+                            <span className="text-xs text-slate-400">{reviewText.length}/500 ký tự</span>
+                          </div>
+                          <Button
+                            onClick={handleSubmitReview}
+                            disabled={
+                              !isValidId ||
+                              !reviewText.trim() ||
+                              selectedRating === 0 ||
+                              isSubmittingReview
+                            }
+                            className="rounded-2xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+                          >
+                            {isSubmittingReview ? "Đang gửi..." : "Gửi đánh giá"}
+                          </Button>
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     {/* Reviews List */}
                     <div className="space-y-4">
@@ -624,7 +638,7 @@ export default function RestaurantDetail() {
                 className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 transition"
               >
                 <span className="text-lg">⭐</span>
-                Viết đánh giá
+                {isOwner ? "Xem đánh giá" : "Viết đánh giá"}
               </button>
               <button className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 transition">
                 <span className="text-lg">📤</span>

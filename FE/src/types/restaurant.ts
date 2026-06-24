@@ -89,6 +89,8 @@ export interface ReviewResponse {
   mediaList?: MediaResponse[];
   rating: number;
   context: string;
+  userName?: string;
+  createdAt?: string;
 }
 
 export interface CreateReviewRequest {
