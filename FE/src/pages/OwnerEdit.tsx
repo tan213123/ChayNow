@@ -597,14 +597,11 @@ export default function OwnerEdit() {
                     ["district", "Quận / huyện *"],
                     ["city", "Thành phố *"],
                     ["address", "Địa chỉ *"],
-                    ["mapUrl", "URL bản đồ"],
                   ] as const
                 ).map(([key, label]) => (
                   <label
                     key={key}
-                    className={`space-y-2 text-sm font-semibold text-slate-700 ${
-                      key === "mapUrl" ? "md:col-span-2" : ""
-                    }`}
+                    className="space-y-2 text-sm font-semibold text-slate-700"
                   >
                     {label}
                     <input
