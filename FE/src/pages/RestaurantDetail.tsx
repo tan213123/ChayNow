@@ -607,23 +607,7 @@ export default function RestaurantDetail() {
 
           {/* Sidebar */}
           <aside className="space-y-5">
-            {/* Map placeholder */}
-            <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-sm font-bold uppercase tracking-widest text-slate-400">📍 Bản đồ</p>
-              <div
-                className="mt-4 h-64 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center"
-                aria-label={restaurant.mapAlt}
-              >
-                <div className="text-center">
-                  <div className="text-5xl">🗺️</div>
-                  <p className="mt-2 text-sm text-slate-500">Xem vị trí trên bản đồ</p>
-                </div>
-              </div>
-              <p className="mt-3 text-sm text-slate-600">{restaurant.address}</p>
-              <Button className="mt-4 w-full rounded-2xl border border-emerald-600 bg-transparent px-4 py-3 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 transition">
-                Mở Google Maps →
-              </Button>
-            </div>
+
 
             {/* Quick Actions */}
             <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm space-y-3">
@@ -646,10 +630,7 @@ export default function RestaurantDetail() {
                 <span className="text-lg">⭐</span>
                 {isOwner ? "Xem đánh giá" : "Viết đánh giá"}
               </button>
-              <button className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 transition">
-                <span className="text-lg">📤</span>
-                Chia sẻ
-              </button>
+
             </div>
 
             {/* Rating summary */}
@@ -666,17 +647,21 @@ export default function RestaurantDetail() {
                   <p className="mt-1 text-xs text-slate-500">{restaurant.reviews} đánh giá</p>
                 </div>
                 <div className="flex-1 space-y-1.5">
-                  {[5, 4, 3, 2, 1].map((star) => (
-                    <div key={star} className="flex items-center gap-2 text-xs">
-                      <span className="w-3 text-slate-400">{star}</span>
-                      <div className="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-amber-400"
-                          style={{ width: `${star === 5 ? 65 : star === 4 ? 25 : star === 3 ? 7 : 3}%` }}
-                        />
+                  {[5, 4, 3, 2, 1].map((star) => {
+                    const count = restaurant.reviewsList.filter(r => Math.round(r.rating) === star).length;
+                    const percentage = restaurant.reviews > 0 ? (count / restaurant.reviews) * 100 : 0;
+                    return (
+                      <div key={star} className="flex items-center gap-2 text-xs">
+                        <span className="w-3 text-slate-400">{star}</span>
+                        <div className="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-amber-400"
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>
