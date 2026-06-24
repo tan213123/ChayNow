@@ -6,9 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 
-import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.List;
 @Getter
 @Setter
 public class CreateRestaurantRequest {
@@ -17,8 +15,8 @@ public class CreateRestaurantRequest {
     private String address;
 
     @Pattern(
-            regexp = "^(0|\\+84)[0-9]{8,10}$",
-            message = "Phone number are invalid. It should start with 0 or +84 and contain 9 to 11 digits."
+            regexp = "^$|^(0|\\+84)(3|5|7|8|9)[0-9]{8}$",
+            message = "Phone number is invalid. It should start with 0 or +84 followed by a valid prefix (3, 5, 7, 8, 9) and 8 digits."
     )
     private String phoneNumber;
     
@@ -33,7 +31,5 @@ public class CreateRestaurantRequest {
     private LocalTime openTime;
     @NotNull(message = "Closed time cannot null")
     private LocalTime closedTime;
-
-    private List<String> mediaUrls;
 
 }

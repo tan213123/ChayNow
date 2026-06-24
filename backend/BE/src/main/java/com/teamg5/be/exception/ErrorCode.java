@@ -69,6 +69,16 @@ public enum ErrorCode {
         "ERR_EVENT_FORBIDDEN",
         "You do not have permission to manage this event",
         HttpStatus.FORBIDDEN
+        ),
+        UPLOAD_FAILED(
+        "ERR_UPLOAD_FAILED",
+        "Failed to upload file to Cloudinary",
+        HttpStatus.INTERNAL_SERVER_ERROR
+        ),
+        EMPTY_FILE(
+        "ERR_EMPTY_FILE",
+        "Uploaded file is empty",
+        HttpStatus.BAD_REQUEST
         );
 
     

@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import java.util.List;
+import java.util.Collections;
 import com.teamg5.be.entity.Review;
 import com.teamg5.be.dto.MediaResponse;
 @Getter
@@ -22,6 +23,7 @@ public class ReviewResponse {
     private String typeRestaurantName;
 
     private List<MediaResponse> restaurantMedia;
+    private List<MediaResponse> mediaList;
 
     private Integer rating;
     private String context;
@@ -40,6 +42,13 @@ public class ReviewResponse {
                                 .stream()
                                 .map(MediaResponse::from)
                                 .toList()
+                )
+                .mediaList(
+                        review.getMediaList() != null
+                                ? review.getMediaList().stream()
+                                        .map(MediaResponse::from)
+                                        .toList()
+                                : Collections.emptyList()
                 )
                 .rating(review.getRating())
                 .context(review.getContext())

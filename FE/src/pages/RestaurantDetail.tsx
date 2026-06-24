@@ -11,6 +11,7 @@ import {
 } from "@/services/restaurant.service";
 import { getRestaurantEvents } from "@/services/event.service";
 import { useAuthStore } from "@/store/authStore";
+import { mediaService } from "@/services/media.service";
 import type {
   RestaurantResponse,
   ReviewResponse,
@@ -45,6 +46,7 @@ export default function RestaurantDetail() {
   const [reviewText, setReviewText] = useState("");
   const [hoverRating, setHoverRating] = useState(0);
   const [selectedRating, setSelectedRating] = useState(0);
+  const [reviewImages, setReviewImages] = useState<File[]>([]);
 
   useEffect(() => {
     if (!usesApi) {
@@ -129,10 +131,17 @@ export default function RestaurantDetail() {
         rating: review.rating,
         date: "",
         comment: review.context,
+        images: review.mediaList?.map((m) => m.url) ?? [],
       })),
       features: [apiRestaurant.typeRestaurantName],
     };
   }, [apiRestaurant, apiReviews, id, usesApi]);
+
+  const handleReviewImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setReviewImages(Array.from(e.target.files));
+    }
+  };
 
   const handleSubmitReview = async () => {
     if (!usesApi || !reviewText.trim() || selectedRating === 0) {
@@ -145,9 +154,17 @@ export default function RestaurantDetail() {
         rating: selectedRating,
         context: reviewText.trim(),
       });
-      setApiReviews((current) => [createdReview, ...current]);
+
+      if (reviewImages.length > 0) {
+        await mediaService.uploadMultiple(reviewImages, undefined, createdReview.id);
+      }
+
+      const freshReviews = await getRestaurantReviews(restaurantId);
+      setApiReviews(freshReviews);
+      
       setReviewText("");
       setSelectedRating(0);
+      setReviewImages([]);
       toast.success("Gửi đánh giá thành công.");
     } catch (error) {
       toast.error(
@@ -464,8 +481,42 @@ export default function RestaurantDetail() {
                         placeholder="Chia sẻ trải nghiệm của bạn..."
                         className="mt-3 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition resize-none"
                       />
+                      {reviewImages.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {reviewImages.map((file, idx) => (
+                            <div key={idx} className="relative h-16 w-16 group">
+                              <img
+                                src={URL.createObjectURL(file)}
+                                alt="preview"
+                                className="h-full w-full rounded-xl object-cover border border-slate-200"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setReviewImages((current) => current.filter((_, i) => i !== idx))}
+                                className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] text-white shadow hover:bg-rose-600 transition"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                       <div className="mt-3 flex items-center justify-between">
-                        <span className="text-xs text-slate-400">{reviewText.length}/500 ký tự</span>
+                        <div className="flex items-center gap-3">
+                          {usesApi && (
+                            <label className="flex items-center gap-1.5 cursor-pointer rounded-xl bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition shadow-sm">
+                              📷 Thêm ảnh
+                              <input
+                                type="file"
+                                multiple
+                                accept="image/*"
+                                onChange={handleReviewImagesChange}
+                                className="sr-only"
+                              />
+                            </label>
+                          )}
+                          <span className="text-xs text-slate-400">{reviewText.length}/500 ký tự</span>
+                        </div>
                         <Button
                           onClick={handleSubmitReview}
                           disabled={
@@ -487,32 +538,47 @@ export default function RestaurantDetail() {
 
                     {/* Reviews List */}
                     <div className="space-y-4">
-                      {restaurant.reviewsList.map((review) => (
-                        <div
-                          key={review.name + review.date}
-                          className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm"
-                        >
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex items-center gap-3">
-                              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-700">
-                                {review.name.slice(0, 1)}
+                      {restaurant.reviewsList.map((review) => {
+                        const images = (review as { images?: string[] }).images;
+                        return (
+                          <div
+                            key={review.name + review.date}
+                            className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm"
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex items-center gap-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-700">
+                                  {review.name.slice(0, 1)}
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-slate-900">{review.name}</p>
+                                  <p className="text-xs text-slate-400">{review.date}</p>
+                                </div>
                               </div>
-                              <div>
-                                <p className="font-semibold text-slate-900">{review.name}</p>
-                                <p className="text-xs text-slate-400">{review.date}</p>
+                              <div className="flex gap-0.5 text-amber-400">
+                                {[...Array(5)].map((_, idx) => (
+                                  <span key={idx} className={idx < review.rating ? "text-amber-400" : "text-slate-200"}>
+                                    ★
+                                  </span>
+                                ))}
                               </div>
                             </div>
-                            <div className="flex gap-0.5 text-amber-400">
-                              {[...Array(5)].map((_, idx) => (
-                                <span key={idx} className={idx < review.rating ? "text-amber-400" : "text-slate-200"}>
-                                  ★
-                                </span>
-                              ))}
-                            </div>
+                            <p className="mt-3 text-sm leading-relaxed text-slate-600">{review.comment}</p>
+                            {images && images.length > 0 && (
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                {images.map((imgUrl, i) => (
+                                  <img
+                                    key={i}
+                                    src={imgUrl}
+                                    alt="Review image"
+                                    className="h-20 w-20 rounded-xl object-cover border border-slate-100 shadow-sm"
+                                  />
+                                ))}
+                              </div>
+                            )}
                           </div>
-                          <p className="mt-3 text-sm leading-relaxed text-slate-600">{review.comment}</p>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
