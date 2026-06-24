@@ -37,6 +37,12 @@ public enum ErrorCode {
             "You are comment this restaurant",
             HttpStatus.BAD_REQUEST
          ),
+    
+    OWNER_CANNOT_REVIEW(
+            "ERR_OWNER_CANNOT_REVIEW",
+            "Restaurant owners cannot review their own restaurants",
+            HttpStatus.BAD_REQUEST
+         ),
                
 
          PLACE_NOT_FOUND(

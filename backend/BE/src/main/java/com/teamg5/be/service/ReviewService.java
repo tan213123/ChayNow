@@ -36,6 +36,10 @@ public class ReviewService {
         Restaurant restaurant = restaurantRepository.findById(restaurantId)
                 .orElseThrow(() -> new AppException(ErrorCode.RESTAURANT_NOT_FOUND));
 
+        if (restaurant.getOwner() != null && restaurant.getOwner().getId().equals(currentUser.getId())) {
+            throw new AppException(ErrorCode.OWNER_CANNOT_REVIEW);
+        }
+
         boolean alreadyReviewed = reviewRepository.existsByUser_IdAndRestaurant_Id(
                 currentUser.getId(),
                 restaurantId

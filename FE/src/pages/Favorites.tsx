@@ -168,6 +168,7 @@ export default function Favorites() {
                 </div>
               </article>
             ))}
+          </div>
         ) : (
           <div className="py-24 text-center">
             <div className="text-6xl">🍃</div>
