@@ -18,6 +18,7 @@ import {
   updatePlace,
 } from "@/services/place.service";
 import { setSelectedRestaurantId } from "@/lib/ownerRestaurant";
+import { mediaService } from "@/services/media.service";
 import type {
   PlaceRequest,
   PlaceResponse,
@@ -75,6 +76,10 @@ export default function OwnerEdit() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState("");
 
+  const setField = (key: keyof RestaurantForm, value: string) => {
+    setForm((current) => ({ ...current, [key]: value }));
+  };
+
   useEffect(() => {
     let cancelled = false;
 
@@ -100,9 +105,10 @@ export default function OwnerEdit() {
         return;
       }
 
+      const restaurantAddress = restaurant.address ?? "";
       setForm({
         name: restaurant.name,
-        address: restaurant.address ?? "",
+        address: restaurantAddress,
         phoneNumber: restaurant.phoneNumber ?? "",
         description: restaurant.description ?? "",
         typeRestaurantId: String(restaurant.typeRestaurantId),
@@ -119,9 +125,12 @@ export default function OwnerEdit() {
             name: place.name,
             district: place.district,
             city: place.city,
-            address: place.address,
+            address: restaurantAddress || place.address,
             mapUrl: place.mapUrl ?? "",
           });
+          if (!restaurantAddress && place.address) {
+            setField("address", place.address);
+          }
         }
       }
     };
@@ -147,8 +156,9 @@ export default function OwnerEdit() {
     };
   }, [isEditing, restaurantId]);
 
-  const setField = (key: keyof RestaurantForm, value: string) => {
-    setForm((current) => ({ ...current, [key]: value }));
+  const setDisplayAddress = (value: string) => {
+    setForm((current) => ({ ...current, address: value }));
+    setPlaceDraft((current) => ({ ...current, address: value }));
   };
 
   const setPlaceField = (key: keyof PlaceRequest, value: string) => {
@@ -216,11 +226,15 @@ export default function OwnerEdit() {
 
     try {
       const place = await getPlace(Number(value));
+      const displayAddress = form.address || place.address;
+      if (!form.address && place.address) {
+        setField("address", place.address);
+      }
       setPlaceDraft({
         name: place.name,
         district: place.district,
         city: place.city,
-        address: place.address,
+        address: displayAddress,
         mapUrl: place.mapUrl ?? "",
       });
     } catch (error) {
@@ -326,13 +340,6 @@ export default function OwnerEdit() {
       return;
     }
 
-    if (imageFile) {
-      toast.error(
-        "Backend chưa có API upload ảnh. Vui lòng bỏ ảnh mới trước khi lưu nhà hàng.",
-      );
-      return;
-    }
-
     const phoneNumber = form.phoneNumber.replace(/\s/g, "");
     if (phoneNumber && !/^(0|\+84)[0-9]{8,10}$/.test(phoneNumber)) {
       toast.error("Số điện thoại không đúng định dạng.");
@@ -348,7 +355,6 @@ export default function OwnerEdit() {
       typeRestaurantId: Number(form.typeRestaurantId),
       openTime: form.openTime,
       closedTime: form.closedTime,
-      mediaUrls: form.mediaUrl.trim() ? [form.mediaUrl.trim()] : [],
     };
 
     try {
@@ -356,13 +362,18 @@ export default function OwnerEdit() {
       const restaurant = isEditing
         ? await updateRestaurant(restaurantId, payload)
         : await createRestaurant(payload);
+
+      if (imageFile) {
+        await mediaService.upload(imageFile, restaurant.id);
+      }
+
       setSelectedRestaurantId(restaurant.id);
       toast.success(
         isEditing
           ? "Cập nhật nhà hàng thành công."
           : "Tạo nhà hàng thành công.",
       );
-      navigate("/manage");
+      navigate(`/restaurant/${restaurant.id}`);
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Không thể lưu nhà hàng.",
@@ -450,7 +461,7 @@ export default function OwnerEdit() {
               Địa chỉ hiển thị
               <input
                 value={form.address}
-                onChange={(event) => setField("address", event.target.value)}
+                onChange={(event) => setDisplayAddress(event.target.value)}
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-normal outline-none focus:border-emerald-500"
               />
             </label>
@@ -521,9 +532,8 @@ export default function OwnerEdit() {
                 </div>
               ) : null}
               {imageFile ? (
-                <p className="text-xs font-normal text-amber-700">
-                  Đã chọn: {imageFile.name}. Backend hiện chưa có API upload
-                  file nên ảnh mới chưa thể lưu lên hệ thống.
+                <p className="text-xs font-normal text-emerald-700">
+                  Đã chọn: {imageFile.name}. Ảnh này sẽ được tải lên khi bạn lưu nhà hàng.
                 </p>
               ) : null}
             </div>
@@ -555,7 +565,7 @@ export default function OwnerEdit() {
               onClick={() => {
                 setIsNewPlace(true);
                 setField("placeId", "");
-                setPlaceDraft(emptyPlace);
+                setPlaceDraft({ ...emptyPlace, address: form.address });
               }}
               className="rounded-2xl border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100"
             >
@@ -587,20 +597,21 @@ export default function OwnerEdit() {
                     ["district", "Quận / huyện *"],
                     ["city", "Thành phố *"],
                     ["address", "Địa chỉ *"],
-                    ["mapUrl", "URL bản đồ"],
                   ] as const
                 ).map(([key, label]) => (
                   <label
                     key={key}
-                    className={`space-y-2 text-sm font-semibold text-slate-700 ${
-                      key === "mapUrl" ? "md:col-span-2" : ""
-                    }`}
+                    className="space-y-2 text-sm font-semibold text-slate-700"
                   >
                     {label}
                     <input
-                      value={placeDraft[key] ?? ""}
+                      value={
+                        key === "address" ? form.address : (placeDraft[key] ?? "")
+                      }
                       onChange={(event) =>
-                        setPlaceField(key, event.target.value)
+                        key === "address"
+                          ? setDisplayAddress(event.target.value)
+                          : setPlaceField(key, event.target.value)
                       }
                       className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-normal outline-none focus:border-sky-500"
                     />

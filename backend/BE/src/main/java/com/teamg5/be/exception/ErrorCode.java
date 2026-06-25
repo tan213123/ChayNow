@@ -12,29 +12,30 @@ public enum ErrorCode {
     NOT_FOUND("ERR_NOT_FOUND", "Resource not found", HttpStatus.NOT_FOUND),
     USER_ALREADY_EXISTS("ERR_USER_EXISTS", "User already exists", HttpStatus.BAD_REQUEST),
     INVALID_CREDENTIALS("ERR_INVALID_CREDENTIALS", "Invalid username or password", HttpStatus.BAD_REQUEST),
-    USER_NOT_FOUND("USER_NOT_FOUND" ,"User not found", HttpStatus.NOT_FOUND),
-    // TYPE RESTAURANT
+    USER_NOT_FOUND("USER_NOT_FOUND", "User not found", HttpStatus.NOT_FOUND),
     TYPE_RESTAURANT_NOT_FOUND(
             "ERR_TYPE_RESTAURANT_NOT_FOUND",
             "cannot find type of restaurant",
             HttpStatus.NOT_FOUND
     ),
-
     TYPE_RESTAURANT_ALREADY_EXISTS(
             "ERR_TYPE_RESTAURANT_ALREADY_EXISTS",
             "this type restaurant is exist",
             HttpStatus.BAD_REQUEST
     ),
-
     RESTAURANT_NOT_FOUND(
             "ERR_RESTAURANT_NOT_FOUND",
             "cannot find this restaurant",
             HttpStatus.NOT_FOUND
     ),
-
     REVIEW_ALREADY_EXISTS(
             "ERR_REVIEW_ALREADY_EXISTS",
             "You are comment this restaurant",
+            HttpStatus.BAD_REQUEST
+    ),
+    OWNER_CANNOT_REVIEW(
+            "ERR_OWNER_CANNOT_REVIEW",
+            "Restaurant owners cannot review their own restaurants",
             HttpStatus.BAD_REQUEST
     ),
     POSTING_NOT_FOUND("ERR_POSTING_NOT_FOUND", "Cannot find this posting", HttpStatus.NOT_FOUND),
@@ -54,8 +55,27 @@ public enum ErrorCode {
             "ERR_MENU_NOT_FOUND",
             "This food cannot be found",
             HttpStatus.NOT_FOUND
+    ),
+    EVENT_NOT_FOUND(
+            "ERR_EVENT_NOT_FOUND",
+            "This event cannot be found",
+            HttpStatus.NOT_FOUND
+    ),
+    EVENT_FORBIDDEN(
+            "ERR_EVENT_FORBIDDEN",
+            "You do not have permission to manage this event",
+            HttpStatus.FORBIDDEN
+    ),
+    UPLOAD_FAILED(
+            "ERR_UPLOAD_FAILED",
+            "Failed to upload file to Cloudinary",
+            HttpStatus.INTERNAL_SERVER_ERROR
+    ),
+    EMPTY_FILE(
+            "ERR_EMPTY_FILE",
+            "Uploaded file is empty",
+            HttpStatus.BAD_REQUEST
     );
-    
 
     private final String code;
     private final String defaultMessage;

@@ -7,8 +7,64 @@ import axios, {
 
 import { useAuthStore } from "@/store/authStore";
 
+const getStringMessages = (value: unknown): string[] => {
+  if (typeof value === "string") {
+    const message = value.trim();
+    return message ? [message] : [];
+  }
+
+  if (Array.isArray(value)) {
+    return value.flatMap(getStringMessages);
+  }
+
+  if (value && typeof value === "object") {
+    return Object.values(value).flatMap(getStringMessages);
+  }
+
+  return [];
+};
+
+export const getApiErrorMessage = (
+  error: unknown,
+  fallback: string,
+): string => {
+  if (error && typeof error === "object") {
+    const response = Reflect.get(error, "response");
+    const responseData =
+      response && typeof response === "object"
+        ? Reflect.get(response, "data")
+        : undefined;
+
+    if (responseData && typeof responseData === "object") {
+      const validationMessages = getStringMessages(
+        Reflect.get(responseData, "data"),
+      );
+
+      if (validationMessages.length > 0) {
+        return validationMessages.join(". ");
+      }
+
+      const backendMessage = Reflect.get(responseData, "message");
+      if (typeof backendMessage === "string" && backendMessage.trim()) {
+        return backendMessage.trim();
+      }
+
+      const legacyError = Reflect.get(responseData, "error");
+      if (typeof legacyError === "string" && legacyError.trim()) {
+        return legacyError.trim();
+      }
+    }
+  }
+
+  if (error instanceof Error && error.message.trim()) {
+    return error.message.trim();
+  }
+
+  return fallback;
+};
+
 const config: AxiosRequestConfig = {
-  baseURL: import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080",
+ 
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
@@ -53,7 +109,7 @@ apiService.interceptors.request.use(
 apiService.interceptors.response.use(
   (response) => response.data,
 
-  (error: AxiosError<{ message?: string; error?: string }>) => {
+  (error: AxiosError<unknown>) => {
     if (!error.response) {
       console.error("Network Error:", error.message);
       return Promise.reject(error);
@@ -61,10 +117,7 @@ apiService.interceptors.response.use(
 
     const status = error.response.status;
 
-    const backendMessage =
-      error.response.data?.message ||
-      error.response.data?.error ||
-      error.message;
+    const backendMessage = getApiErrorMessage(error, error.message);
 
     switch (status) {
       case 400:

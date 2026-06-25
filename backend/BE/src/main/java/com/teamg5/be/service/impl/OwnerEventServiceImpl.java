@@ -43,10 +43,6 @@ public class OwnerEventServiceImpl implements OwnerEventService {
         if (request.getRestaurantId() == null) {
             throw new AppException(ErrorCode.INVALID_INPUT, "Restaurant ID is required");
         }
-        if (request.getType() == null || request.getType().isBlank()) {
-            throw new AppException(ErrorCode.INVALID_INPUT, "Event type is required (DISCOUNT or CHARITY)");
-        }
-
         // 2. Fetch and check restaurant exists
         Restaurant restaurant = restaurantRepository.findById(request.getRestaurantId())
                 .orElseThrow(() -> new AppException(ErrorCode.RESTAURANT_NOT_FOUND, "Restaurant not found with ID: " + request.getRestaurantId()));
@@ -62,7 +58,14 @@ public class OwnerEventServiceImpl implements OwnerEventService {
         }
 
         // 5. Validate type
-        String typeStr = request.getType().trim().toUpperCase();
+        String typeStr = request.getType();
+        if (typeStr == null || typeStr.isBlank()) {
+            typeStr = request.getEventType() != null ? request.getEventType().name() : null;
+        }
+        if (typeStr == null || typeStr.isBlank()) {
+            throw new AppException(ErrorCode.INVALID_INPUT, "Event type is required (DISCOUNT or CHARITY)");
+        }
+        typeStr = typeStr.trim().toUpperCase();
         EventType eventType;
         try {
             eventType = EventType.valueOf(typeStr);
@@ -100,10 +103,11 @@ public class OwnerEventServiceImpl implements OwnerEventService {
                 .restaurant(restaurant)
                 .creator(currentUser)
                 .title(request.getTitle().trim())
-                .description(request.getDescription().trim())
+                .description(request.getDescription() != null ? request.getDescription().trim() : null)
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
                 .type(eventType.name())
+                .eventType(eventType)
                 .discountPercent(discountPercent)
                 .period(period)
                 .charityTime(charityTime)

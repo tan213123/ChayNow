@@ -1,35 +1,46 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
-import { favoriteRestaurants, restaurants } from "@/data/restaurants";
+import { getRestaurants } from "@/services/restaurant.service";
+import type { RestaurantResponse } from "@/types/restaurant";
 
 const sortOptions = ["Mới nhất", "Đánh giá cao nhất", "Tên A-Z"];
 
 export default function Favorites() {
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("Mới nhất");
-  const [removed, setRemoved] = useState<string[]>([]);
+  const [removed, setRemoved] = useState<number[]>([]);
+  const [allRestaurants, setAllRestaurants] = useState<RestaurantResponse[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleRemove = (id: string) => {
+  useEffect(() => {
+    getRestaurants()
+      .then((data) => setAllRestaurants(data))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  const FALLBACK_IMG = "https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=1200&q=80";
+
+  const handleRemove = (id: number) => {
     setRemoved((prev) => [...prev, id]);
   };
 
-  const displayed = favoriteRestaurants
+  const displayed = allRestaurants
     .filter((r) => !removed.includes(r.id))
     .filter(
       (r) =>
         r.name.toLowerCase().includes(search.toLowerCase()) ||
-        r.location.toLowerCase().includes(search.toLowerCase())
+        (r.address ?? "").toLowerCase().includes(search.toLowerCase())
     )
     .sort((a, b) => {
-      if (sortBy === "Đánh giá cao nhất") return b.rating - a.rating;
       if (sortBy === "Tên A-Z") return a.name.localeCompare(b.name);
       return 0;
     });
 
-  // Suggested restaurants (not in favorites)
-  const suggested = restaurants.filter((r) => !favoriteRestaurants.find((f) => f.id === r.id));
+  // Gợi ý: những nhà hàng đã bị xóa khỏi danh sách hiển thị
+  const suggested = allRestaurants.filter((r) => removed.includes(r.id));
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
@@ -85,7 +96,7 @@ export default function Favorites() {
         {/* Stats */}
         <div className="mb-6 flex items-center gap-3">
           <span className="rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700">
-            {displayed.length} địa điểm yêu thích
+            {loading ? "Đang tải..." : `${displayed.length} địa điểm`}
           </span>
           {removed.length > 0 && (
             <button
@@ -98,7 +109,20 @@ export default function Favorites() {
         </div>
 
         {/* Grid */}
-        {displayed.length > 0 ? (
+        {loading ? (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm animate-pulse">
+                <div className="h-52 bg-slate-200" />
+                <div className="space-y-3 p-5">
+                  <div className="h-4 w-3/4 rounded-full bg-slate-200" />
+                  <div className="h-3 w-1/2 rounded-full bg-slate-200" />
+                  <div className="h-10 rounded-2xl bg-slate-200" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : displayed.length > 0 ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {displayed.map((restaurant) => (
               <article
@@ -107,18 +131,15 @@ export default function Favorites() {
               >
                 <div className="relative h-52 overflow-hidden bg-slate-100">
                   <img
-                    src={restaurant.image}
+                    src={restaurant.mediaList[0]?.url ?? FALLBACK_IMG}
                     alt={restaurant.name}
                     className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 transition group-hover:opacity-100" />
-                  <div className="absolute right-4 top-4 rounded-full bg-white/95 px-3 py-1.5 text-sm font-bold text-amber-600 shadow-md">
-                    {restaurant.rating} ★
-                  </div>
                   {/* Remove button */}
                   <button
                     onClick={() => handleRemove(restaurant.id)}
-                    title="Xoá khỏi yêu thích"
+                    title="Xoá khỏi danh sách"
                     className="absolute left-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-white shadow-md text-sm transition hover:bg-red-600 hover:scale-110"
                   >
                     ♥
@@ -129,26 +150,15 @@ export default function Favorites() {
                     <div>
                       <h2 className="font-bold text-slate-900">{restaurant.name}</h2>
                       <p className="mt-1 flex items-center gap-1 text-sm text-slate-500">
-                        <span>📍</span> {restaurant.location}
+                        <span>📍</span> {restaurant.address ?? "Chưa cập nhật"}
                       </p>
                     </div>
                     <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-                      {restaurant.category}
+                      {restaurant.typeRestaurantName}
                     </span>
                   </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {restaurant.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
                   <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-400">
-                    <span>🕐 {restaurant.hours}</span>
-                    <span>{restaurant.reviews} đánh giá</span>
+                    <span>📞 {restaurant.phoneNumber ?? "Chưa cập nhật"}</span>
                   </div>
                   <Link to={`/restaurant/${restaurant.id}`}>
                     <Button className="w-full rounded-2xl bg-emerald-600 py-3 text-sm font-semibold text-white hover:bg-emerald-700 transition">
@@ -178,12 +188,12 @@ export default function Favorites() {
           </div>
         )}
 
-        {/* Suggestions */}
+        {/* Suggestions — nhà hàng đã tạm xóa */}
         {suggested.length > 0 && (
           <div className="mt-14">
             <div className="mb-6">
-              <h2 className="text-xl font-bold text-slate-900">Có thể bạn cũng thích</h2>
-              <p className="mt-1 text-sm text-slate-500">Khám phá thêm những quán chay tuyệt vời khác</p>
+              <h2 className="text-xl font-bold text-slate-900">Đã xoá gần đây</h2>
+              <p className="mt-1 text-sm text-slate-500">Những nhà hàng bạn vừa xóa khỏi danh sách</p>
             </div>
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {suggested.map((restaurant) => (
@@ -193,29 +203,21 @@ export default function Favorites() {
                 >
                   <div className="relative h-44 overflow-hidden bg-slate-100">
                     <img
-                      src={restaurant.image}
+                      src={restaurant.mediaList[0]?.url ?? FALLBACK_IMG}
                       alt={restaurant.name}
                       className="h-full w-full object-cover transition duration-500 group-hover:scale-105 opacity-90"
                     />
-                    <div className="absolute right-4 top-4 rounded-full bg-white px-2.5 py-1 text-xs font-bold text-amber-600 shadow-sm">
-                      {restaurant.rating} ★
-                    </div>
                   </div>
                   <div className="space-y-3 p-5">
                     <div>
                       <h3 className="font-bold text-slate-900">{restaurant.name}</h3>
-                      <p className="mt-0.5 text-sm text-slate-500">{restaurant.location}</p>
+                      <p className="mt-0.5 text-sm text-slate-500">{restaurant.address ?? "Chưa cập nhật"}</p>
                     </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <Link to={`/restaurant/${restaurant.id}`} className="flex-1">
-                        <Button variant="outline" className="w-full rounded-2xl border-slate-300 py-2.5 text-sm">
-                          Xem chi tiết
-                        </Button>
-                      </Link>
-                      <button className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 text-slate-400 hover:border-red-200 hover:bg-red-50 hover:text-red-500 transition text-lg">
-                        ♡
-                      </button>
-                    </div>
+                    <Link to={`/restaurant/${restaurant.id}`} className="flex-1">
+                      <Button variant="outline" className="w-full rounded-2xl border-slate-300 py-2.5 text-sm">
+                        Xem chi tiết
+                      </Button>
+                    </Link>
                   </div>
                 </article>
               ))}

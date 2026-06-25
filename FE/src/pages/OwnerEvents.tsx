@@ -11,7 +11,7 @@ import {
 } from "@/services/event.service";
 import {
   getRestaurant,
-  getRestaurants,
+  getMyRestaurants,
 } from "@/services/restaurant.service";
 import {
   getSelectedRestaurantId,
@@ -67,14 +67,14 @@ const statusStyles: Record<EventStatus, string> = {
   HIDDEN: "bg-rose-50 text-rose-700",
 };
 
-const getEventTypeLabel = (eventType: EventResponse["eventType"]) =>
-  eventType ? eventTypeLabels[eventType] : "Sự kiện";
+const getEventTypeLabel = (eventType: string | null) =>
+  eventType ? eventTypeLabels[eventType as EventType] : "Sự kiện";
 
-const getStatusLabel = (status: EventResponse["status"]) =>
-  status ? statusLabels[status] : "Chưa cập nhật";
+const getStatusLabel = (status: string | null) =>
+  status ? statusLabels[status as EventStatus] : "Chưa cập nhật";
 
-const getStatusStyle = (status: EventResponse["status"]) =>
-  status ? statusStyles[status] : "bg-slate-100 text-slate-600";
+const getStatusStyle = (status: string | null) =>
+  status ? statusStyles[status as EventStatus] : "bg-slate-100 text-slate-600";
 
 const dateFormatter = new Intl.DateTimeFormat("vi-VN", {
   day: "2-digit",
@@ -101,7 +101,7 @@ export default function OwnerEvents() {
       let restaurantId = getSelectedRestaurantId();
 
       if (!restaurantId) {
-        const restaurants = await getRestaurants();
+        const restaurants = await getMyRestaurants();
         restaurantId = restaurants[0]?.id ?? null;
         if (restaurantId) {
           setSelectedRestaurantId(restaurantId);
@@ -162,10 +162,10 @@ export default function OwnerEvents() {
       title: restaurantEvent.title,
       description: restaurantEvent.description ?? "",
       imageUrl: restaurantEvent.imageUrl ?? "",
-      eventType: restaurantEvent.eventType ?? "CHARITY",
+      eventType: (restaurantEvent.eventType as EventType) ?? "CHARITY",
       startDate: restaurantEvent.startDate ?? "",
       endDate: restaurantEvent.endDate ?? "",
-      status: restaurantEvent.status ?? "AUTO",
+      status: (restaurantEvent.status as EventStatus) ?? "AUTO",
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };

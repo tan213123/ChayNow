@@ -3,23 +3,26 @@ import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
-import { restaurants } from "@/data/restaurants";
 import {
   createRestaurantReview,
   getRestaurant,
   getRestaurantReviews,
 } from "@/services/restaurant.service";
+import { getRestaurantEvents } from "@/services/event.service";
+import { mediaService } from "@/services/media.service";
 import { useAuthStore } from "@/store/authStore";
 import type {
   RestaurantResponse,
   ReviewResponse,
+  EventResponse,
 } from "@/types/restaurant";
 
-const tabLabels = ["Thông tin", "Thực đơn", "Đánh giá", "Giới thiệu"] as const;
+const tabLabels = ["Thông tin", "Sự kiện", "Thực đơn", "Đánh giá", "Giới thiệu"] as const;
 type Tab = (typeof tabLabels)[number];
 
 const tabIcons: Record<Tab, string> = {
   "Thông tin": "ℹ️",
+  "Sự kiện": "🎉",
   "Thực đơn": "🍽️",
   "Đánh giá": "⭐",
   "Giới thiệu": "📖",
@@ -27,13 +30,14 @@ const tabIcons: Record<Tab, string> = {
 
 export default function RestaurantDetail() {
   const { id } = useParams();
-  const accessToken = useAuthStore((state) => state.accessToken);
   const restaurantId = Number(id);
-  const usesApi = Number.isInteger(restaurantId) && restaurantId > 0;
+  const isValidId = Number.isInteger(restaurantId) && restaurantId > 0;
   const [apiRestaurant, setApiRestaurant] =
     useState<RestaurantResponse | null>(null);
   const [apiReviews, setApiReviews] = useState<ReviewResponse[]>([]);
-  const [isLoading, setIsLoading] = useState(usesApi && Boolean(accessToken));
+  const [apiEvents, setApiEvents] = useState<EventResponse[]>([]);
+  const [isLoading, setIsLoading] = useState(isValidId);
+  const { user } = useAuthStore();
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("Thông tin");
@@ -41,26 +45,38 @@ export default function RestaurantDetail() {
   const [reviewText, setReviewText] = useState("");
   const [hoverRating, setHoverRating] = useState(0);
   const [selectedRating, setSelectedRating] = useState(0);
+  const [reviewImages, setReviewImages] = useState<File[]>([]);
+
+  const isOwner = useMemo(() => {
+    return user?.id !== undefined && apiRestaurant?.ownerId !== undefined && user.id === apiRestaurant.ownerId;
+  }, [user, apiRestaurant]);
 
   useEffect(() => {
-    if (!usesApi) {
-      return;
-    }
-
-    if (!accessToken) {
-      return;
-    }
+    if (!isValidId) return;
 
     let cancelled = false;
 
-    Promise.all([
-      getRestaurant(restaurantId),
-      getRestaurantReviews(restaurantId),
-    ])
-      .then(([restaurantResponse, reviewsResponse]) => {
+    Promise.resolve()
+      .then(() => {
+        if (!cancelled) {
+          setIsLoading(true);
+          setLoadError(null);
+        }
+
+        return Promise.all([
+          getRestaurant(restaurantId),
+          getRestaurantReviews(restaurantId),
+          getRestaurantEvents(restaurantId).catch((err) => {
+            console.error("Failed to load events", err);
+            return [] as EventResponse[];
+          }),
+        ]);
+      })
+      .then(([restaurantResponse, reviewsResponse, eventsResponse]) => {
         if (!cancelled) {
           setApiRestaurant(restaurantResponse);
           setApiReviews(reviewsResponse);
+          setApiEvents(eventsResponse);
         }
       })
       .catch((error: unknown) => {
@@ -73,23 +89,16 @@ export default function RestaurantDetail() {
         }
       })
       .finally(() => {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
+        if (!cancelled) setIsLoading(false);
       });
 
     return () => {
       cancelled = true;
     };
-  }, [accessToken, restaurantId, usesApi]);
+  }, [restaurantId, isValidId]);
 
   const restaurant = useMemo(() => {
-    if (!usesApi) {
-      return restaurants.find((item) => item.id === id);
-    }
-    if (!apiRestaurant) {
-      return undefined;
-    }
+    if (!apiRestaurant) return undefined;
 
     const rating =
       apiReviews.length > 0
@@ -106,7 +115,7 @@ export default function RestaurantDetail() {
       rating: Number(rating.toFixed(1)),
       reviews: apiReviews.length,
       category: apiRestaurant.typeRestaurantName,
-      tags: [apiRestaurant.typeRestaurantName],
+      tags: [apiRestaurant.typeRestaurantName].filter(Boolean),
       image:
         apiRestaurant.mediaList[0]?.url ??
         "https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=1200&q=80",
@@ -114,21 +123,28 @@ export default function RestaurantDetail() {
       address: apiRestaurant.address ?? "Chưa cập nhật địa chỉ",
       phone: apiRestaurant.phoneNumber ?? "Chưa cập nhật",
       mapAlt: `Bản đồ ${apiRestaurant.name}`,
-      menu: [],
+      menu: [] as Array<{ name: string; price: string; category: string }>,
       reviewsList: apiReviews.map((review) => ({
-        name: `Người dùng #${review.userId}`,
+        name: review.userName ?? `Người dùng #${review.userId}`,
         rating: review.rating,
-        date: "",
+        date: review.createdAt
+          ? new Intl.DateTimeFormat("vi-VN").format(new Date(review.createdAt))
+          : "",
         comment: review.context,
+        images: review.mediaList?.map((m) => m.url) ?? [],
       })),
-      features: [apiRestaurant.typeRestaurantName],
+      features: [apiRestaurant.typeRestaurantName].filter(Boolean),
     };
-  }, [apiRestaurant, apiReviews, id, usesApi]);
+  }, [apiRestaurant, apiReviews]);
+
+  const handleReviewImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setReviewImages(Array.from(e.target.files));
+    }
+  };
 
   const handleSubmitReview = async () => {
-    if (!usesApi || !reviewText.trim() || selectedRating === 0) {
-      return;
-    }
+    if (!isValidId || !reviewText.trim() || selectedRating === 0) return;
 
     try {
       setIsSubmittingReview(true);
@@ -136,15 +152,21 @@ export default function RestaurantDetail() {
         rating: selectedRating,
         context: reviewText.trim(),
       });
-      setApiReviews((current) => [createdReview, ...current]);
+
+      if (reviewImages.length > 0) {
+        await mediaService.uploadMultiple(reviewImages, restaurantId, createdReview.id);
+      }
+
+      const freshReviews = await getRestaurantReviews(restaurantId);
+      setApiReviews(freshReviews);
+      
       setReviewText("");
       setSelectedRating(0);
+      setReviewImages([]);
       toast.success("Gửi đánh giá thành công.");
     } catch (error) {
       toast.error(
-        error instanceof Error
-          ? error.message
-          : "Không thể gửi đánh giá.",
+        error instanceof Error ? error.message : "Không thể gửi đánh giá.",
       );
     } finally {
       setIsSubmittingReview(false);
@@ -173,10 +195,7 @@ export default function RestaurantDetail() {
             <div className="text-5xl">🔍</div>
             <h1 className="mt-4 text-2xl font-bold text-slate-900">Không tìm thấy nhà hàng</h1>
             <p className="mt-3 text-sm text-slate-500">
-              {(usesApi && !accessToken
-                ? "Vui lòng đăng nhập để xem dữ liệu nhà hàng từ hệ thống."
-                : loadError) ??
-                "Địa điểm này không tồn tại hoặc đã bị xoá. Vui lòng quay lại trang chủ."}
+              {loadError ?? "Địa điểm này không tồn tại hoặc đã bị xoá."}
             </p>
             <Link to="/">
               <Button className="mt-6 rounded-2xl bg-emerald-600 px-8 py-3 text-sm font-semibold text-white hover:bg-emerald-700">
@@ -308,6 +327,95 @@ export default function RestaurantDetail() {
                   </div>
                 )}
 
+                {/* Sự kiện Tab */}
+                {activeTab === "Sự kiện" && (
+                  <div className="space-y-6">
+                    {apiEvents.filter((e) => e.status !== "HIDDEN").length === 0 ? (
+                      <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white p-12 text-center">
+                        <div className="text-4xl">🎉</div>
+                        <p className="mt-3 font-semibold text-slate-900">
+                          Hiện tại nhà hàng chưa có sự kiện nào.
+                        </p>
+                        <p className="mt-2 text-sm text-slate-500">
+                          Hãy quay lại sau để cập nhật các chương trình mới nhất của nhà hàng nhé!
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid gap-6 md:grid-cols-2">
+                        {apiEvents
+                          .filter((e) => e.status !== "HIDDEN")
+                          .map((event) => {
+                            const statusLabels: Record<string, string> = {
+                              UPCOMING: "Sắp diễn ra",
+                              ACTIVE: "Đang diễn ra",
+                              EXPIRED: "Đã kết thúc",
+                            };
+                            const statusStyles: Record<string, string> = {
+                              UPCOMING: "bg-sky-50 text-sky-700 border border-sky-200",
+                              ACTIVE: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+                              EXPIRED: "bg-slate-100 text-slate-600 border border-slate-200",
+                            };
+                            const typeLabels: Record<string, string> = {
+                              CHARITY: "Từ thiện",
+                              DISCOUNT: "Giảm giá",
+                            };
+
+                            const fallbackImage =
+                              "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80";
+                            const formattedStart = event.startDate
+                              ? new Intl.DateTimeFormat("vi-VN").format(new Date(event.startDate))
+                              : "Chưa cập nhật";
+                            const formattedEnd = event.endDate
+                              ? new Intl.DateTimeFormat("vi-VN").format(new Date(event.endDate))
+                              : "Chưa cập nhật";
+
+                            return (
+                              <article
+                                key={event.id}
+                                className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm hover:shadow-md transition duration-300 flex flex-col"
+                              >
+                                <div className="relative h-48 w-full overflow-hidden bg-slate-100">
+                                  <img
+                                    src={event.imageUrl || fallbackImage}
+                                    alt={event.title}
+                                    className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
+                                  />
+                                  <span className="absolute left-4 top-4 rounded-xl bg-black/50 px-3.5 py-1.5 text-xs font-bold text-white backdrop-blur-sm">
+                                    {typeLabels[event.eventType || ""] || "Sự kiện"}
+                                  </span>
+                                </div>
+                                <div className="p-6 flex-1 flex flex-col justify-between">
+                                  <div className="space-y-3">
+                                    <div className="flex items-start justify-between gap-3">
+                                      <h3 className="text-lg font-bold text-slate-900 leading-snug">
+                                        {event.title}
+                                      </h3>
+                                      <span
+                                        className={`rounded-full px-3 py-1 text-xs font-semibold border ${
+                                          statusStyles[event.status || ""] ||
+                                          "bg-slate-50 text-slate-500 border-slate-200"
+                                        }`}
+                                      >
+                                        {statusLabels[event.status || ""] || event.status}
+                                      </span>
+                                    </div>
+                                    <p className="text-xs font-semibold text-emerald-600 flex items-center gap-1">
+                                      📅 {formattedStart} - {formattedEnd}
+                                    </p>
+                                    <p className="text-sm leading-relaxed text-slate-600 line-clamp-3">
+                                      {event.description ||
+                                        "Nhà hàng chưa cung cấp mô tả chi tiết cho sự kiện này."}
+                                    </p>
+                                  </div>
+                                </div>
+                              </article>
+                            );
+                          })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Thực đơn Tab */}
                 {activeTab === "Thực đơn" && (
                   <div className="space-y-3">
@@ -337,84 +445,139 @@ export default function RestaurantDetail() {
                 {activeTab === "Đánh giá" && (
                   <div className="space-y-6">
                     {/* Write Review */}
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                      <p className="font-semibold text-slate-900">Viết đánh giá của bạn</p>
-                      <div className="mt-3 flex items-center gap-1">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <button
-                            key={star}
-                            onMouseEnter={() => setHoverRating(star)}
-                            onMouseLeave={() => setHoverRating(0)}
-                            onClick={() => setSelectedRating(star)}
-                            className="text-2xl transition-transform hover:scale-125"
-                          >
-                            <span className={(hoverRating || selectedRating) >= star ? "text-amber-400" : "text-slate-300"}>
-                              ★
+                    {!user ? (
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-5 text-center text-slate-600">
+                        🔑 Vui lòng <Link to="/login" className="font-semibold text-emerald-600 hover:underline">đăng nhập</Link> để viết đánh giá cho nhà hàng này.
+                      </div>
+                    ) : isOwner ? (
+                      <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-5 text-center text-amber-800">
+                        ⚠️ Bạn là chủ nhà hàng này, do đó không thể đánh giá nhà hàng của chính mình.
+                      </div>
+                    ) : (
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                        <p className="font-semibold text-slate-900">Viết đánh giá của bạn</p>
+                        <div className="mt-3 flex items-center gap-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              onMouseEnter={() => setHoverRating(star)}
+                              onMouseLeave={() => setHoverRating(0)}
+                              onClick={() => setSelectedRating(star)}
+                              className="text-2xl transition-transform hover:scale-125"
+                            >
+                              <span className={(hoverRating || selectedRating) >= star ? "text-amber-400" : "text-slate-300"}>
+                                ★
+                              </span>
+                            </button>
+                          ))}
+                          {selectedRating > 0 && (
+                            <span className="ml-2 text-sm font-medium text-slate-600">
+                              {["", "Tệ", "Kém", "Bình thường", "Tốt", "Xuất sắc"][selectedRating]}
                             </span>
-                          </button>
-                        ))}
-                        {selectedRating > 0 && (
-                          <span className="ml-2 text-sm font-medium text-slate-600">
-                            {["", "Tệ", "Kém", "Bình thường", "Tốt", "Xuất sắc"][selectedRating]}
-                          </span>
+                          )}
+                        </div>
+                        <textarea
+                          rows={3}
+                          value={reviewText}
+                          onChange={(e) => setReviewText(e.target.value)}
+                          placeholder="Chia sẻ trải nghiệm của bạn..."
+                          className="mt-3 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition resize-none"
+                        />
+                        {reviewImages.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {reviewImages.map((file, idx) => (
+                              <div key={idx} className="relative h-16 w-16 group">
+                                <img
+                                  src={URL.createObjectURL(file)}
+                                  alt="preview"
+                                  className="h-full w-full rounded-xl object-cover border border-slate-200"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setReviewImages((current) => current.filter((_, i) => i !== idx))}
+                                  className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] text-white shadow hover:bg-rose-600 transition"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            ))}
+                          </div>
                         )}
+                        <div className="mt-3 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            {isValidId && (
+                              <label className="flex items-center gap-1.5 cursor-pointer rounded-xl bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition shadow-sm">
+                                📷 Thêm ảnh
+                                <input
+                                  type="file"
+                                  multiple
+                                  accept="image/*"
+                                  onChange={handleReviewImagesChange}
+                                  className="sr-only"
+                                />
+                              </label>
+                            )}
+                            <span className="text-xs text-slate-400">{reviewText.length}/500 ký tự</span>
+                          </div>
+                          <Button
+                            onClick={handleSubmitReview}
+                            disabled={
+                              !isValidId ||
+                              !reviewText.trim() ||
+                              selectedRating === 0 ||
+                              isSubmittingReview
+                            }
+                            className="rounded-2xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+                          >
+                            {isSubmittingReview ? "Đang gửi..." : "Gửi đánh giá"}
+                          </Button>
+                        </div>
                       </div>
-                      <textarea
-                        rows={3}
-                        value={reviewText}
-                        onChange={(e) => setReviewText(e.target.value)}
-                        placeholder="Chia sẻ trải nghiệm của bạn..."
-                        className="mt-3 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition resize-none"
-                      />
-                      <div className="mt-3 flex items-center justify-between">
-                        <span className="text-xs text-slate-400">{reviewText.length}/500 ký tự</span>
-                        <Button
-                          onClick={handleSubmitReview}
-                          disabled={
-                            !usesApi ||
-                            !reviewText.trim() ||
-                            selectedRating === 0 ||
-                            isSubmittingReview
-                          }
-                          className="rounded-2xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
-                        >
-                          {usesApi
-                            ? isSubmittingReview
-                              ? "Đang gửi..."
-                              : "Gửi đánh giá"
-                            : "Chỉ áp dụng cho dữ liệu API"}
-                        </Button>
-                      </div>
-                    </div>
+                    )}
 
                     {/* Reviews List */}
                     <div className="space-y-4">
-                      {restaurant.reviewsList.map((review) => (
-                        <div
-                          key={review.name + review.date}
-                          className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm"
-                        >
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex items-center gap-3">
-                              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-700">
-                                {review.name.slice(0, 1)}
+                      {restaurant.reviewsList.map((review) => {
+                        const images = (review as { images?: string[] }).images;
+                        return (
+                          <div
+                            key={review.name + review.date}
+                            className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm"
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex items-center gap-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-700">
+                                  {review.name.slice(0, 1)}
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-slate-900">{review.name}</p>
+                                  <p className="text-xs text-slate-400">{review.date}</p>
+                                </div>
                               </div>
-                              <div>
-                                <p className="font-semibold text-slate-900">{review.name}</p>
-                                <p className="text-xs text-slate-400">{review.date}</p>
+                              <div className="flex gap-0.5 text-amber-400">
+                                {[...Array(5)].map((_, idx) => (
+                                  <span key={idx} className={idx < review.rating ? "text-amber-400" : "text-slate-200"}>
+                                    ★
+                                  </span>
+                                ))}
                               </div>
                             </div>
-                            <div className="flex gap-0.5 text-amber-400">
-                              {[...Array(5)].map((_, idx) => (
-                                <span key={idx} className={idx < review.rating ? "text-amber-400" : "text-slate-200"}>
-                                  ★
-                                </span>
-                              ))}
-                            </div>
+                            <p className="mt-3 text-sm leading-relaxed text-slate-600">{review.comment}</p>
+                            {images && images.length > 0 && (
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                {images.map((imgUrl, i) => (
+                                  <img
+                                    key={i}
+                                    src={imgUrl}
+                                    alt="Review image"
+                                    className="h-20 w-20 rounded-xl object-cover border border-slate-100 shadow-sm"
+                                  />
+                                ))}
+                              </div>
+                            )}
                           </div>
-                          <p className="mt-3 text-sm leading-relaxed text-slate-600">{review.comment}</p>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -444,23 +607,7 @@ export default function RestaurantDetail() {
 
           {/* Sidebar */}
           <aside className="space-y-5">
-            {/* Map placeholder */}
-            <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-sm font-bold uppercase tracking-widest text-slate-400">📍 Bản đồ</p>
-              <div
-                className="mt-4 h-64 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center"
-                aria-label={restaurant.mapAlt}
-              >
-                <div className="text-center">
-                  <div className="text-5xl">🗺️</div>
-                  <p className="mt-2 text-sm text-slate-500">Xem vị trí trên bản đồ</p>
-                </div>
-              </div>
-              <p className="mt-3 text-sm text-slate-600">{restaurant.address}</p>
-              <Button className="mt-4 w-full rounded-2xl border border-emerald-600 bg-transparent px-4 py-3 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 transition">
-                Mở Google Maps →
-              </Button>
-            </div>
+
 
             {/* Quick Actions */}
             <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm space-y-3">
@@ -481,12 +628,9 @@ export default function RestaurantDetail() {
                 className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 transition"
               >
                 <span className="text-lg">⭐</span>
-                Viết đánh giá
+                {isOwner ? "Xem đánh giá" : "Viết đánh giá"}
               </button>
-              <button className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 transition">
-                <span className="text-lg">📤</span>
-                Chia sẻ
-              </button>
+
             </div>
 
             {/* Rating summary */}
@@ -503,17 +647,21 @@ export default function RestaurantDetail() {
                   <p className="mt-1 text-xs text-slate-500">{restaurant.reviews} đánh giá</p>
                 </div>
                 <div className="flex-1 space-y-1.5">
-                  {[5, 4, 3, 2, 1].map((star) => (
-                    <div key={star} className="flex items-center gap-2 text-xs">
-                      <span className="w-3 text-slate-400">{star}</span>
-                      <div className="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-amber-400"
-                          style={{ width: `${star === 5 ? 65 : star === 4 ? 25 : star === 3 ? 7 : 3}%` }}
-                        />
+                  {[5, 4, 3, 2, 1].map((star) => {
+                    const count = restaurant.reviewsList.filter(r => Math.round(r.rating) === star).length;
+                    const percentage = restaurant.reviews > 0 ? (count / restaurant.reviews) * 100 : 0;
+                    return (
+                      <div key={star} className="flex items-center gap-2 text-xs">
+                        <span className="w-3 text-slate-400">{star}</span>
+                        <div className="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-amber-400"
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>

@@ -25,6 +25,7 @@ export const routes: RouteObject[] = [
     path: "/login",
     element: <Login />,
   },
+
   {
     path: "/register",
     element: <Register />,
@@ -122,13 +123,14 @@ export const routes: RouteObject[] = [
     ),
   },
   {
-    path: "/manage/report",
+    path: "/admin/report",
     element: (
       <ProtectedRoute requiredRoles={["ADMIN"]}>
         <ReportManagement />
       </ProtectedRoute>
     ),
   },
+  
   {
     path: "/admin/locations",
     element: (

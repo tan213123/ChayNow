@@ -1,8 +1,8 @@
 package com.teamg5.be.dto;
 
+import com.teamg5.be.entity.EventType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,33 +18,28 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateEventRequest {
-
     private Long restaurantId;
-
     private String type;
 
     @NotBlank(message = "Title is required")
-    @Size(min = 5, max = 150, message = "Title must be between 5 and 150 characters")
+    @Size(min = 5, max = 255, message = "Title must be between 5 and 255 characters")
     private String title;
 
-    @NotBlank(message = "Description is required")
-    @Size(min = 10, max = 1000, message = "Description must be between 10 and 1000 characters")
     private String description;
 
-    @NotNull(message = "Start date is required")
+    @Size(max = 500, message = "Image URL cannot exceed 500 characters")
+    private String imageUrl;
+
+    private EventType eventType;
+
+    @NotNull(message = "Start date cannot be null")
     private LocalDate startDate;
 
-    @NotNull(message = "End date is required")
+    @NotNull(message = "End date cannot be null")
     private LocalDate endDate;
 
     private Integer discountPercent;
-
     private String period;
-
     private String charityTime;
-
-    @Pattern(regexp = "^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]|$", message = "Image URL must be a valid URL")
-    private String imageUrl;
-
-    private String status; // UPCOMING, ACTIVE, EXPIRED, HIDDEN
+    private String status;
 }

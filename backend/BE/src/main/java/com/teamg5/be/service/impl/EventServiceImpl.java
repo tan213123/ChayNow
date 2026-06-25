@@ -4,6 +4,7 @@ import com.teamg5.be.dto.CreateEventRequest;
 import com.teamg5.be.dto.EventResponse;
 import com.teamg5.be.dto.UpdateEventRequest;
 import com.teamg5.be.entity.Event;
+import com.teamg5.be.entity.EventType;
 import com.teamg5.be.entity.Restaurant;
 import com.teamg5.be.entity.Role;
 import com.teamg5.be.entity.User;
@@ -32,11 +33,29 @@ public class EventServiceImpl implements EventService {
     private final UserRepository userRepository;
 
     @Override
+    @Transactional(readOnly = true)
+    public List<EventResponse> getAllEvents() {
+        return eventRepository.findAll()
+                .stream()
+                .map(EventResponse::from)
+                .toList();
+    }
+
+    @Override
     public EventResponse createEvent(Long restaurantId, CreateEventRequest request) {
         Restaurant restaurant = restaurantRepository.findByIdAndActiveTrue(restaurantId)
                 .orElseThrow(() -> new AppException(ErrorCode.RESTAURANT_NOT_FOUND));
 
         verifyOwnerOrAdmin(restaurant);
+
+        EventType eventType = request.getEventType();
+        if (eventType == null && request.getType() != null) {
+            try {
+                eventType = EventType.valueOf(request.getType().trim().toUpperCase());
+            } catch (IllegalArgumentException ignored) {
+                eventType = null;
+            }
+        }
 
         Event event = Event.builder()
                 .restaurant(restaurant)
@@ -46,6 +65,8 @@ public class EventServiceImpl implements EventService {
                 .imageUrl(request.getImageUrl() != null ? request.getImageUrl().trim() : null)
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
+                .type(eventType != null ? eventType.name() : request.getType())
+                .eventType(eventType)
                 .status(request.getStatus() != null ? request.getStatus().trim() : "UPCOMING")
                 .build();
 
@@ -68,6 +89,18 @@ public class EventServiceImpl implements EventService {
         }
         if (request.getImageUrl() != null) {
             event.setImageUrl(request.getImageUrl().trim());
+        }
+        if (request.getEventType() != null) {
+            event.setEventType(request.getEventType());
+            event.setType(request.getEventType().name());
+        } else if (request.getType() != null) {
+            try {
+                EventType eventType = EventType.valueOf(request.getType().trim().toUpperCase());
+                event.setEventType(eventType);
+                event.setType(eventType.name());
+            } catch (IllegalArgumentException ignored) {
+                event.setType(request.getType());
+            }
         }
         if (request.getStartDate() != null) {
             event.setStartDate(request.getStartDate());

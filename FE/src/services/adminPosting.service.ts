@@ -19,17 +19,30 @@ export type PostingStatus = "PENDING" | "APPROVED" | "REJECTED";
 
 export interface AdminPosting {
   id: number;
-  name: string;
-  restaurantName?: string;
-  restaurantId?: number;
-  type?: string;
-  description?: string;
-  image?: string;
-  imageUrl?: string;
-  createdDate?: string;
-  createdAt?: string;
+  title: string;
+  content?: string | null;
+  category?: string | null;
+  thumbnailUrl?: string | null;
+  likeCount: number;
+  commentCount: number;
   status: PostingStatus;
-  rejectReason?: string;
+  rejectReason?: string | null;
+  createdAt: string;
+  updatedAt?: string | null;
+  authorId?: number | null;
+  authorName?: string | null;
+  authorAvatarUrl?: string | null;
+  restaurantId?: number | null;
+  restaurantName?: string | null;
+  restaurantAddress?: string | null;
+  restaurantPhone?: string | null;
+  restaurantThumbnailUrl?: string | null;
+  placeId?: number | null;
+  placeName?: string | null;
+  placeCity?: string | null;
+  menuId?: number | null;
+  menuName?: string | null;
+  menuPrice?: number | null;
 }
 
 export interface AdminPostingsResponse {

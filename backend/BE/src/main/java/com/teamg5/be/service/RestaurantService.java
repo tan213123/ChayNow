@@ -5,6 +5,7 @@ import com.teamg5.be.dto.MediaResponse;
 import com.teamg5.be.dto.RestaurantResponse;
 import com.teamg5.be.dto.TypeRestaurantResponse;
 import com.teamg5.be.dto.UpdateRestaurantRequest;
+import com.teamg5.be.repository.MediaRepository;
 import com.teamg5.be.repository.PlaceRepository;
 import com.teamg5.be.repository.RestaurantRepository;
 import com.teamg5.be.repository.TypeRestaurantRepository;
@@ -20,6 +21,9 @@ import com.teamg5.be.entity.Media;
 import com.teamg5.be.entity.Mediatype;
 import com.teamg5.be.entity.Place;
 import com.teamg5.be.entity.Restaurant;
+
+import java.time.LocalDate;
+import java.time.LocalTime;
 import  java.util.List;
 
 import org.springframework.security.core.Authentication;
@@ -35,6 +39,7 @@ public class RestaurantService {
     private final TypeRestaurantRepository typeRestaurantRepository;
     private final PlaceRepository placeRepository;
     private final UserRepository userRepository;
+    private final MediaRepository mediaRepository;
 
     private List<MediaResponse> mediaList;
 
@@ -55,11 +60,17 @@ public class RestaurantService {
                         new AppException(ErrorCode.PLACE_NOT_FOUND)
                 );
 
+        if (request.getOpenTime() != null && request.getClosedTime() != null) {
+            if (!request.getOpenTime().isBefore(request.getClosedTime())) {
+                throw new AppException(ErrorCode.INVALID_INPUT, "Giờ mở cửa phải trước giờ đóng cửa.");
+            }
+        }
+
         Restaurant restaurant = Restaurant.builder()
-                .name(request.getName().trim())
-                .address(request.getAddress())
-                .phoneNumber(request.getPhoneNumber())
-                .description(request.getDescription())
+                .name(request.getName() != null ? request.getName().trim() : null)
+                .address(request.getAddress() != null ? request.getAddress().trim() : null)
+                .phoneNumber(request.getPhoneNumber() != null ? request.getPhoneNumber().trim() : null)
+                .description(request.getDescription() != null ? request.getDescription().trim() : null)
                 .openTime(request.getOpenTime())
                 .closedTime(request.getClosedTime())
                 .owner(currentUser)
@@ -67,23 +78,6 @@ public class RestaurantService {
                 .place(place)
                 .active(true)
                 .build();
-
-        if (request.getMediaUrls() != null) {
-            request.getMediaUrls()
-                    .stream()
-                    .filter(StringUtils::hasText)
-                    .map(String::trim)
-                    .forEach(url -> {
-                        Media media = Media.builder()
-                                .url(url)
-                                .type(Mediatype.IMAGE)
-                                .restaurant(restaurant)
-                                .build();
-
-                        restaurant.getMediaList().add(media);
-                    });
-        }
-
         Restaurant savedRestaurant =
                 restaurantRepository.save(restaurant);
 
@@ -111,19 +105,19 @@ public class RestaurantService {
             .orElseThrow(() -> new AppException(ErrorCode.RESTAURANT_NOT_FOUND));
 
     if (StringUtils.hasText(request.getName())) {
-        restaurant.setName(request.getName());
+        restaurant.setName(request.getName().trim());
     }
 
     if (StringUtils.hasText(request.getAddress())) {
-        restaurant.setAddress(request.getAddress());
+        restaurant.setAddress(request.getAddress().trim());
     }
 
     if (StringUtils.hasText(request.getPhoneNumber())) {
-        restaurant.setPhoneNumber(request.getPhoneNumber());
+        restaurant.setPhoneNumber(request.getPhoneNumber().trim());
     }
 
     if (StringUtils.hasText(request.getDescription())) {
-        restaurant.setDescription(request.getDescription());
+        restaurant.setDescription(request.getDescription().trim());
     }
     
 
@@ -139,6 +133,13 @@ public class RestaurantService {
                     .orElseThrow(() -> new AppException(ErrorCode.PLACE_NOT_FOUND));
                     restaurant.setPlace(place);
     }
+
+    LocalTime openTime = request.getOpenTime() != null ? request.getOpenTime() : restaurant.getOpenTime();
+    LocalTime closedTime = request.getClosedTime() != null ? request.getClosedTime() : restaurant.getClosedTime();
+    if (openTime != null && closedTime != null && !openTime.isBefore(closedTime)) {
+        throw new AppException(ErrorCode.INVALID_INPUT, "Giờ mở cửa phải trước giờ đóng cửa.");
+    }
+
     if(request.getOpenTime() != null) {
         restaurant.setOpenTime(request.getOpenTime());
     }
@@ -146,21 +147,15 @@ public class RestaurantService {
         restaurant.setClosedTime(request.getClosedTime());
     }
 
-    if(request.getMediaUrls() != null) {
+    if (request.getMediaIds() != null) {
         restaurant.getMediaList().clear();
-
-        request.getMediaUrls().stream()
-                .filter(StringUtils::hasText)
-                .map(String::trim)
-                .forEach(url -> {
-                    Media media = Media.builder()
-                            .url(url)
-                            .type(Mediatype.IMAGE)
-                            .restaurant(restaurant)
-                            .build();
-
-                    restaurant.getMediaList().add(media);
-                });
+        if (!request.getMediaIds().isEmpty()) {
+            List<Media> existingMedia = mediaRepository.findAllById(request.getMediaIds());
+            for (Media media : existingMedia) {
+                media.setRestaurant(restaurant);
+                restaurant.getMediaList().add(media);
+            }
+        }
     }
     Restaurant savedRestaurant = restaurantRepository.save(restaurant);
 

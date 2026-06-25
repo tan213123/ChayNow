@@ -4,12 +4,17 @@ package com.teamg5.be.dto;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import java.util.List;
+import java.util.Collections;
 import com.teamg5.be.entity.Review;
 import com.teamg5.be.dto.MediaResponse;
 @Getter
 @Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ReviewResponse {
     private long id;
 
@@ -22,9 +27,13 @@ public class ReviewResponse {
     private String typeRestaurantName;
 
     private List<MediaResponse> restaurantMedia;
+    private List<MediaResponse> mediaList;
 
     private Integer rating;
     private String context;
+
+    private String userName;
+    private java.time.LocalDateTime createdAt;
 
     public static ReviewResponse from(Review review) {
              return ReviewResponse.builder()
@@ -41,8 +50,17 @@ public class ReviewResponse {
                                 .map(MediaResponse::from)
                                 .toList()
                 )
+                .mediaList(
+                        review.getMediaList() != null
+                                ? review.getMediaList().stream()
+                                        .map(MediaResponse::from)
+                                        .toList()
+                                : Collections.emptyList()
+                )
                 .rating(review.getRating())
                 .context(review.getContext())
+                .userName(review.getUser().getFullName())
+                .createdAt(review.getCreatedAt())
                 .build();
     }
 

@@ -7,6 +7,8 @@ import com.teamg5.be.dto.UpdateEventRequest;
 import java.util.List;
 
 public interface EventService {
+    List<EventResponse> getAllEvents();
+
     EventResponse createEvent(Long restaurantId, CreateEventRequest request);
 
     EventResponse updateEvent(Long eventId, UpdateEventRequest request);
