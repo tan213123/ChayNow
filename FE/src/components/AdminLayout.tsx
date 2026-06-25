@@ -44,10 +44,10 @@ const adminNavItems = [
     enabled: true,
   },
   {
-    to: "/admin/reports",
+    to: "/admin/report",
     label: "Xử lý báo cáo",
     icon: AlertTriangle,
-    enabled: false,
+    enabled: true,
   },
 ];
 

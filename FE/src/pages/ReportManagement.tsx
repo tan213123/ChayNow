@@ -10,6 +10,7 @@ import {
   type AdminReportStats,
   type ReportStatus,
 } from "@/services/admin-report.service";
+import AdminLayout from "@/components/AdminLayout";
 export default function ReportManagement() {
   const [reports, setReports] = useState<AdminReport[]>([]);
 
@@ -71,15 +72,14 @@ export default function ReportManagement() {
   };
 
 return (
+      <AdminLayout title=" Quản lý báo cáo">
+
   <main className="min-h-screen bg-slate-100">
-    <Navbar />
 
     <section className="mx-auto max-w-7xl px-6 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-slate-900">
-          Quản lý báo cáo
-        </h1>
+        
 
         <p className="mt-2 text-slate-500">
           Xử lý các báo cáo vi phạm từ người dùng
@@ -88,7 +88,7 @@ return (
 
       {/* Statistics */}
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-2xl border bg-white p-6 shadow-sm">
+        <div className="rounded-2xl  bg-white p-6 shadow-sm">
           <p className="text-4xl font-bold">
             {stats.totalReports}
           </p>
@@ -130,7 +130,7 @@ return (
       </div>
 
       {/* Filter */}
-      <div className="mt-8 rounded-3xl border bg-white p-6 shadow-sm">
+      <div className="mt-8 rounded-3xl bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-4 md:flex-row md:items-center">
           <span className="font-semibold text-slate-700">
             Lọc theo:
@@ -300,5 +300,6 @@ return (
       )}
     </section>
   </main>
+      </AdminLayout>
 );
 }
