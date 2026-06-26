@@ -22,6 +22,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import com.teamg5.be.service.impl.RestaurantServiceImpl;
 
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -40,7 +41,7 @@ import static org.mockito.Mockito.when;
 public class RestaurantServiceTest {
 
     @InjectMocks
-    private RestaurantService restaurantService;
+    private RestaurantServiceImpl restaurantService;
 
     @Mock
     private RestaurantRepository restaurantRepository;

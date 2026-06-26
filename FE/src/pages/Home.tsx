@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
-import { communityPosts } from "@/data/restaurants";
 import { Search } from "lucide-react";
 import { getRestaurants } from "@/services/restaurant.service";
 import { getEvents } from "@/services/event.service";
@@ -52,7 +51,7 @@ export default function Home() {
   const [dataLoading, setDataLoading] = useState(true);
 
   // Community posts state
-  const [posts, setPosts] = useState<CommunityPost[]>(communityPosts);
+  const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(defaultForm);
   const [likedPosts, setLikedPosts] = useState<string[]>([]);
@@ -74,7 +73,9 @@ export default function Home() {
       r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (r.address ?? "").toLowerCase().includes(searchQuery.toLowerCase());
     const matchCategory =
-      selectedCategory === "Tất cả" || r.typeRestaurantName === selectedCategory;
+      selectedCategory === "Tất cả" ||
+      (r.typeRestaurantName &&
+        r.typeRestaurantName.toLowerCase().includes(selectedCategory.toLowerCase()));
     return matchSearch && matchCategory;
   });
 

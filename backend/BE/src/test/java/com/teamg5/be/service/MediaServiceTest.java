@@ -15,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.mock.web.MockMultipartFile;
+import com.teamg5.be.service.impl.MediaServiceImpl;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -29,7 +30,7 @@ import static org.mockito.Mockito.*;
 public class MediaServiceTest {
 
     @InjectMocks
-    private MediaService mediaService;
+    private MediaServiceImpl mediaService;
 
     @Mock
     private Cloudinary cloudinary;

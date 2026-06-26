@@ -20,6 +20,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import com.teamg5.be.service.impl.ReviewServiceImpl;
 
 import java.util.Collections;
 import java.util.List;
@@ -32,7 +33,7 @@ import static org.mockito.Mockito.*;
 public class ReviewServiceTest {
 
     @InjectMocks
-    private ReviewService reviewService;
+    private ReviewServiceImpl reviewService;
 
     @Mock
     private ReviewRepository reviewRepository;
