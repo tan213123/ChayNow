@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
-import { getRestaurants } from "@/services/restaurant.service";
+import { getFavourites, removeFavourite } from "@/services/favourite.service";
 import type { RestaurantResponse } from "@/types/restaurant";
 
 const sortOptions = ["Mới nhất", "Đánh giá cao nhất", "Tên A-Z"];
@@ -15,16 +15,28 @@ export default function Favorites() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getRestaurants()
-      .then((data) => setAllRestaurants(data))
+    getFavourites(0, 50)
+      .then((res) => {
+        if (res.success && res.data) {
+          const restaurants = res.data.content.map((item) => item.restaurant);
+          setAllRestaurants(restaurants);
+        }
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
 
   const FALLBACK_IMG = "https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=1200&q=80";
 
-  const handleRemove = (id: number) => {
-    setRemoved((prev) => [...prev, id]);
+  const handleRemove = async (id: number) => {
+    try {
+      const res = await removeFavourite(id);
+      if (res.success) {
+        setRemoved((prev) => [...prev, id]);
+      }
+    } catch (err) {
+      console.error("Failed to remove favorite", err);
+    }
   };
 
   const displayed = allRestaurants

@@ -11,6 +11,7 @@ import {
 import { getRestaurantEvents } from "@/services/event.service";
 import { mediaService } from "@/services/media.service";
 import { useAuthStore } from "@/store/authStore";
+import { addFavourite, isFavourite, removeFavourite } from "@/services/favourite.service";
 import type {
   RestaurantResponse,
   ReviewResponse,
@@ -70,13 +71,22 @@ export default function RestaurantDetail() {
             console.error("Failed to load events", err);
             return [] as EventResponse[];
           }),
+          user
+            ? isFavourite(restaurantId)
+                .then((res) => (res.success ? res.data : false))
+                .catch((err) => {
+                  console.error("Failed to check favorite status", err);
+                  return false;
+                })
+            : Promise.resolve(false),
         ]);
       })
-      .then(([restaurantResponse, reviewsResponse, eventsResponse]) => {
+      .then(([restaurantResponse, reviewsResponse, eventsResponse, isFavResponse]) => {
         if (!cancelled) {
           setApiRestaurant(restaurantResponse);
           setApiReviews(reviewsResponse);
           setApiEvents(eventsResponse);
+          setIsFavorite(!!isFavResponse);
         }
       })
       .catch((error: unknown) => {
@@ -95,7 +105,32 @@ export default function RestaurantDetail() {
     return () => {
       cancelled = true;
     };
-  }, [restaurantId, isValidId]);
+  }, [restaurantId, isValidId, user]);
+
+  const handleToggleFavorite = async () => {
+    if (!user) {
+      toast.error("Vui lòng đăng nhập để lưu địa điểm yêu thích!");
+      return;
+    }
+    try {
+      if (isFavorite) {
+        const res = await removeFavourite(restaurantId);
+        if (res.success) {
+          setIsFavorite(false);
+          toast.success("Đã xóa khỏi danh sách yêu thích");
+        }
+      } else {
+        const res = await addFavourite(restaurantId);
+        if (res.success) {
+          setIsFavorite(true);
+          toast.success("Đã thêm vào danh sách yêu thích");
+        }
+      }
+    } catch (error) {
+      console.error("Lỗi khi thay đổi trạng thái yêu thích:", error);
+      toast.error("Đã xảy ra lỗi khi thay đổi trạng thái yêu thích");
+    }
+  };
 
   const restaurant = useMemo(() => {
     if (!apiRestaurant) return undefined;
@@ -240,7 +275,7 @@ export default function RestaurantDetail() {
                 <span className="text-white/70 text-xs">({restaurant.reviews})</span>
               </div>
               <button
-                onClick={() => setIsFavorite(!isFavorite)}
+                onClick={handleToggleFavorite}
                 className={`flex h-10 w-10 items-center justify-center rounded-full text-lg backdrop-blur-sm transition ${
                   isFavorite ? "bg-red-500 text-white" : "bg-white/20 text-white hover:bg-white/30"
                 }`}
@@ -613,7 +648,7 @@ export default function RestaurantDetail() {
             <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm space-y-3">
               <p className="text-sm font-bold uppercase tracking-widest text-slate-400">Hành động nhanh</p>
               <button
-                onClick={() => setIsFavorite(!isFavorite)}
+                onClick={handleToggleFavorite}
                 className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
                   isFavorite
                     ? "bg-red-50 text-red-600 border border-red-200"

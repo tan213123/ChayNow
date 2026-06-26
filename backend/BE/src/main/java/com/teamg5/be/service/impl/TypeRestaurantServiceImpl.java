@@ -1,0 +1,89 @@
+package com.teamg5.be.service.impl;
+
+import com.teamg5.be.dto.CreateTypeRestaurantRequest;
+import com.teamg5.be.dto.TypeRestaurantResponse;
+import com.teamg5.be.entity.TypeRestaurant;
+import com.teamg5.be.exception.AppException;
+import com.teamg5.be.exception.ErrorCode;
+import com.teamg5.be.repository.TypeRestaurantRepository;
+import com.teamg5.be.service.TypeRestaurantService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class TypeRestaurantServiceImpl implements TypeRestaurantService {
+    
+    private final TypeRestaurantRepository typeRestaurantRepository;
+
+    @Override
+    public TypeRestaurantResponse createdTypeRestaurant(CreateTypeRestaurantRequest request) {
+        boolean existed = typeRestaurantRepository.existsByName(request.getName());
+
+        if(existed) {
+            throw new AppException(ErrorCode.TYPE_RESTAURANT_ALREADY_EXISTS);
+        }
+
+        TypeRestaurant typeRestaurant = TypeRestaurant.builder()
+                        .name(request.getName())
+                        .description(request.getDescription())
+                        .build();
+        
+        TypeRestaurant saveTypeRestaurant = typeRestaurantRepository.save(typeRestaurant);
+        return TypeRestaurantResponse.from(saveTypeRestaurant);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TypeRestaurantResponse> getAllTypeRestaurant() {
+        return typeRestaurantRepository.findAll()
+                .stream()
+                .map(TypeRestaurantResponse::from)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public TypeRestaurantResponse getTypeRestaurantById(Long typeRestaurantId) {
+        TypeRestaurant typeRestaurant = typeRestaurantRepository.findById(typeRestaurantId)
+                .orElseThrow(() -> new AppException(ErrorCode.TYPE_RESTAURANT_NOT_FOUND));
+
+        return TypeRestaurantResponse.from(typeRestaurant);
+    }
+
+    @Override
+    @Transactional
+    public TypeRestaurantResponse updateTypeRestaurant(Long id, CreateTypeRestaurantRequest request) {
+        TypeRestaurant typeRestaurant = typeRestaurantRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.TYPE_RESTAURANT_NOT_FOUND));
+
+        if (!typeRestaurant.getName().equalsIgnoreCase(request.getName())) {
+            boolean existed = typeRestaurantRepository.existsByName(request.getName());
+            if (existed) {
+                throw new AppException(ErrorCode.TYPE_RESTAURANT_ALREADY_EXISTS);
+            }
+        }
+
+        typeRestaurant.setName(request.getName());
+        typeRestaurant.setDescription(request.getDescription());
+
+        TypeRestaurant saved = typeRestaurantRepository.save(typeRestaurant);
+        return TypeRestaurantResponse.from(saved);
+    }
+
+    @Override
+    @Transactional
+    public void deleteTypeRestaurant(Long id) {
+        TypeRestaurant typeRestaurant = typeRestaurantRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.TYPE_RESTAURANT_NOT_FOUND));
+
+        if (typeRestaurant.getRestaurants() != null && !typeRestaurant.getRestaurants().isEmpty()) {
+            throw new AppException(ErrorCode.INVALID_INPUT);
+        }
+
+        typeRestaurantRepository.delete(typeRestaurant);
+    }
+}
