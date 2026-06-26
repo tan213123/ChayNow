@@ -30,4 +30,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     );
 
     long countByRole(Role role);
+
+    @Query("SELECT COUNT(r) FROM Review r WHERE r.user.id = :userId")
+    long countReviewsByUserId(@Param("userId") Long userId);
 }

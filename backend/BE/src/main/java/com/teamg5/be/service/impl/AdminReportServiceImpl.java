@@ -4,6 +4,7 @@ import com.teamg5.be.dto.*;
 import com.teamg5.be.entity.*;
 import com.teamg5.be.exception.AppException;
 import com.teamg5.be.exception.ErrorCode;
+import com.teamg5.be.service.CommentService;
 import com.teamg5.be.repository.*;
 import com.teamg5.be.service.AdminReportService;
 import com.teamg5.be.utils.SecurityUtils;
@@ -26,6 +27,8 @@ public class AdminReportServiceImpl implements AdminReportService {
     private final ReportRepository reportRepository;
     private final UserRepository userRepository;
     private final ReviewRepository reviewRepository;
+    private final CommentRepository commentRepository;
+    private final CommentService commentService;
     private final PostingRepository postingRepository;
     private final RestaurantRepository restaurantRepository;
 
@@ -207,6 +210,17 @@ public class AdminReportServiceImpl implements AdminReportService {
                 builder.title("Bài đăng");
                 builder.content("[Nội dung đã bị xóa]");
             });
+        } else if (type == ReportTargetType.COMMENT) {
+            commentRepository.findById(targetId).ifPresentOrElse(comment -> {
+                builder.title("Bình luận");
+                builder.content(comment.getContent());
+                if (includeOwner && comment.getUser() != null) {
+                    builder.ownerId(comment.getUser().getId());
+                }
+            }, () -> {
+                builder.title("Bình luận");
+                builder.content("[Nội dung đã bị xóa]");
+            });
         } else if (type == ReportTargetType.RESTAURANT) {
             restaurantRepository.findById(targetId).ifPresentOrElse(restaurant -> {
                 builder.title(restaurant.getName());
@@ -253,6 +267,12 @@ public class AdminReportServiceImpl implements AdminReportService {
                 if (review != null) {
                     contentCreator = review.getUser();
                     reviewRepository.delete(review);
+                }
+            } else if (report.getTargetType() == ReportTargetType.COMMENT) {
+                Comment comment = commentRepository.findById(report.getTargetId()).orElse(null);
+                if (comment != null) {
+                    contentCreator = comment.getUser();
+                    commentService.deleteCommentById(comment.getId());
                 }
             } else if (report.getTargetType() == ReportTargetType.POST) {
                 Posting post = postingRepository.findById(report.getTargetId()).orElse(null);

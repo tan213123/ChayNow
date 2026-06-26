@@ -41,12 +41,16 @@ public interface PostingRepository extends JpaRepository<Posting, Long> {
         WHERE p.restaurant.id = :restaurantId
         AND p.restaurant.owner.id = :ownerId
         AND (:status IS NULL OR :status = '' OR p.status = :status)
+        AND (:keyword IS NULL OR :keyword = ''
+            OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')))
         ORDER BY p.createdAt DESC
     """)
     Page<Posting> findByOwnerAndRestaurant(
             @Param("ownerId") Long ownerId,
             @Param("restaurantId") Long restaurantId,
             @Param("status") String status,
+            @Param("keyword") String keyword,
             Pageable pageable
     );
 
@@ -95,5 +99,31 @@ public interface PostingRepository extends JpaRepository<Posting, Long> {
             @Param("keyword") String keyword,
             Pageable pageable
     );
-}
 
+    @Query("""
+        SELECT p FROM Posting p
+        WHERE p.status = 'APPROVED'
+        AND (:categoryId IS NULL OR :categoryId = '' OR p.category = :categoryId)
+        AND (:restaurantId IS NULL OR p.restaurant.id = :restaurantId)
+        AND (:placeId IS NULL OR (p.restaurant.place IS NOT NULL AND p.restaurant.place.id = :placeId))
+        AND (:keyword IS NULL OR :keyword = ''
+            OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR LOWER(p.restaurant.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
+        ORDER BY p.createdAt DESC
+    """)
+    Page<Posting> findApprovedPublicPostings(
+            @Param("categoryId") String categoryId,
+            @Param("restaurantId") Long restaurantId,
+            @Param("placeId") Long placeId,
+            @Param("keyword") String keyword,
+            Pageable pageable
+    );
+
+    @Query("""
+        SELECT p FROM Posting p
+        WHERE p.id = :id
+        AND p.status = 'APPROVED'
+    """)
+    java.util.Optional<Posting> findApprovedById(@Param("id") Long id);
+}

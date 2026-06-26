@@ -1,6 +1,8 @@
 package com.teamg5.be.controller;
 
 import com.teamg5.be.dto.AdminUserResponseDTO;
+import com.teamg5.be.dto.AdminUserDetailResponse;
+import com.teamg5.be.dto.UpdateUserRequest;
 import com.teamg5.be.service.AdminUserService;
 import com.teamg5.be.dto.PageResponse;
 import com.teamg5.be.dto.ApiResponse;
@@ -13,6 +15,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -56,6 +60,58 @@ public class AdminController {
                 .success(true)
                 .message("Get all users successfully")
                 .data(response)
+                .build());
+    }
+
+    @GetMapping("/users/{id}")
+    @Operation(
+        summary = "Lấy chi tiết người dùng theo ID",
+        description = "API dành cho Admin xem thông tin chi tiết của một người dùng bao gồm: thông tin cá nhân, vai trò, trạng thái, số lần cảnh cáo, số review đã viết."
+    )
+    public ResponseEntity<ApiResponse<AdminUserDetailResponse>> getUserById(
+            @Parameter(description = "ID của người dùng", example = "1")
+            @PathVariable(name = "id") Long id
+    ) {
+        AdminUserDetailResponse response = adminUserService.getUserById(id);
+        return ResponseEntity.ok(ApiResponse.<AdminUserDetailResponse>builder()
+                .success(true)
+                .message("Get user detail successfully")
+                .data(response)
+                .build());
+    }
+
+    @PutMapping("/users/{id}")
+    @Operation(
+        summary = "Cập nhật thông tin người dùng",
+        description = "API dành cho Admin cập nhật thông tin người dùng. Chỉ cần gửi các field muốn thay đổi (partial update). Hỗ trợ cập nhật: fullName, phone, role (USER/OWNER/ADMIN), status (ACTIVE/SUSPENDED/PENDING)."
+    )
+    public ResponseEntity<ApiResponse<AdminUserDetailResponse>> updateUser(
+            @Parameter(description = "ID của người dùng cần cập nhật", example = "2")
+            @PathVariable(name = "id") Long id,
+
+            @RequestBody UpdateUserRequest request
+    ) {
+        AdminUserDetailResponse response = adminUserService.updateUser(id, request);
+        return ResponseEntity.ok(ApiResponse.<AdminUserDetailResponse>builder()
+                .success(true)
+                .message("User updated successfully")
+                .data(response)
+                .build());
+    }
+
+    @DeleteMapping("/users/{id}")
+    @Operation(
+        summary = "Xóa người dùng",
+        description = "API dành cho Admin xóa tài khoản người dùng khỏi hệ thống. Admin không thể tự xóa chính mình."
+    )
+    public ResponseEntity<ApiResponse<Void>> deleteUser(
+            @Parameter(description = "ID của người dùng cần xóa", example = "5")
+            @PathVariable(name = "id") Long id
+    ) {
+        adminUserService.deleteUser(id);
+        return ResponseEntity.ok(ApiResponse.<Void>builder()
+                .success(true)
+                .message("User deleted successfully")
                 .build());
     }
 

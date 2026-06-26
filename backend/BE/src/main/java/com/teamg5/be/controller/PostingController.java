@@ -3,20 +3,28 @@ package com.teamg5.be.controller;
 import com.teamg5.be.dto.ApiResponse;
 import com.teamg5.be.dto.PageResponseDTO;
 import com.teamg5.be.dto.PostingResponse;
+import com.teamg5.be.dto.UpdatePostingRequest;
 import com.teamg5.be.service.PostingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/owner/postings")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('OWNER')")
 @Tag(name = "Owner - Postings", description = "API dành cho Owner để quản lý bài đăng của mình")
 public class PostingController {
 
@@ -56,6 +64,58 @@ public class PostingController {
                 .success(true)
                 .message("Get postings successfully")
                 .data(data)
+                .build());
+    }
+
+    @PatchMapping("/{postingId}")
+    @Operation(
+            summary = "Cập nhật bài đăng của owner",
+            description = "Owner chỉ có thể cập nhật bài đăng thuộc nhà hàng của mình khi bài đăng đang ở trạng thái PENDING hoặc REJECTED."
+    )
+    public ResponseEntity<ApiResponse<PostingResponse>> updateMyPosting(
+            @Parameter(description = "ID bài đăng", example = "1")
+            @PathVariable Long postingId,
+            @Valid @RequestBody UpdatePostingRequest request
+    ) {
+        PostingResponse response = postingService.updateMyPosting(postingId, request);
+        return ResponseEntity.ok(ApiResponse.<PostingResponse>builder()
+                .success(true)
+                .message("Posting updated successfully")
+                .data(response)
+                .build());
+    }
+
+    @DeleteMapping("/{postingId}")
+    @Operation(
+            summary = "Xóa bài đăng của owner",
+            description = "Owner có thể xóa bài đăng thuộc nhà hàng của mình."
+    )
+    public ResponseEntity<ApiResponse<Void>> deleteMyPosting(
+            @Parameter(description = "ID bài đăng", example = "1")
+            @PathVariable Long postingId
+    ) {
+        postingService.deleteMyPosting(postingId);
+        return ResponseEntity.ok(ApiResponse.<Void>builder()
+                .success(true)
+                .message("Posting deleted successfully")
+                .data(null)
+                .build());
+    }
+
+    @PatchMapping("/{postingId}/resubmit")
+    @Operation(
+            summary = "Gửi lại bài đăng sau khi bị từ chối",
+            description = "Chỉ cho phép resubmit các bài đăng đang ở trạng thái REJECTED."
+    )
+    public ResponseEntity<ApiResponse<PostingResponse>> resubmitMyPosting(
+            @Parameter(description = "ID bài đăng", example = "1")
+            @PathVariable Long postingId
+    ) {
+        PostingResponse response = postingService.resubmitMyPosting(postingId);
+        return ResponseEntity.ok(ApiResponse.<PostingResponse>builder()
+                .success(true)
+                .message("Posting resubmitted successfully")
+                .data(response)
                 .build());
     }
 }

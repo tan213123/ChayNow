@@ -1,6 +1,7 @@
 package com.teamg5.be.service.impl;
 
 import com.teamg5.be.dto.AdminUserResponseDTO;
+import com.teamg5.be.dto.AdminUserDetailResponse;
 import com.teamg5.be.service.AdminUserService;
 import com.teamg5.be.entity.AccountStatus;
 import com.teamg5.be.entity.Role;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.teamg5.be.dto.CreateAdminRequest;
+import com.teamg5.be.dto.UpdateUserRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import com.teamg5.be.utils.DateUtils;
 
@@ -103,6 +105,99 @@ public class AdminUserServiceImpl implements AdminUserService {
                 .build();
     }
 
+    // ===================== GET USER BY ID =====================
+    @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public AdminUserDetailResponse getUserById(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "User not found with id: " + userId));
+
+        long reviewCount = userRepository.countReviewsByUserId(userId);
+
+        return AdminUserDetailResponse.builder()
+                .id(user.getId())
+                .fullName(user.getFullName())
+                .email(user.getEmail())
+                .avatarUrl(user.getAvatarUrl())
+                .phone(user.getPhone())
+                .bio(user.getBio())
+                .role(user.getRole() != null ? user.getRole().name() : null)
+                .status(user.getStatus() != null ? user.getStatus().name() : null)
+                .warningCount(user.getWarningCount())
+                .reviewCount((int) reviewCount)
+                .createdAt(DateUtils.formatLocalDateTimeDoubleDash(user.getCreatedAt()))
+                .updatedAt(DateUtils.formatLocalDateTimeDoubleDash(user.getUpdatedAt()))
+                .build();
+    }
+
+    // ===================== UPDATE USER =====================
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public AdminUserDetailResponse updateUser(Long userId, UpdateUserRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "User not found with id: " + userId));
+
+        if (request.getFullName() != null && !request.getFullName().trim().isEmpty()) {
+            user.setFullName(request.getFullName().trim());
+        }
+
+        if (request.getPhone() != null) {
+            user.setPhone(request.getPhone().trim());
+        }
+
+        if (request.getRole() != null && !request.getRole().trim().isEmpty()) {
+            try {
+                Role role = Role.valueOf(request.getRole().trim().toUpperCase());
+                user.setRole(role);
+            } catch (IllegalArgumentException e) {
+                throw new AppException(ErrorCode.INVALID_INPUT, "Invalid role: " + request.getRole());
+            }
+        }
+
+        if (request.getStatus() != null && !request.getStatus().trim().isEmpty()) {
+            try {
+                AccountStatus status = AccountStatus.valueOf(request.getStatus().trim().toUpperCase());
+                user.setStatus(status);
+            } catch (IllegalArgumentException e) {
+                throw new AppException(ErrorCode.INVALID_INPUT, "Invalid status: " + request.getStatus());
+            }
+        }
+
+        User saved = userRepository.save(user);
+        long reviewCount = userRepository.countReviewsByUserId(userId);
+
+        return AdminUserDetailResponse.builder()
+                .id(saved.getId())
+                .fullName(saved.getFullName())
+                .email(saved.getEmail())
+                .avatarUrl(saved.getAvatarUrl())
+                .phone(saved.getPhone())
+                .bio(saved.getBio())
+                .role(saved.getRole() != null ? saved.getRole().name() : null)
+                .status(saved.getStatus() != null ? saved.getStatus().name() : null)
+                .warningCount(saved.getWarningCount())
+                .reviewCount((int) reviewCount)
+                .createdAt(DateUtils.formatLocalDateTimeDoubleDash(saved.getCreatedAt()))
+                .updatedAt(DateUtils.formatLocalDateTimeDoubleDash(saved.getUpdatedAt()))
+                .build();
+    }
+
+    // ===================== DELETE USER =====================
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public void deleteUser(Long userId) {
+        User targetUser = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "User not found with id: " + userId));
+
+        User currentUser = getCurrentUser();
+        if (currentUser.getId().equals(targetUser.getId())) {
+            throw new AppException(ErrorCode.INVALID_INPUT, "You cannot delete yourself");
+        }
+
+        userRepository.delete(targetUser);
+    }
+
+    // ===================== SUSPEND / ACTIVATE =====================
     @Override
     @org.springframework.transaction.annotation.Transactional
     public void suspendUser(Long userId) {
@@ -133,6 +228,7 @@ public class AdminUserServiceImpl implements AdminUserService {
         userRepository.save(targetUser);
     }
 
+    // ===================== HELPER =====================
     private User getCurrentUser() {
         org.springframework.security.core.Authentication authentication =
                 org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
@@ -162,6 +258,7 @@ public class AdminUserServiceImpl implements AdminUserService {
         }
     }
 
+    // ===================== CREATE ADMIN =====================
     @Override
     @org.springframework.transaction.annotation.Transactional
     public AdminUserResponseDTO createAdmin(CreateAdminRequest request) {
@@ -194,6 +291,7 @@ public class AdminUserServiceImpl implements AdminUserService {
                 .build();
     }
 
+    // ===================== DASHBOARD STATS =====================
     @Override
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public DashboardStatsResponse getDashboardStats() {

@@ -66,6 +66,10 @@ public class User extends BaseEntity implements UserDetails {
     @lombok.Builder.Default
     private List<Posting> postings = new java.util.ArrayList<>();
 
+    @jakarta.persistence.OneToMany(mappedBy = "user", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
+    @lombok.Builder.Default
+    private List<Comment> comments = new java.util.ArrayList<>();
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
@@ -95,7 +99,7 @@ public class User extends BaseEntity implements UserDetails {
     public boolean isEnabled() {
         return true;
     }
-       @OneToMany(mappedBy = "owner")
+    @OneToMany(mappedBy = "owner")
     @Builder.Default
     private List<Restaurant> restaurants = new ArrayList<>();
 }

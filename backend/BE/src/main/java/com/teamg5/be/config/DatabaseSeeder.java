@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Component
@@ -44,17 +45,22 @@ public class DatabaseSeeder implements CommandLineRunner {
     // ===================== ADMIN =====================
     private void seedAdmin() {
         String adminEmail = "admin@chaynow.com";
-        if (!userRepository.existsByEmail(adminEmail)) {
-            User admin = User.builder()
+        User admin = userRepository.findByEmail(adminEmail).orElse(null);
+        if (admin == null) {
+            admin = User.builder()
                     .email(adminEmail)
                     .fullName("System Administrator")
-                    .password(passwordEncoder.encode("admin123"))
+                    .password(passwordEncoder.encode("123456"))
                     .role(Role.ADMIN)
                     .status(AccountStatus.ACTIVE)
                     .phone("0123456789")
                     .build();
             userRepository.save(admin);
             log.info("Created admin account: {}", adminEmail);
+        } else {
+            admin.setPassword(passwordEncoder.encode("123456"));
+            userRepository.save(admin);
+            log.info("Updated admin account password to 123456: {}", adminEmail);
         }
     }
 
@@ -101,6 +107,8 @@ public class DatabaseSeeder implements CommandLineRunner {
                 .address("25 Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP.HCM")
                 .description("Nhà hàng chay cao cấp tại trung tâm Quận 1, mang đến trải nghiệm ẩm thực chay tinh tế với các nguyên liệu hữu cơ, tươi sạch. Không gian sang trọng, ánh đèn ấm cúng, phù hợp cho các buổi họp mặt gia đình và tiệc đặc biệt.")
                 .phoneNumber("028 3911 2233")
+                .openTime(LocalTime.of(8, 0))
+                .closedTime(LocalTime.of(22, 0))
                 .typeRestaurant(typeChaySanh)
                 .place(placeQ1)
                 .owner(owner1)
@@ -152,6 +160,8 @@ public class DatabaseSeeder implements CommandLineRunner {
                 .address("78 Võ Văn Tần, Phường 6, Quận 3, TP.HCM")
                 .description("Quán chay mang phong cách Thiền, không gian xanh mát với nhiều cây cối, ao cá và tiếng nhạc nhẹ nhàng. Thực đơn theo mùa, sử dụng hoàn toàn rau củ hữu cơ từ vườn riêng. Phù hợp để thư giãn tâm hồn và tận hưởng bữa ăn trong lành.")
                 .phoneNumber("028 3811 5566")
+                .openTime(LocalTime.of(7, 30))
+                .closedTime(LocalTime.of(21, 30))
                 .typeRestaurant(typeChayThien)
                 .place(placeQ3)
                 .owner(owner2)
@@ -189,6 +199,8 @@ public class DatabaseSeeder implements CommandLineRunner {
                 .address("Block B2, Midtown Phú Mỹ Hưng, Quận 7, TP.HCM")
                 .description("Quán cà phê và ăn uống thuần chay (100% vegan) theo phong cách hiện đại. Tất cả nguyên liệu đều plant-based, không sử dụng trứng, sữa hay bất kỳ sản phẩm từ động vật. Không gian Instagram-worthy, phù hợp cho giới trẻ và người theo lối sống lành mạnh.")
                 .phoneNumber("028 5411 7788")
+                .openTime(LocalTime.of(7, 0))
+                .closedTime(LocalTime.of(22, 30))
                 .typeRestaurant(typeChayVegan)
                 .place(placeQ7)
                 .owner(owner3)
@@ -233,6 +245,8 @@ public class DatabaseSeeder implements CommandLineRunner {
                 .address("12 Phan Bội Châu, Phường Bến Thành, Quận 1, TP.HCM")
                 .description("Quán cơm chay bình dân với các món ăn thuần Việt đậm đà hương vị quê nhà. Nấu theo kiểu mẹ nấu - ít dầu mỡ, nhiều rau củ, giá cả hợp lý. Mở cửa từ sáng sớm đến tối, phục vụ cả ba bữa. Nơi lý tưởng cho những ai muốn ăn chay ngon với giá bình dân.")
                 .phoneNumber("0901 234 567")
+                .openTime(LocalTime.of(6, 0))
+                .closedTime(LocalTime.of(20, 0))
                 .typeRestaurant(typeChayBinhDan)
                 .place(placeQ1)
                 .owner(owner4)
@@ -269,6 +283,8 @@ public class DatabaseSeeder implements CommandLineRunner {
                 .address("45 Đại lộ Bình Dương, Phú Hòa, Thủ Dầu Một, Bình Dương")
                 .description("Nhà hàng chay theo phong cách truyền thống với sức chứa lớn, phù hợp tổ chức tiệc chay, giỗ chạp và các sự kiện quan trọng. Thực đơn đa dạng với hơn 50 món, trong đó có nhiều món chay cao cấp như hải sản chay, thịt chay các loại.")
                 .phoneNumber("0274 3688 999")
+                .openTime(LocalTime.of(9, 0))
+                .closedTime(LocalTime.of(22, 0))
                 .typeRestaurant(typeChaySanh)
                 .place(placeBD)
                 .owner(owner1)
@@ -310,6 +326,8 @@ public class DatabaseSeeder implements CommandLineRunner {
                 .address("56 Hàng Bông, Hoàn Kiếm, Hà Nội")
                 .description("Nhà hàng chay phong cách Bắc truyền thống giữa lòng phố cổ Hà Nội. Các món chay mang đậm hương vị Hà Thành như bún thang chay, bánh cuốn chay, nem cuốn chay. Không gian hoài cổ với bàn ghế gỗ và đèn lồng đỏ.")
                 .phoneNumber("024 3826 1234")
+                .openTime(LocalTime.of(8, 0))
+                .closedTime(LocalTime.of(21, 30))
                 .typeRestaurant(typeChayThien)
                 .place(placeHN)
                 .owner(owner2)
@@ -331,6 +349,8 @@ public class DatabaseSeeder implements CommandLineRunner {
                 .address("101 Cách Mạng Tháng 8, Phường 7, Quận 3, TP.HCM")
                 .description("Nhà bếp thuần chay sống (raw vegan) - tất cả nguyên liệu không qua nấu chín trên 42°C để giữ nguyên enzyme và dinh dưỡng. Đây là khái niệm ẩm thực mới tại Việt Nam dành cho người quan tâm đến sức khỏe tối ưu.")
                 .phoneNumber("0938 777 888")
+                .openTime(LocalTime.of(8, 30))
+                .closedTime(LocalTime.of(21, 0))
                 .typeRestaurant(typeChayVegan)
                 .place(placeQ3)
                 .owner(owner3)
@@ -351,6 +371,8 @@ public class DatabaseSeeder implements CommandLineRunner {
                 .address("99 Lê Lợi, Quận 1, TP.HCM")
                 .description("Quán chay nhỏ với thực đơn cơ bản.")
                 .phoneNumber("0909 111 222")
+                .openTime(LocalTime.of(8, 0))
+                .closedTime(LocalTime.of(21, 0))
                 .typeRestaurant(typeChayBinhDan)
                 .place(placeQ1)
                 .owner(owner4)
@@ -369,6 +391,8 @@ public class DatabaseSeeder implements CommandLineRunner {
                 .address("18 Nguyễn Lương Bằng, Tân Phú, Quận 7, TP.HCM")
                 .description("Nhà hàng vegan phong cách Nhật Bản với các món như sushi chay, ramen chay dashi kombu và tempura rau củ. Không gian trang trí phong cách Nhật với hoa anh đào nhân tạo và đèn giấy.")
                 .phoneNumber("028 5411 9900")
+                .openTime(LocalTime.of(10, 0))
+                .closedTime(LocalTime.of(22, 0))
                 .typeRestaurant(typeChayVegan)
                 .place(placeQ7)
                 .owner(owner2)
@@ -390,6 +414,8 @@ public class DatabaseSeeder implements CommandLineRunner {
                 .address("33 Nguyễn Đình Chiểu, Phường 3, Quận 3, TP.HCM")
                 .description("Không gian kết hợp giữa cà phê và ẩm thực chay, mở cả ngày. Đặc biệt nổi tiếng với các món bánh ngọt chay thuần và cà phê specialty. Không gian thoáng mát với nhiều cây xanh, phù hợp để làm việc và gặp gỡ bạn bè.")
                 .phoneNumber("028 3822 4455")
+                .openTime(LocalTime.of(7, 0))
+                .closedTime(LocalTime.of(22, 0))
                 .typeRestaurant(typeChaySanh)
                 .place(placeQ3)
                 .owner(owner1)
