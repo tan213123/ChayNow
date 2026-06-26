@@ -3,142 +3,51 @@ package com.teamg5.be.service;
 import com.teamg5.be.dto.CommentResponse;
 import com.teamg5.be.dto.CreateCommentRequest;
 import com.teamg5.be.dto.PageResponseDTO;
-import com.teamg5.be.entity.AccountStatus;
 import com.teamg5.be.entity.Comment;
-import com.teamg5.be.entity.Posting;
-import com.teamg5.be.entity.User;
-import com.teamg5.be.exception.AppException;
-import com.teamg5.be.exception.ErrorCode;
-import com.teamg5.be.repository.CommentRepository;
-import com.teamg5.be.repository.PostingRepository;
-import com.teamg5.be.repository.UserRepository;
-import com.teamg5.be.utils.SecurityUtils;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
-import java.util.List;
+/**
+ * Service interface quản lý các thao tác liên quan đến bình luận (Comment).
+ */
+public interface CommentService {
 
-@Service
-@RequiredArgsConstructor
-public class CommentService {
+    /**
+     * Tạo một bình luận mới cho bài đăng.
+     *
+     * @param postingId ID của bài đăng cần bình luận
+     * @param request thông tin nội dung bình luận
+     * @return CommentResponse phản hồi chứa thông tin bình luận vừa tạo
+     */
+    CommentResponse createComment(Long postingId, CreateCommentRequest request);
 
-    private final CommentRepository commentRepository;
-    private final PostingRepository postingRepository;
-    private final UserRepository userRepository;
+    /**
+     * Lấy danh sách bình luận của một bài đăng với phân trang.
+     *
+     * @param postingId ID của bài đăng
+     * @param page số trang hiện tại
+     * @param size kích thước trang
+     * @return PageResponseDTO chứa danh sách bình luận
+     */
+    PageResponseDTO<CommentResponse> getCommentsByPosting(Long postingId, int page, int size);
 
-    @Transactional
-    public CommentResponse createComment(Long postingId, CreateCommentRequest request) {
-        User currentUser = requireActiveUser();
-        Posting posting = postingRepository.findApprovedById(postingId)
-                .orElseThrow(() -> new AppException(ErrorCode.POSTING_NOT_FOUND));
+    /**
+     * Xóa bình luận của bản thân người dùng hiện tại.
+     *
+     * @param commentId ID của bình luận cần xóa
+     */
+    void deleteMyComment(Long commentId);
 
-        String content = request.getContent() == null ? null : request.getContent().trim();
-        if (!StringUtils.hasText(content)) {
-            throw new AppException(ErrorCode.INVALID_INPUT, "Comment content is required");
-        }
-        if (content.length() > 1000) {
-            throw new AppException(ErrorCode.INVALID_INPUT, "Comment content must be at most 1000 characters");
-        }
+    /**
+     * Xóa bình luận theo ID (dành cho quản trị viên hoặc quyền hạn tương đương).
+     *
+     * @param commentId ID của bình luận cần xóa
+     */
+    void deleteCommentById(Long commentId);
 
-        Comment comment = Comment.builder()
-                .user(currentUser)
-                .posting(posting)
-                .content(content)
-                .build();
-
-        Comment saved = commentRepository.save(comment);
-        incrementCommentCount(posting);
-
-        return CommentResponse.from(saved);
-    }
-
-    @Transactional(readOnly = true)
-    public PageResponseDTO<CommentResponse> getCommentsByPosting(Long postingId, int page, int size) {
-        if (size > 50) size = 50;
-
-        postingRepository.findApprovedById(postingId)
-                .orElseThrow(() -> new AppException(ErrorCode.POSTING_NOT_FOUND));
-
-        PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "createdAt"));
-        Page<Comment> dbPage = commentRepository.findByPosting_IdOrderByCreatedAtAsc(postingId, pageable);
-
-        List<CommentResponse> content = dbPage.getContent().stream()
-                .map(CommentResponse::from)
-                .toList();
-
-        return PageResponseDTO.<CommentResponse>builder()
-                .content(content)
-                .page(dbPage.getNumber())
-                .size(dbPage.getSize())
-                .totalElements(dbPage.getTotalElements())
-                .totalPages(dbPage.getTotalPages())
-                .last(dbPage.isLast())
-                .build();
-    }
-
-    @Transactional
-    public void deleteMyComment(Long commentId) {
-        User currentUser = requireActiveUser();
-        Comment comment = commentRepository.findByIdAndUser_Id(commentId, currentUser.getId())
-                .orElseThrow(() -> new AppException(ErrorCode.COMMENT_NOT_FOUND));
-
-        Posting posting = comment.getPosting();
-        commentRepository.delete(comment);
-        decrementCommentCount(posting);
-    }
-
-    @Transactional
-    public void deleteCommentById(Long commentId) {
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new AppException(ErrorCode.COMMENT_NOT_FOUND));
-
-        Posting posting = comment.getPosting();
-        commentRepository.delete(comment);
-        decrementCommentCount(posting);
-    }
-
-    @Transactional(readOnly = true)
-    public Comment getCommentById(Long commentId) {
-        return commentRepository.findById(commentId)
-                .orElseThrow(() -> new AppException(ErrorCode.COMMENT_NOT_FOUND));
-    }
-
-    private void incrementCommentCount(Posting posting) {
-        if (posting.getCommentCount() == null) {
-            posting.setCommentCount(0);
-        }
-        posting.setCommentCount(posting.getCommentCount() + 1);
-        postingRepository.save(posting);
-    }
-
-    private void decrementCommentCount(Posting posting) {
-        if (posting == null) {
-            return;
-        }
-        if (posting.getCommentCount() == null || posting.getCommentCount() <= 0) {
-            posting.setCommentCount(0);
-        } else {
-            posting.setCommentCount(posting.getCommentCount() - 1);
-        }
-        postingRepository.save(posting);
-    }
-
-    private User requireActiveUser() {
-        String email = SecurityUtils.getCurrentUserLogin()
-                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHORIZED));
-
-        User currentUser = userRepository.findByEmail(email)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-
-        if (currentUser.getStatus() != AccountStatus.ACTIVE) {
-            throw new AppException(ErrorCode.FORBIDDEN, "Suspended or inactive users cannot comment");
-        }
-
-        return currentUser;
-    }
+    /**
+     * Lấy thực thể bình luận theo ID.
+     *
+     * @param commentId ID của bình luận
+     * @return Comment thực thể bình luận
+     */
+    Comment getCommentById(Long commentId);
 }

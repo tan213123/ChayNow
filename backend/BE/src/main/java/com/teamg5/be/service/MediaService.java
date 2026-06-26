@@ -1,113 +1,50 @@
 package com.teamg5.be.service;
 
-import com.cloudinary.Cloudinary;
-import com.cloudinary.utils.ObjectUtils;
 import com.teamg5.be.dto.MediaResponse;
-import com.teamg5.be.entity.Media;
-import com.teamg5.be.entity.Mediatype;
-import com.teamg5.be.entity.Restaurant;
-import com.teamg5.be.exception.AppException;
-import com.teamg5.be.exception.ErrorCode;
-import com.teamg5.be.repository.MediaRepository;
-import com.teamg5.be.repository.RestaurantRepository;
-import com.teamg5.be.entity.Review;
-import com.teamg5.be.repository.ReviewRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-@Service
-@RequiredArgsConstructor
-public class MediaService {
-
-    private final Cloudinary cloudinary;
-    private final MediaRepository mediaRepository;
-    private final RestaurantRepository restaurantRepository;
-    private final ReviewRepository reviewRepository;
+/**
+ * Service interface quản lý các thao tác tải lên và lưu trữ phương tiện truyền thông (Media - Hình ảnh/Video).
+ */
+public interface MediaService {
 
     /**
-     * Upload a single file to Cloudinary and save to Media entity.
+     * Tải lên một tệp tin duy nhất lên Cloudinary và lưu vào cơ sở dữ liệu liên kết với Nhà hàng.
+     *
+     * @param file tệp tin phương tiện cần tải lên
+     * @param restaurantId ID của nhà hàng liên kết
+     * @return MediaResponse phản hồi chứa thông tin phương tiện đã lưu
      */
-    @Transactional
-    public MediaResponse uploadFile(MultipartFile file, Long restaurantId) {
-        return uploadFile(file, restaurantId, null);
-    }
+    MediaResponse uploadFile(MultipartFile file, Long restaurantId);
 
     /**
-     * Upload a single file to Cloudinary and save to Media entity.
+     * Tải lên một tệp tin duy nhất lên Cloudinary và lưu liên kết với Nhà hàng và/hoặc Đánh giá.
+     *
+     * @param file tệp tin phương tiện cần tải lên
+     * @param restaurantId ID của nhà hàng liên kết (có thể null)
+     * @param reviewId ID của đánh giá liên kết (có thể null)
+     * @return MediaResponse phản hồi chứa thông tin phương tiện đã lưu
      */
-    @Transactional
-    public MediaResponse uploadFile(MultipartFile file, Long restaurantId, Long reviewId) {
-        if (file == null || file.isEmpty()) {
-            throw new AppException(ErrorCode.EMPTY_FILE);
-        }
-
-        try {
-            // Upload to Cloudinary
-            Map<?, ?> uploadResult = cloudinary.uploader().upload(
-                    file.getBytes(),
-                    ObjectUtils.asMap("resource_type", "auto")
-            );
-            String url = (String) uploadResult.get("secure_url");
-
-            Restaurant restaurant = null;
-            if (restaurantId != null) {
-                restaurant = restaurantRepository.findById(restaurantId)
-                        .orElseThrow(() -> new AppException(ErrorCode.RESTAURANT_NOT_FOUND));
-            }
-
-            Review review = null;
-            if (reviewId != null) {
-                review = reviewRepository.findById(reviewId)
-                        .orElseThrow(() -> new AppException(ErrorCode.REVIEW_NOT_FOUND));
-            }
-
-            // Determine Media type (IMAGE / VIDEO)
-            Mediatype mediatype = Mediatype.IMAGE;
-            String contentType = file.getContentType();
-            if (contentType != null && contentType.startsWith("video")) {
-                mediatype = Mediatype.VIDEO;
-            }
-
-            Media media = Media.builder()
-                    .url(url)
-                    .type(mediatype)
-                    .restaurant(restaurant)
-                    .review(review)
-                    .build();
-
-            Media savedMedia = mediaRepository.save(media);
-            return MediaResponse.from(savedMedia);
-
-        } catch (IOException e) {
-            throw new AppException(ErrorCode.UPLOAD_FAILED, "Failed to upload file to Cloudinary: " + e.getMessage());
-        }
-    }
-
-    @Transactional
-    public List<MediaResponse> uploadFiles(MultipartFile[] files, Long restaurantId) {
-        return uploadFiles(files, restaurantId, null);
-    }
+    MediaResponse uploadFile(MultipartFile file, Long restaurantId, Long reviewId);
 
     /**
-     * Upload multiple files to Cloudinary and save to Media entities.
+     * Tải lên nhiều tệp tin phương tiện lên Cloudinary và liên kết với Nhà hàng.
+     *
+     * @param files danh sách các tệp tin phương tiện cần tải lên
+     * @param restaurantId ID của nhà hàng liên kết
+     * @return List&lt;MediaResponse&gt; danh sách phản hồi chứa thông tin các phương tiện đã lưu
      */
-    @Transactional
-    public List<MediaResponse> uploadFiles(MultipartFile[] files, Long restaurantId, Long reviewId) {
-        if (files == null || files.length == 0) {
-            throw new AppException(ErrorCode.EMPTY_FILE, "No files uploaded");
-        }
+    List<MediaResponse> uploadFiles(MultipartFile[] files, Long restaurantId);
 
-        List<MediaResponse> responses = new ArrayList<>();
-        for (MultipartFile file : files) {
-            responses.add(uploadFile(file, restaurantId, reviewId));
-        }
-        return responses;
-    }
+    /**
+     * Tải lên nhiều tệp tin phương tiện lên Cloudinary và liên kết với Nhà hàng và/hoặc Đánh giá.
+     *
+     * @param files danh sách các tệp tin phương tiện cần tải lên
+     * @param restaurantId ID của nhà hàng liên kết (có thể null)
+     * @param reviewId ID của đánh giá liên kết (có thể null)
+     * @return List&lt;MediaResponse&gt; danh sách phản hồi chứa thông tin các phương tiện đã lưu
+     */
+    List<MediaResponse> uploadFiles(MultipartFile[] files, Long restaurantId, Long reviewId);
 }

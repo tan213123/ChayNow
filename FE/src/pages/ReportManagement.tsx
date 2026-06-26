@@ -1,5 +1,4 @@
 
-import Navbar from "@/components/Navbar";
 import { AlertTriangle, CheckCircle2, Clock3, XCircle } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import {
