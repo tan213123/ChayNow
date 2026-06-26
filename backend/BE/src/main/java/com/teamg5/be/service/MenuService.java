@@ -10,6 +10,11 @@ import com.teamg5.be.exception.AppException;
 import com.teamg5.be.exception.ErrorCode;
 import com.teamg5.be.repository.MenuRepository;
 import com.teamg5.be.repository.RestaurantRepository;
+import com.teamg5.be.entity.User;
+import com.teamg5.be.entity.Role;
+import com.teamg5.be.repository.UserRepository;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
@@ -27,6 +32,36 @@ public class MenuService {
     
     private final MenuRepository menuRepository;
     private final RestaurantRepository restaurantRepository;
+    private final UserRepository userRepository;
+
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof User user) {
+            return user;
+        }
+
+        String email = authentication.getName();
+        if (email == null || email.equals("anonymousUser")) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    private void verifyOwnerOrAdmin(Restaurant restaurant) {
+        User currentUser = getCurrentUser();
+        if (currentUser.getRole() != Role.ADMIN) {
+            if (restaurant.getOwner() == null || !restaurant.getOwner().getId().equals(currentUser.getId())) {
+                throw new AppException(ErrorCode.FORBIDDEN);
+            }
+        }
+    }
 
     // create
      public MenuResponse createMenu(
@@ -38,6 +73,8 @@ public class MenuService {
                 .orElseThrow(() ->
                         new AppException(ErrorCode.RESTAURANT_NOT_FOUND)
                 );
+
+        verifyOwnerOrAdmin(restaurant);
 
         Menu menu = Menu.builder()
                 .restaurant(restaurant)
@@ -110,6 +147,8 @@ public class MenuService {
                         new AppException(ErrorCode.MENU_NOT_FOUND)
                 );
 
+        verifyOwnerOrAdmin(menu.getRestaurant());
+
         if (StringUtils.hasText(request.getName())) {
             menu.setName(request.getName().trim());
         }
@@ -148,6 +187,8 @@ public class MenuService {
                 .orElseThrow(() ->
                         new AppException(ErrorCode.MENU_NOT_FOUND)
                 );
+
+        verifyOwnerOrAdmin(menu.getRestaurant());
 
         menu.setActive(!menu.getActive());
         menu.setAvailable(!menu.getAvailable());

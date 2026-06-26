@@ -54,6 +54,10 @@ public class User extends BaseEntity implements UserDetails {
 
     private String bio;
 
+    @Column(name = "warning_count")
+    @Builder.Default
+    private int warningCount = 0;
+
     @jakarta.persistence.OneToMany(mappedBy = "user", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
     @lombok.Builder.Default
     private List<FavouritePlace> favouritePlaces = new java.util.ArrayList<>();
@@ -61,6 +65,10 @@ public class User extends BaseEntity implements UserDetails {
     @jakarta.persistence.OneToMany(mappedBy = "user", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
     @lombok.Builder.Default
     private List<Posting> postings = new java.util.ArrayList<>();
+
+    @jakarta.persistence.OneToMany(mappedBy = "user", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
+    @lombok.Builder.Default
+    private List<Comment> comments = new java.util.ArrayList<>();
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -91,7 +99,7 @@ public class User extends BaseEntity implements UserDetails {
     public boolean isEnabled() {
         return true;
     }
-       @OneToMany(mappedBy = "owner")
+    @OneToMany(mappedBy = "owner")
     @Builder.Default
     private List<Restaurant> restaurants = new ArrayList<>();
 }
