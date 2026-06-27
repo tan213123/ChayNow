@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import com.teamg5.be.service.impl.TypeRestaurantServiceImpl;
 
 import java.util.Collections;
 import java.util.List;
@@ -23,7 +24,7 @@ import static org.mockito.Mockito.*;
 public class TypeRestaurantServiceTest {
 
     @InjectMocks
-    private com.teamg5.be.service.impl.TypeRestaurantServiceImpl typeRestaurantService;
+    private TypeRestaurantServiceImpl typeRestaurantService;
 
     @Mock
     private TypeRestaurantRepository typeRestaurantRepository;
