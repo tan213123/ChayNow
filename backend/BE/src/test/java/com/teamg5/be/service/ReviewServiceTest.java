@@ -32,7 +32,7 @@ import static org.mockito.Mockito.*;
 public class ReviewServiceTest {
 
     @InjectMocks
-    private ReviewService reviewService;
+    private com.teamg5.be.service.impl.ReviewServiceImpl reviewService;
 
     @Mock
     private ReviewRepository reviewRepository;

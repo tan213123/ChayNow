@@ -23,7 +23,7 @@ import static org.mockito.Mockito.*;
 public class TypeRestaurantServiceTest {
 
     @InjectMocks
-    private TypeRestaurantService typeRestaurantService;
+    private com.teamg5.be.service.impl.TypeRestaurantServiceImpl typeRestaurantService;
 
     @Mock
     private TypeRestaurantRepository typeRestaurantRepository;

@@ -29,7 +29,7 @@ import static org.mockito.Mockito.*;
 public class MediaServiceTest {
 
     @InjectMocks
-    private MediaService mediaService;
+    private com.teamg5.be.service.impl.MediaServiceImpl mediaService;
 
     @Mock
     private Cloudinary cloudinary;
