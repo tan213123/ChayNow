@@ -197,8 +197,12 @@ export default function RestaurantDetail() {
       id: String(apiRestaurant.id),
       name: apiRestaurant.name,
       location: apiRestaurant.address ?? "Chưa cập nhật địa chỉ",
-      hours: "Chưa cập nhật",
-      priceRange: "Chưa cập nhật",
+      hours: apiRestaurant.openTime && apiRestaurant.closedTime
+        ? `${apiRestaurant.openTime.substring(0, 5)} - ${apiRestaurant.closedTime.substring(0, 5)}`
+        : "Chưa cập nhật",
+      priceRange: apiMenus.length > 0
+        ? `${Math.min(...apiMenus.map((m) => m.price)).toLocaleString("vi-VN")}đ - ${Math.max(...apiMenus.map((m) => m.price)).toLocaleString("vi-VN")}đ`
+        : "Chưa cập nhật",
       rating: Number(rating.toFixed(1)),
       reviews: apiReviews.length,
       category: apiRestaurant.typeRestaurantName,
@@ -214,6 +218,7 @@ export default function RestaurantDetail() {
         name: item.name,
         price: item.price != null ? `${item.price.toLocaleString("vi-VN")}đ` : "Liên hệ",
         category: item.category ?? "Món ăn",
+        image: item.imageUrl,
       })),
       reviewsList: apiReviews.map((review) => ({
         name: review.userName ?? `Người dùng #${review.userId}`,
@@ -516,9 +521,17 @@ export default function RestaurantDetail() {
                         className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50 p-4 transition hover:border-emerald-200 hover:bg-emerald-50/50"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-lg">
-                            🍽️
-                          </div>
+                          {dish.image ? (
+                            <img
+                              src={dish.image}
+                              alt={dish.name}
+                              className="h-10 w-10 rounded-xl object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-lg">
+                              🍽️
+                            </div>
+                          )}
                           <div>
                             <p className="font-semibold text-slate-900">{dish.name}</p>
                             <p className="text-xs text-slate-500">{dish.category}</p>
