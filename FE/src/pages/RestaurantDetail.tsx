@@ -9,6 +9,7 @@ import {
   getRestaurantReviews,
 } from "@/services/restaurant.service";
 import { getRestaurantEvents } from "@/services/event.service";
+import { getRestaurantMenus } from "@/services/menu.service";
 import { mediaService } from "@/services/media.service";
 import { useAuthStore } from "@/store/authStore";
 import { addFavourite, isFavourite, removeFavourite } from "@/services/favourite.service";
@@ -17,6 +18,7 @@ import type {
   RestaurantResponse,
   ReviewResponse,
   EventResponse,
+  MenuResponse,
 } from "@/types/restaurant";
 
 const tabLabels = ["Thông tin", "Sự kiện", "Thực đơn", "Đánh giá"] as const;
@@ -47,6 +49,7 @@ export default function RestaurantDetail() {
     useState<RestaurantResponse | null>(null);
   const [apiReviews, setApiReviews] = useState<ReviewResponse[]>([]);
   const [apiEvents, setApiEvents] = useState<EventResponse[]>([]);
+  const [apiMenus, setApiMenus] = useState<MenuResponse[]>([]);
   const [isLoading, setIsLoading] = useState(isValidId);
   const { user } = useAuthStore();
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -87,6 +90,10 @@ export default function RestaurantDetail() {
             console.error("Failed to load events", err);
             return [] as EventResponse[];
           }),
+          getRestaurantMenus(restaurantId).catch((err) => {
+            console.error("Failed to load menus", err);
+            return [] as MenuResponse[];
+          }),
           user
             ? isFavourite(restaurantId)
                 .then((res) => (res.success ? res.data : false))
@@ -97,11 +104,12 @@ export default function RestaurantDetail() {
             : Promise.resolve(false),
         ]);
       })
-      .then(([restaurantResponse, reviewsResponse, eventsResponse, isFavResponse]) => {
+      .then(([restaurantResponse, reviewsResponse, eventsResponse, menusResponse, isFavResponse]) => {
         if (!cancelled) {
           setApiRestaurant(restaurantResponse);
           setApiReviews(reviewsResponse);
           setApiEvents(eventsResponse);
+          setApiMenus(menusResponse);
           setIsFavorite(!!isFavResponse);
         }
       })
@@ -202,7 +210,11 @@ export default function RestaurantDetail() {
       address: apiRestaurant.address ?? "Chưa cập nhật địa chỉ",
       phone: apiRestaurant.phoneNumber ?? "Chưa cập nhật",
       mapAlt: `Bản đồ ${apiRestaurant.name}`,
-      menu: [] as Array<{ name: string; price: string; category: string }>,
+      menu: apiMenus.map((item) => ({
+        name: item.name,
+        price: item.price != null ? `${item.price.toLocaleString("vi-VN")}đ` : "Liên hệ",
+        category: item.category ?? "Món ăn",
+      })),
       reviewsList: apiReviews.map((review) => ({
         name: review.userName ?? `Người dùng #${review.userId}`,
         rating: review.rating,
@@ -214,7 +226,7 @@ export default function RestaurantDetail() {
       })),
       features: [apiRestaurant.typeRestaurantName].filter(Boolean),
     };
-  }, [apiRestaurant, apiReviews]);
+  }, [apiRestaurant, apiReviews, apiMenus]);
 
   const handleReviewImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {

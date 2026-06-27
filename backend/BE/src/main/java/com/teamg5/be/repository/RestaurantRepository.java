@@ -33,6 +33,8 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
 
     List<Restaurant> findAllByActiveTrue();
 
+    List<Restaurant> findAllByActiveTrueAndStatus(RestaurantStatus status);
+
     List<Restaurant> findAllByActiveFalse();
 
     boolean existsByPlace_IdAndActiveTrue(Long placeId);

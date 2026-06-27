@@ -7,6 +7,7 @@ import com.teamg5.be.dto.UpdateRestaurantRequest;
 import com.teamg5.be.entity.Media;
 import com.teamg5.be.entity.Place;
 import com.teamg5.be.entity.Restaurant;
+import com.teamg5.be.entity.RestaurantStatus;
 import com.teamg5.be.entity.TypeRestaurant;
 import com.teamg5.be.entity.User;
 import com.teamg5.be.exception.AppException;
@@ -94,7 +95,7 @@ public class RestaurantServiceImpl implements RestaurantService {
     @Override
     @Transactional(readOnly = true)
     public List<RestaurantResponse> getAllRestaurant() {
-        return restaurantRepository.findAllByActiveTrue()
+        return restaurantRepository.findAllByActiveTrueAndStatus(RestaurantStatus.APPROVED)
                 .stream()
                 .map(RestaurantResponse::from)
                 .toList();
