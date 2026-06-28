@@ -70,6 +70,11 @@ public class RestaurantServiceImpl implements RestaurantService {
             }
         }
 
+        String name = request.getName() != null ? request.getName().trim() : null;
+        if (restaurantRepository.existsDuplicateRestaurant(name, request.getPlaceId())) {
+            throw new AppException(ErrorCode.RESTAURANT_ALREADY_EXISTS);
+        }
+
         Restaurant restaurant = Restaurant.builder()
                 .name(request.getName() != null ? request.getName().trim() : null)
                 .address(request.getAddress() != null ? request.getAddress().trim() : null)
@@ -125,6 +130,13 @@ public class RestaurantServiceImpl implements RestaurantService {
     public RestaurantResponse updateResponse(Long restaurantId , UpdateRestaurantRequest request) {
          Restaurant restaurant = restaurantRepository.findById(restaurantId)
             .orElseThrow(() -> new AppException(ErrorCode.RESTAURANT_NOT_FOUND));
+
+        String finalName = StringUtils.hasText(request.getName()) ? request.getName().trim() : restaurant.getName();
+        Long finalPlaceId = request.getPlaceId() != null ? request.getPlaceId() : (restaurant.getPlace() != null ? restaurant.getPlace().getId() : null);
+
+        if (finalPlaceId != null && restaurantRepository.existsDuplicateRestaurantForUpdate(finalName, finalPlaceId, restaurantId)) {
+            throw new AppException(ErrorCode.RESTAURANT_ALREADY_EXISTS);
+        }
 
         if (StringUtils.hasText(request.getName())) {
             restaurant.setName(request.getName().trim());

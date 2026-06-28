@@ -28,6 +28,11 @@ public enum ErrorCode {
             "Không tìm thấy nhà hàng này",
             HttpStatus.NOT_FOUND
     ),
+    RESTAURANT_ALREADY_EXISTS(
+            "ERR_RESTAURANT_ALREADY_EXISTS",
+            "Nhà hàng này đã tồn tại (trùng tên và địa chỉ)",
+            HttpStatus.BAD_REQUEST
+    ),
     REVIEW_ALREADY_EXISTS(
             "ERR_REVIEW_ALREADY_EXISTS",
             "Bạn đã đánh giá nhà hàng này rồi",
