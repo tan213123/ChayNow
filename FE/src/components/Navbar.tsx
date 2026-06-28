@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Heart, Home, Leaf, LogOut, Store, UserCircle } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import type { Role } from "@/types/auth";
 
@@ -29,11 +30,11 @@ export default function Navbar() {
   };
 
   const navLinks = [
-    { to: "/", label: "Trang chủ", icon: "⌂" },
-    { to: "/favorites", label: "Yêu thích", icon: "♡" },
+    { to: "/", label: "Trang chủ", icon: Home },
+    { to: "/favorites", label: "Yêu thích", icon: Heart },
     ...(user?.role === "OWNER"
       ? [
-          { to: "/manage", label: "Quản lý quán", icon: "▣" },
+          { to: "/manage", label: "Quản lý quán", icon: Store },
         ]
       : []),
   ];
@@ -50,26 +51,29 @@ export default function Navbar() {
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <Link to="/" className="group flex items-center gap-3 text-emerald-700">
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-xl transition-transform group-hover:scale-110">
-            ♧
+            <Leaf className="h-5 w-5" />
           </div>
           <span className="text-lg font-bold tracking-tight">ChayNow</span>
         </Link>
 
         <nav className="hidden items-center gap-1 text-sm md:flex">
-          {navLinks.map((link) => (
-            <Link
-              key={link.to}
-              to={link.to}
-              className={`flex items-center gap-2 rounded-full px-4 py-2 font-medium transition-all ${
-                isActive(link.to)
-                  ? "bg-emerald-50 text-emerald-700"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-              }`}
-            >
-              <span>{link.icon}</span>
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map((link) => {
+            const Icon = link.icon;
+            return (
+              <Link
+                key={link.to}
+                to={link.to}
+                className={`flex items-center gap-2 rounded-full px-4 py-2 font-medium transition-all ${
+                  isActive(link.to)
+                    ? "bg-emerald-50 text-emerald-700"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="flex items-center gap-3">
@@ -90,8 +94,9 @@ export default function Navbar() {
               </Link>
               <button
                 onClick={handleLogout}
-                className="hidden rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 sm:block"
+                className="hidden items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 sm:flex"
               >
+                <LogOut className="h-4 w-4" />
                 Đăng xuất
               </button>
             </div>
@@ -138,21 +143,24 @@ export default function Navbar() {
 
       {menuOpen && (
         <div className="space-y-2 border-t border-slate-100 bg-white px-6 py-4 shadow-lg md:hidden">
-          {navLinks.map((link) => (
-            <Link
-              key={link.to}
-              to={link.to}
-              onClick={() => setMenuOpen(false)}
-              className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition ${
-                isActive(link.to)
-                  ? "bg-emerald-50 text-emerald-700"
-                  : "text-slate-600 hover:bg-slate-50"
-              }`}
-            >
-              <span className="text-base">{link.icon}</span>
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map((link) => {
+            const Icon = link.icon;
+            return (
+              <Link
+                key={link.to}
+                to={link.to}
+                onClick={() => setMenuOpen(false)}
+                className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition ${
+                  isActive(link.to)
+                    ? "bg-emerald-50 text-emerald-700"
+                    : "text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {link.label}
+              </Link>
+            );
+          })}
           <div className="border-t border-slate-100 pt-2">
             {isLoggedIn && user ? (
               <div className="space-y-2">
@@ -161,15 +169,14 @@ export default function Navbar() {
                   onClick={() => setMenuOpen(false)}
                   className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50"
                 >
-                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-xs font-bold text-white">
-                    {getInitials()}
-                  </span>
+                  <UserCircle className="h-5 w-5 text-emerald-600" />
                   Hồ sơ cá nhân
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="w-full rounded-2xl px-4 py-3 text-left text-sm font-medium text-red-600 transition hover:bg-red-50"
+                  className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium text-red-600 transition hover:bg-red-50"
                 >
+                  <LogOut className="h-4 w-4" />
                   Đăng xuất
                 </button>
               </div>

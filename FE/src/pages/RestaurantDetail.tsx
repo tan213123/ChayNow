@@ -4,6 +4,28 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import {
+  AlertTriangle,
+  Calendar,
+  Camera,
+  Check,
+  Clock,
+  DollarSign,
+  Flag,
+  Heart,
+  Info,
+  KeyRound,
+  MapPin,
+  PartyPopper,
+  Phone,
+  Plus,
+  Search,
+  Star,
+  Tag,
+  Utensils,
+  X,
+  type LucideIcon,
+} from "lucide-react";
+import {
   createRestaurantReview,
   getRestaurant,
   getRestaurantReviews,
@@ -24,11 +46,11 @@ import type {
 const tabLabels = ["Thông tin", "Sự kiện", "Thực đơn", "Đánh giá"] as const;
 type Tab = (typeof tabLabels)[number];
 
-const tabIcons: Record<Tab, string> = {
-  "Thông tin": "ℹ️",
-  "Sự kiện": "🎉",
-  "Thực đơn": "🍽️",
-  "Đánh giá": "⭐",
+const tabIcons: Record<Tab, LucideIcon> = {
+  "Thông tin": Info,
+  "Sự kiện": PartyPopper,
+  "Thực đơn": Utensils,
+  "Đánh giá": Star,
 };
 
 const reviewSuggestions = [
@@ -177,7 +199,7 @@ export default function RestaurantDetail() {
       setIsReportModalOpen(false);
       setReportReason("");
       setReportDescription("");
-    } catch (error) {
+    } catch {
       toast.error("Không thể gửi báo cáo. Vui lòng thử lại sau.");
     } finally {
       setIsSubmittingReport(false);
@@ -288,7 +310,7 @@ export default function RestaurantDetail() {
         <Navbar />
         <div className="flex min-h-[80vh] items-center justify-center p-6">
           <div className="rounded-[2rem] border border-slate-200 bg-white p-12 shadow-2xl text-center max-w-md">
-            <div className="text-5xl">🔍</div>
+            <Search className="mx-auto h-12 w-12 text-slate-300" />
             <h1 className="mt-4 text-2xl font-bold text-slate-900">Không tìm thấy nhà hàng</h1>
             <p className="mt-3 text-sm text-slate-500">
               {loadError ?? "Địa điểm này không tồn tại hoặc đã bị xoá."}
@@ -326,12 +348,12 @@ export default function RestaurantDetail() {
                 {restaurant.name}
               </h1>
               <p className="mt-1.5 flex items-center gap-1.5 text-sm text-white/80">
-                <span>📍</span> {restaurant.address}
+                <MapPin className="h-4 w-4 shrink-0" /> {restaurant.address}
               </p>
             </div>
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 text-white backdrop-blur-sm">
-                <span className="text-amber-400">★</span>
+                <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
                 <span className="font-bold">{restaurant.rating}</span>
                 <span className="text-white/70 text-xs">({restaurant.reviews})</span>
               </div>
@@ -341,7 +363,7 @@ export default function RestaurantDetail() {
                   isFavorite ? "bg-red-500 text-white" : "bg-white/20 text-white hover:bg-white/30"
                 }`}
               >
-                {isFavorite ? "♥" : "♡"}
+                <Heart className={`h-5 w-5 ${isFavorite ? "fill-current" : ""}`} />
               </button>
             </div>
           </div>
@@ -355,13 +377,13 @@ export default function RestaurantDetail() {
             {/* Quick Info Bar */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
-                { icon: "🕐", label: "Giờ mở cửa", value: restaurant.hours },
-                { icon: "💰", label: "Khoảng giá", value: restaurant.priceRange },
-                { icon: "📞", label: "Điện thoại", value: restaurant.phone },
-                { icon: "🏷️", label: "Danh mục", value: restaurant.category },
+                { icon: Clock, label: "Giờ mở cửa", value: restaurant.hours },
+                { icon: DollarSign, label: "Khoảng giá", value: restaurant.priceRange },
+                { icon: Phone, label: "Điện thoại", value: restaurant.phone },
+                { icon: Tag, label: "Danh mục", value: restaurant.category },
               ].map((info) => (
                 <div key={info.label} className="rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-sm">
-                  <div className="text-xl">{info.icon}</div>
+                  <info.icon className="h-5 w-5 text-emerald-600" />
                   <p className="mt-2 text-xs font-medium text-slate-500">{info.label}</p>
                   <p className="mt-1 text-sm font-semibold text-slate-900 leading-snug">{info.value}</p>
                 </div>
@@ -380,21 +402,24 @@ export default function RestaurantDetail() {
             {/* Tabs */}
             <div className="rounded-[2rem] border border-slate-200 bg-white shadow-sm overflow-hidden">
               <div className="flex flex-wrap gap-1 border-b border-slate-100 p-2">
-                {tabLabels.map((label) => (
-                  <button
-                    key={label}
-                    type="button"
-                    onClick={() => setActiveTab(label)}
-                    className={`flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-semibold transition-all ${
-                      activeTab === label
-                        ? "bg-emerald-600 text-white shadow-sm"
-                        : "text-slate-600 hover:bg-slate-100"
-                    }`}
-                  >
-                    <span>{tabIcons[label]}</span>
-                    {label}
-                  </button>
-                ))}
+                {tabLabels.map((label) => {
+                  const Icon = tabIcons[label];
+                  return (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => setActiveTab(label)}
+                      className={`flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-semibold transition-all ${
+                        activeTab === label
+                          ? "bg-emerald-600 text-white shadow-sm"
+                          : "text-slate-600 hover:bg-slate-100"
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
 
               <div className="p-6">
@@ -428,7 +453,7 @@ export default function RestaurantDetail() {
                   <div className="space-y-6">
                     {apiEvents.filter((e) => e.status !== "HIDDEN").length === 0 ? (
                       <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white p-12 text-center">
-                        <div className="text-4xl">🎉</div>
+                        <PartyPopper className="mx-auto h-10 w-10 text-slate-300" />
                         <p className="mt-3 font-semibold text-slate-900">
                           Hiện tại nhà hàng chưa có sự kiện nào.
                         </p>
@@ -496,7 +521,7 @@ export default function RestaurantDetail() {
                                       </span>
                                     </div>
                                     <p className="text-xs font-semibold text-emerald-600 flex items-center gap-1">
-                                      📅 {formattedStart} - {formattedEnd}
+                                      <Calendar className="h-3.5 w-3.5" /> {formattedStart} - {formattedEnd}
                                     </p>
                                     <p className="text-sm leading-relaxed text-slate-600 line-clamp-3">
                                       {event.description ||
@@ -529,7 +554,7 @@ export default function RestaurantDetail() {
                             />
                           ) : (
                             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-lg">
-                              🍽️
+                              <Utensils className="h-5 w-5 text-emerald-600" />
                             </div>
                           )}
                           <div>
@@ -551,11 +576,11 @@ export default function RestaurantDetail() {
                     {/* Write Review */}
                     {!user ? (
                       <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-5 text-center text-slate-600">
-                        🔑 Vui lòng <Link to="/login" className="font-semibold text-emerald-600 hover:underline">đăng nhập</Link> để viết đánh giá cho nhà hàng này.
+                        <KeyRound className="mr-2 inline h-4 w-4" /> Vui lòng <Link to="/login" className="font-semibold text-emerald-600 hover:underline">đăng nhập</Link> để viết đánh giá cho nhà hàng này.
                       </div>
                     ) : isOwner ? (
                       <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-5 text-center text-amber-800">
-                        ⚠️ Bạn là chủ nhà hàng này, do đó không thể đánh giá nhà hàng của chính mình.
+                        <AlertTriangle className="mr-2 inline h-4 w-4" /> Bạn là chủ nhà hàng này, do đó không thể đánh giá nhà hàng của chính mình.
                       </div>
                     ) : (
                       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
@@ -570,7 +595,7 @@ export default function RestaurantDetail() {
                               className="text-2xl transition-transform hover:scale-125"
                             >
                               <span className={(hoverRating || selectedRating) >= star ? "text-amber-400" : "text-slate-300"}>
-                                ★
+                                <Star className="h-7 w-7 fill-current" />
                               </span>
                             </button>
                           ))}
@@ -607,7 +632,7 @@ export default function RestaurantDetail() {
                                     : "border-slate-200 bg-white text-slate-600 hover:border-emerald-300 hover:bg-emerald-50"
                                 }`}
                               >
-                                {isSelected ? "✓ " : "+ "}{suggestion}
+                                {isSelected ? <Check className="mr-1 inline h-3 w-3" /> : <Plus className="mr-1 inline h-3 w-3" />}{suggestion}
                               </button>
                             );
                           })}
@@ -626,7 +651,7 @@ export default function RestaurantDetail() {
                                   onClick={() => setReviewImages((current) => current.filter((_, i) => i !== idx))}
                                   className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] text-white shadow hover:bg-rose-600 transition"
                                 >
-                                  ✕
+                                  <X className="h-2.5 w-2.5" />
                                 </button>
                               </div>
                             ))}
@@ -636,7 +661,7 @@ export default function RestaurantDetail() {
                           <div className="flex items-center gap-3">
                             {isValidId && (
                               <label className="flex items-center gap-1.5 cursor-pointer rounded-xl bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition shadow-sm">
-                                📷 Thêm ảnh
+                                <Camera className="h-3.5 w-3.5" /> Thêm ảnh
                                 <input
                                   type="file"
                                   multiple
@@ -685,9 +710,14 @@ export default function RestaurantDetail() {
                               </div>
                               <div className="flex gap-0.5 text-amber-400">
                                 {[...Array(5)].map((_, idx) => (
-                                  <span key={idx} className={idx < review.rating ? "text-amber-400" : "text-slate-200"}>
-                                    ★
-                                  </span>
+                                  <Star
+                                    key={idx}
+                                    className={`h-4 w-4 ${
+                                      idx < review.rating
+                                        ? "fill-amber-400 text-amber-400"
+                                        : "text-slate-200"
+                                    }`}
+                                  />
                                 ))}
                               </div>
                             </div>
@@ -730,14 +760,14 @@ export default function RestaurantDetail() {
                     : "bg-slate-50 text-slate-700 border border-slate-200 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
                 }`}
               >
-                <span className="text-lg">{isFavorite ? "♥" : "♡"}</span>
+                <Heart className={`h-5 w-5 ${isFavorite ? "fill-current" : ""}`} />
                 {isFavorite ? "Đã lưu vào yêu thích" : "Thêm vào yêu thích"}
               </button>
               <button
                 onClick={() => setActiveTab("Đánh giá")}
                 className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 transition"
               >
-                <span className="text-lg">⭐</span>
+                <Star className="h-5 w-5" />
                 {isOwner ? "Xem đánh giá" : "Viết đánh giá"}
               </button>
               
@@ -751,7 +781,7 @@ export default function RestaurantDetail() {
                 }}
                 className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 hover:border-red-200 hover:bg-red-50 hover:text-red-700 transition"
               >
-                <span className="text-lg">🚩</span>
+                <Flag className="h-5 w-5" />
                 Báo cáo nhà hàng
               </button>
 
@@ -765,7 +795,14 @@ export default function RestaurantDetail() {
                   <p className="text-5xl font-extrabold text-slate-900">{restaurant.rating}</p>
                   <div className="mt-1 flex gap-0.5 justify-center text-amber-400">
                     {[...Array(5)].map((_, i) => (
-                      <span key={i} className={i < Math.floor(restaurant.rating) ? "text-amber-400" : "text-slate-200"}>★</span>
+                      <Star
+                        key={i}
+                        className={`h-4 w-4 ${
+                          i < Math.floor(restaurant.rating)
+                            ? "fill-amber-400 text-amber-400"
+                            : "text-slate-200"
+                        }`}
+                      />
                     ))}
                   </div>
                   <p className="mt-1 text-xs text-slate-500">{restaurant.reviews} đánh giá</p>
