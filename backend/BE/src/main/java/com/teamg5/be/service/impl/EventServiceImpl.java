@@ -48,6 +48,12 @@ public class EventServiceImpl implements EventService {
 
         verifyOwnerOrAdmin(restaurant);
 
+        if (request.getStartDate() != null && request.getEndDate() != null) {
+            if (request.getEndDate().isBefore(request.getStartDate())) {
+                throw new AppException(ErrorCode.INVALID_INPUT, "Ngày kết thúc phải sau hoặc bằng ngày bắt đầu");
+            }
+        }
+
         EventType eventType = request.getEventType();
         if (eventType == null && request.getType() != null) {
             try {
@@ -80,6 +86,12 @@ public class EventServiceImpl implements EventService {
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Không tìm thấy sự kiện"));
 
         verifyOwnerOrAdmin(event.getRestaurant());
+
+        java.time.LocalDate startDate = request.getStartDate() != null ? request.getStartDate() : event.getStartDate();
+        java.time.LocalDate endDate = request.getEndDate() != null ? request.getEndDate() : event.getEndDate();
+        if (startDate != null && endDate != null && endDate.isBefore(startDate)) {
+            throw new AppException(ErrorCode.INVALID_INPUT, "Ngày kết thúc phải sau hoặc bằng ngày bắt đầu");
+        }
 
         if (StringUtils.hasText(request.getTitle())) {
             event.setTitle(request.getTitle().trim());

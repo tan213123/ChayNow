@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import OwnerLayout from "@/components/OwnerLayout";
 import { Button } from "@/components/ui/button";
+import { Camera, X } from "lucide-react";
 import { getSelectedRestaurantId } from "@/lib/ownerRestaurant";
 import {
   createMenu,
@@ -344,13 +345,13 @@ export default function OwnerNewDish() {
                       className="absolute right-2 top-2 rounded-full bg-slate-900/60 p-1.5 text-white hover:bg-slate-900/80 transition"
                       title="Xóa ảnh"
                     >
-                      ✕
+                      <X className="h-4 w-4" />
                     </button>
                   </div>
                 ) : (
                   <label className="flex h-40 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 transition hover:bg-slate-100/80">
                     <div className="flex flex-col items-center justify-center pb-6 pt-5">
-                      <span className="text-3xl">📷</span>
+                      <Camera className="h-8 w-8 text-slate-400" />
                       <p className="mt-2 text-sm text-slate-500 font-normal">
                         {isUploading ? "Đang tải ảnh lên..." : "Click để tải ảnh lên"}
                       </p>

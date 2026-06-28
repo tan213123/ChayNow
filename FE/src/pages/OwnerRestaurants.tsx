@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import OwnerLayout from "@/components/OwnerLayout";
+import { Star } from "lucide-react";
 import {
   deleteRestaurant,
   getMyRestaurants,
@@ -197,7 +198,10 @@ export default function OwnerRestaurants() {
                         </div>
                       )}
                       <div className="mt-5 flex justify-between text-sm text-slate-600">
-                        <span>{stats?.average.toFixed(1) ?? "0.0"} ★</span>
+                        <span className="inline-flex items-center gap-1">
+                          {stats?.average.toFixed(1) ?? "0.0"}
+                          <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                        </span>
                         <span>{stats?.count ?? 0} đánh giá</span>
                       </div>
                     </div>

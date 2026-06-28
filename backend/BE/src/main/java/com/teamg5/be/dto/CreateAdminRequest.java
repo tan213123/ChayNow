@@ -3,6 +3,7 @@ package com.teamg5.be.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -23,6 +24,11 @@ public class CreateAdminRequest {
     @Schema(description = "Admin's full name", example = "System Admin 2")
     private String fullName;
 
+    @Pattern(
+            regexp = "^$|^(0|\\+84)(3|5|7|8|9)[0-9]{8}$",
+            message = "Phone number is invalid. It should start with 0 or +84 followed by a valid prefix (3, 5, 7, 8, 9) and 8 digits."
+    )
+    @Size(max = 20, message = "Phone number must not exceed 20 characters")
     @Schema(description = "Admin's phone number", example = "0987654321")
     private String phone;
 }

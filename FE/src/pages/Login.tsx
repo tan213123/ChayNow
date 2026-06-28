@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Leaf } from "lucide-react";
 import { login as loginApi } from "@/services/auth.service";
 import { useAuthStore } from "@/store/authStore";
 export default function Login() {
@@ -58,7 +59,7 @@ export default function Login() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <Link to="/" className="flex items-center gap-3 text-emerald-700">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-xl">
-              🌱
+              <Leaf className="h-5 w-5" />
             </div>
             <span className="font-semibold">ChayNow</span>
           </Link>

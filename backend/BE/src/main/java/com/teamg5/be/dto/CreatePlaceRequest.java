@@ -1,6 +1,7 @@
 package com.teamg5.be.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -25,6 +26,9 @@ public class CreatePlaceRequest {
     private String address;
     private Double latitude;
     private Double longitude;
+
+    @Size(max = 1000, message = "Map URL must not exceed 1000 characters")
     private String mapUrl;
+
     private Boolean active;
 }
