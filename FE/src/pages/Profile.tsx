@@ -1,27 +1,28 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+
 import Navbar from "@/components/Navbar";
 import {
   BarChart3,
   Calendar,
   Camera,
+  Check,
   ClipboardList,
   Heart,
   Leaf,
   Mail,
-  MapPin,
+  Pencil,
   Phone,
-  Settings,
-  Sprout,
-  Star,
-  Trophy,
   User,
+  X,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import type { Role } from "@/types/auth";
 import { getRestaurants } from "@/services/restaurant.service";
 import type { RestaurantResponse } from "@/types/restaurant";
+import { getMyProfile, updateMyProfile } from "@/services/user.service";
+import type { UserProfileResponse } from "@/types/auth";
+import { toast } from "sonner";
 
 const roleLabels: Record<Role, string> = {
   ADMIN: "Quản trị viên",
@@ -29,29 +30,36 @@ const roleLabels: Record<Role, string> = {
   USER: "Người dùng",
 };
 
-const activityLog = [
-  { id: 1, type: "review", text: "Đã đánh giá Hum Vegetarian 5 sao", time: "2 giờ trước", icon: Star },
-  { id: 2, type: "favorite", text: "Đã lưu Loving Hut vào yêu thích", time: "1 ngày trước", icon: Heart },
-  { id: 3, type: "visit", text: "Đã ghé thăm An Lạc Chay", time: "3 ngày trước", icon: MapPin },
-  { id: 4, type: "review", text: "Đã đánh giá Loving Hut 4 sao", time: "1 tuần trước", icon: Star },
-  { id: 5, type: "favorite", text: "Đã lưu Hum Vegetarian vào yêu thích", time: "2 tuần trước", icon: Heart },
-];
-
-const achievements = [
-  { id: 1, icon: Sprout, title: "Người mới", desc: "Đã tham gia cộng đồng chay", unlocked: true },
-  { id: 2, icon: Star, title: "Nhà phê bình", desc: "Đã viết 5 đánh giá", unlocked: true },
-  { id: 3, icon: Heart, title: "Tín đồ chay", desc: "Đã lưu 10 địa điểm yêu thích", unlocked: false },
-  { id: 4, icon: Trophy, title: "Chuyên gia", desc: "Đã thử 20 nhà hàng chay", unlocked: false },
-];
+const activityLog: any[] = [];
 
 export default function Profile() {
   const user = useAuthStore((state) => state.user);
-  const [activeTab, setActiveTab] = useState<"overview" | "favorites" | "activity" | "settings">("overview");
-  const [name, setName] = useState(user?.fullName || "Nguyễn Văn A");
-  const [bio, setBio] = useState(user?.bio || "Yêu thích ẩm thực chay, tìm kiếm những quán ngon tại TPHCM");
-  const [phone, setPhone] = useState(user?.phone || "0901 234 567");
+  const updateUser = useAuthStore((state) => state.updateUser);
+  const [activeTab, setActiveTab] = useState<"overview" | "favorites" | "activity">("overview");
+  const [name, setName] = useState(user?.fullName || "");
+  const [bio, setBio] = useState(user?.bio || "");
+  const [phone, setPhone] = useState(user?.phone || "");
+  const [editName, setEditName] = useState("");
+  const [editBio, setEditBio] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [apiRestaurants, setApiRestaurants] = useState<RestaurantResponse[]>([]);
   const [restLoading, setRestLoading] = useState(true);
+  const [userProfile, setUserProfile] = useState<UserProfileResponse | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      getMyProfile()
+        .then((profile) => {
+          setUserProfile(profile);
+          setName(profile.fullName || "");
+          setBio(profile.bio || "");
+          setPhone(profile.phone || "");
+        })
+        .catch(console.error);
+    }
+  }, [user]);
 
   useEffect(() => {
     getRestaurants()
@@ -67,11 +75,47 @@ export default function Profile() {
   const getInitials = () => (user.fullName || user.email).slice(0, 2).toUpperCase();
   const roleLabel = roleLabels[user.role];
 
+  const handleStartEdit = () => {
+    setEditName(name);
+    setEditBio(bio);
+    setEditPhone(phone);
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+  };
+
+  const handleSaveEdit = async () => {
+    setIsSaving(true);
+    try {
+      const updated = await updateMyProfile({
+        fullName: editName,
+        phone: editPhone,
+        bio: editBio,
+      });
+      setName(updated.fullName || "");
+      setPhone(updated.phone || "");
+      setBio(updated.bio || "");
+      setUserProfile(updated);
+      updateUser({
+        fullName: updated.fullName,
+        phone: updated.phone,
+        bio: updated.bio,
+      });
+      setIsEditing(false);
+      toast.success("Cập nhật thông tin thành công!");
+    } catch (err: any) {
+      toast.error(err.message || "Lưu thất bại, vui lòng thử lại");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const tabItems = [
     { id: "overview" as const, label: "Tổng quan", icon: BarChart3 },
     { id: "favorites" as const, label: "Yêu thích", icon: Heart },
     { id: "activity" as const, label: "Hoạt động", icon: ClipboardList },
-    { id: "settings" as const, label: "Cài đặt", icon: Settings },
   ];
 
   return (
@@ -97,7 +141,7 @@ export default function Profile() {
                     {roleLabel}
                   </p>
                   <h1 className="mt-1 text-3xl font-extrabold text-white">{name}</h1>
-                  <p className="mt-2 text-sm text-emerald-100/90">{bio}</p>
+                  {bio && <p className="mt-2 text-sm text-emerald-100/90">{bio}</p>}
                 </div>
                 <div className="flex items-center gap-3">
                   {user.role === "OWNER" && (
@@ -111,20 +155,6 @@ export default function Profile() {
                 </div>
               </div>
             </div>
-          </div>
-
-          <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {[
-              { label: "Địa điểm đã ghé", value: "12" },
-              { label: "Đánh giá đã viết", value: "8" },
-              { label: "Yêu thích", value: restLoading ? "..." : String(apiRestaurants.length) },
-              { label: "Điểm cộng đồng", value: "340" },
-            ].map((stat) => (
-              <div key={stat.label} className="rounded-[1.5rem] bg-white/10 p-4 text-center backdrop-blur-sm">
-                <p className="text-2xl font-extrabold text-white">{stat.value}</p>
-                <p className="mt-1 text-xs text-emerald-100">{stat.label}</p>
-              </div>
-            ))}
           </div>
         </div>
       </section>
@@ -154,18 +184,59 @@ export default function Profile() {
           <div className="p-6">
             {activeTab === "overview" && (
               <div className="space-y-6">
-                <div className="grid gap-6 lg:grid-cols-2">
-                  <div className="space-y-4">
+                <div className="rounded-[1.5rem] border border-slate-100 bg-slate-50 p-6">
+                  {/* Header */}
+                  <div className="flex items-center justify-between mb-5">
                     <h2 className="text-lg font-semibold text-slate-900">Thông tin cá nhân</h2>
-                    <div className="space-y-3 rounded-[1.5rem] bg-slate-50 p-5">
+                    {!isEditing ? (
+                      <button
+                        onClick={handleStartEdit}
+                        className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:border-emerald-300 hover:text-emerald-600"
+                      >
+                        <Pencil className="h-4 w-4" />
+                        Chỉnh sửa
+                      </button>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={handleCancelEdit}
+                          disabled={isSaving}
+                          className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-500 shadow-sm transition hover:bg-slate-100 disabled:opacity-50"
+                        >
+                          <X className="h-4 w-4" />
+                          Hủy
+                        </button>
+                        <button
+                          onClick={handleSaveEdit}
+                          disabled={isSaving}
+                          className="flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-70"
+                        >
+                          <Check className="h-4 w-4" />
+                          {isSaving ? "Đang lưu..." : "Lưu"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Fields */}
+                  {!isEditing ? (
+                    <div className="space-y-3">
                       {[
                         { label: "Email", value: user.email, icon: Mail },
-                        { label: "Số điện thoại", value: phone, icon: Phone },
+                        { label: "Họ và tên", value: name || "Chưa cập nhật", icon: User },
+                        { label: "Số điện thoại", value: phone || "Chưa cập nhật", icon: Phone },
+                        { label: "Giới thiệu", value: bio || "Chưa cập nhật", icon: Pencil },
                         { label: "Loại tài khoản", value: roleLabel, icon: User },
-                        { label: "Tham gia từ", value: "Tháng 5/2026", icon: Calendar },
+                        {
+                          label: "Tham gia từ",
+                          value: userProfile?.createdAt
+                            ? `Tháng ${userProfile.createdAt.split("-")[1]}/${userProfile.createdAt.split("-")[0]}`
+                            : "Gần đây",
+                          icon: Calendar,
+                        },
                       ].map((item) => (
-                        <div key={item.label} className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm">
-                          <item.icon className="h-5 w-5 text-emerald-600" />
+                        <div key={item.label} className="flex items-start gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm">
+                          <item.icon className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-600" />
                           <div>
                             <p className="text-xs text-slate-500">{item.label}</p>
                             <p className="text-sm font-medium text-slate-900">{item.value}</p>
@@ -173,33 +244,50 @@ export default function Profile() {
                         </div>
                       ))}
                     </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <h2 className="text-lg font-semibold text-slate-900">Thành tích</h2>
-                    <div className="grid grid-cols-2 gap-3">
-                      {achievements.map((a) => (
-                        <div
-                          key={a.id}
-                          className={`rounded-[1.5rem] border p-4 text-center transition ${
-                            a.unlocked
-                              ? "border-emerald-200 bg-emerald-50"
-                              : "border-slate-200 bg-slate-50 opacity-50"
-                          }`}
-                        >
-                          <a.icon className={`mx-auto h-8 w-8 ${a.unlocked ? "text-emerald-600" : "text-slate-400"}`} />
-                          <p className={`mt-2 text-sm font-semibold ${a.unlocked ? "text-emerald-800" : "text-slate-500"}`}>
-                            {a.title}
-                          </p>
-                          <p className="mt-1 text-xs text-slate-500">{a.desc}</p>
+                  ) : (
+                    <div className="space-y-4">
+                      <div>
+                        <label className="mb-1.5 block text-sm font-medium text-slate-700">Họ và tên</label>
+                        <input
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          placeholder="Nhập họ và tên..."
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1.5 block text-sm font-medium text-slate-700">Số điện thoại</label>
+                        <input
+                          value={editPhone}
+                          onChange={(e) => setEditPhone(e.target.value)}
+                          placeholder="Nhập số điện thoại..."
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1.5 block text-sm font-medium text-slate-700">Giới thiệu bản thân</label>
+                        <textarea
+                          rows={3}
+                          value={editBio}
+                          onChange={(e) => setEditBio(e.target.value)}
+                          placeholder="Kể về bản thân bạn..."
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition resize-none"
+                        />
+                      </div>
+                      <div className="rounded-2xl border border-slate-100 bg-white px-4 py-3 flex items-center gap-3 opacity-60">
+                        <Mail className="h-5 w-5 text-emerald-600" />
+                        <div>
+                          <p className="text-xs text-slate-500">Email (không thể thay đổi)</p>
+                          <p className="text-sm font-medium text-slate-900">{user.email}</p>
                         </div>
-                      ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
+                {/* Activity section */}
                 <div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-semibold text-slate-900">Hoạt động gần đây</h2>
                     <button
                       onClick={() => setActiveTab("activity")}
@@ -208,22 +296,29 @@ export default function Profile() {
                       Xem tất cả →
                     </button>
                   </div>
-                  <div className="mt-4 space-y-3">
-                    {activityLog.slice(0, 3).map((item) => {
-                      const Icon = item.icon;
-                      return (
-                      <div key={item.id} className="flex items-center gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-lg">
-                          <Icon className="h-5 w-5 text-emerald-600" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-slate-900 truncate">{item.text}</p>
-                          <p className="text-xs text-slate-400">{item.time}</p>
-                        </div>
-                      </div>
-                      );
-                    })}
-                  </div>
+                  {activityLog.length === 0 ? (
+                    <div className="rounded-[1.5rem] border border-dashed border-slate-200 py-10 text-center">
+                      <ClipboardList className="mx-auto h-10 w-10 text-slate-300" />
+                      <p className="mt-3 text-sm text-slate-400">Chưa có hoạt động nào</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {activityLog.slice(0, 3).map((item: any) => {
+                        const Icon = item.icon;
+                        return (
+                          <div key={item.id} className="flex items-center gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-50">
+                              <Icon className="h-5 w-5 text-emerald-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-slate-900 truncate">{item.text}</p>
+                              <p className="text-xs text-slate-400">{item.time}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -291,88 +386,30 @@ export default function Profile() {
             {activeTab === "activity" && (
               <div className="space-y-4">
                 <h2 className="text-lg font-semibold text-slate-900">Lịch sử hoạt động</h2>
-                <div className="relative space-y-4 pl-6">
-                  <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-slate-200" />
-                  {activityLog.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                    <div key={item.id} className="relative flex items-start gap-4">
-                      <div className="absolute -left-4 flex h-8 w-8 items-center justify-center rounded-full bg-white border-2 border-emerald-200 text-base shadow-sm">
-                        <Icon className="h-4 w-4 text-emerald-600" />
-                      </div>
-                      <div className="ml-6 flex-1 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-                        <p className="text-sm font-medium text-slate-900">{item.text}</p>
-                        <p className="mt-1 text-xs text-slate-400">{item.time}</p>
-                      </div>
-                    </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {activeTab === "settings" && (
-              <div className="space-y-6">
-                <h2 className="text-lg font-semibold text-slate-900">Cài đặt tài khoản</h2>
-
-                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-                  <p className="font-semibold text-slate-900">Thông tin cá nhân</p>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <label className="mb-1.5 block text-sm font-medium text-slate-700">Họ và tên</label>
-                      <input
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-sm font-medium text-slate-700">Số điện thoại</label>
-                      <input
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition"
-                      />
-                    </div>
+                {activityLog.length === 0 ? (
+                  <div className="rounded-[1.5rem] border border-dashed border-slate-200 py-20 text-center">
+                    <ClipboardList className="mx-auto h-10 w-10 text-slate-300" />
+                    <p className="mt-4 text-slate-500">Chưa có hoạt động nào</p>
                   </div>
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-slate-700">Giới thiệu bản thân</label>
-                    <textarea
-                      rows={3}
-                      value={bio}
-                      onChange={(e) => setBio(e.target.value)}
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition resize-none"
-                    />
+                ) : (
+                  <div className="relative space-y-4 pl-6">
+                    <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-slate-200" />
+                    {activityLog.map((item: any) => {
+                      const Icon = item.icon;
+                      return (
+                        <div key={item.id} className="relative flex items-start gap-4">
+                          <div className="absolute -left-4 flex h-8 w-8 items-center justify-center rounded-full bg-white border-2 border-emerald-200 shadow-sm">
+                            <Icon className="h-4 w-4 text-emerald-600" />
+                          </div>
+                          <div className="ml-6 flex-1 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                            <p className="text-sm font-medium text-slate-900">{item.text}</p>
+                            <p className="mt-1 text-xs text-slate-400">{item.time}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <Button className="rounded-2xl bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700">
-                    Lưu thay đổi
-                  </Button>
-                </div>
-
-                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-                  <p className="font-semibold text-slate-900">Đổi mật khẩu</p>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <label className="mb-1.5 block text-sm font-medium text-slate-700">Mật khẩu hiện tại</label>
-                      <input
-                        type="password"
-                        placeholder="••••••••"
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-sm font-medium text-slate-700">Mật khẩu mới</label>
-                      <input
-                        type="password"
-                        placeholder="••••••••"
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition"
-                      />
-                    </div>
-                  </div>
-                  <Button variant="outline" className="rounded-2xl border-slate-300 px-6 py-2.5 text-sm font-semibold">
-                    Cập nhật mật khẩu
-                  </Button>
-                </div>
+                )}
               </div>
             )}
           </div>
