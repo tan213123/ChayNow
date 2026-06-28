@@ -1,12 +1,20 @@
 package com.teamg5.be.service.impl;
 
 import com.teamg5.be.dto.AdminUserResponseDTO;
+import com.teamg5.be.dto.AdminUserDetailResponse;
 import com.teamg5.be.service.AdminUserService;
 import com.teamg5.be.entity.AccountStatus;
 import com.teamg5.be.entity.Role;
 import com.teamg5.be.entity.User;
+import com.teamg5.be.entity.RestaurantStatus;
+import com.teamg5.be.entity.ReportStatus;
 import com.teamg5.be.repository.UserRepository;
+import com.teamg5.be.repository.RestaurantRepository;
+import com.teamg5.be.repository.ReviewRepository;
+import com.teamg5.be.repository.PostingRepository;
+import com.teamg5.be.repository.ReportRepository;
 import com.teamg5.be.dto.PageResponse;
+import com.teamg5.be.dto.DashboardStatsResponse;
 import com.teamg5.be.exception.AppException;
 import com.teamg5.be.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +26,9 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.teamg5.be.dto.CreateAdminRequest;
+import com.teamg5.be.dto.UpdateUserRequest;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import com.teamg5.be.utils.DateUtils;
 
 @Service
@@ -25,6 +36,11 @@ import com.teamg5.be.utils.DateUtils;
 public class AdminUserServiceImpl implements AdminUserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final RestaurantRepository restaurantRepository;
+    private final ReviewRepository reviewRepository;
+    private final PostingRepository postingRepository;
+    private final ReportRepository reportRepository;
 
     @Override
     public PageResponse<AdminUserResponseDTO> getAllUsers(
@@ -41,7 +57,7 @@ public class AdminUserServiceImpl implements AdminUserService {
             try {
                 role = Role.valueOf(roleStr.trim().toUpperCase());
             } catch (IllegalArgumentException e) {
-                throw new AppException(ErrorCode.INVALID_INPUT, "Invalid role parameter: " + roleStr);
+                throw new AppException(ErrorCode.INVALID_INPUT, "Tham số vai trò không hợp lệ: " + roleStr);
             }
         }
 
@@ -50,7 +66,7 @@ public class AdminUserServiceImpl implements AdminUserService {
             try {
                 status = AccountStatus.valueOf(statusStr.trim().toUpperCase());
             } catch (IllegalArgumentException e) {
-                throw new AppException(ErrorCode.INVALID_INPUT, "Invalid status parameter: " + statusStr);
+                throw new AppException(ErrorCode.INVALID_INPUT, "Tham số trạng thái không hợp lệ: " + statusStr);
             }
         }
 
@@ -89,15 +105,108 @@ public class AdminUserServiceImpl implements AdminUserService {
                 .build();
     }
 
+    // ===================== GET USER BY ID =====================
+    @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public AdminUserDetailResponse getUserById(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "Không tìm thấy người dùng với mã id: " + userId));
+
+        long reviewCount = userRepository.countReviewsByUserId(userId);
+
+        return AdminUserDetailResponse.builder()
+                .id(user.getId())
+                .fullName(user.getFullName())
+                .email(user.getEmail())
+                .avatarUrl(user.getAvatarUrl())
+                .phone(user.getPhone())
+                .bio(user.getBio())
+                .role(user.getRole() != null ? user.getRole().name() : null)
+                .status(user.getStatus() != null ? user.getStatus().name() : null)
+                .warningCount(user.getWarningCount())
+                .reviewCount((int) reviewCount)
+                .createdAt(DateUtils.formatLocalDateTimeDoubleDash(user.getCreatedAt()))
+                .updatedAt(DateUtils.formatLocalDateTimeDoubleDash(user.getUpdatedAt()))
+                .build();
+    }
+
+    // ===================== UPDATE USER =====================
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public AdminUserDetailResponse updateUser(Long userId, UpdateUserRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "Không tìm thấy người dùng với mã id: " + userId));
+
+        if (request.getFullName() != null && !request.getFullName().trim().isEmpty()) {
+            user.setFullName(request.getFullName().trim());
+        }
+
+        if (request.getPhone() != null) {
+            user.setPhone(request.getPhone().trim());
+        }
+
+        if (request.getRole() != null && !request.getRole().trim().isEmpty()) {
+            try {
+                Role role = Role.valueOf(request.getRole().trim().toUpperCase());
+                user.setRole(role);
+            } catch (IllegalArgumentException e) {
+                throw new AppException(ErrorCode.INVALID_INPUT, "Vai trò không hợp lệ: " + request.getRole());
+            }
+        }
+
+        if (request.getStatus() != null && !request.getStatus().trim().isEmpty()) {
+            try {
+                AccountStatus status = AccountStatus.valueOf(request.getStatus().trim().toUpperCase());
+                user.setStatus(status);
+            } catch (IllegalArgumentException e) {
+                throw new AppException(ErrorCode.INVALID_INPUT, "Trạng thái không hợp lệ: " + request.getStatus());
+            }
+        }
+
+        User saved = userRepository.save(user);
+        long reviewCount = userRepository.countReviewsByUserId(userId);
+
+        return AdminUserDetailResponse.builder()
+                .id(saved.getId())
+                .fullName(saved.getFullName())
+                .email(saved.getEmail())
+                .avatarUrl(saved.getAvatarUrl())
+                .phone(saved.getPhone())
+                .bio(saved.getBio())
+                .role(saved.getRole() != null ? saved.getRole().name() : null)
+                .status(saved.getStatus() != null ? saved.getStatus().name() : null)
+                .warningCount(saved.getWarningCount())
+                .reviewCount((int) reviewCount)
+                .createdAt(DateUtils.formatLocalDateTimeDoubleDash(saved.getCreatedAt()))
+                .updatedAt(DateUtils.formatLocalDateTimeDoubleDash(saved.getUpdatedAt()))
+                .build();
+    }
+
+    // ===================== DELETE USER =====================
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public void deleteUser(Long userId) {
+        User targetUser = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "Không tìm thấy người dùng với mã id: " + userId));
+
+        User currentUser = getCurrentUser();
+        if (currentUser.getId().equals(targetUser.getId())) {
+            throw new AppException(ErrorCode.INVALID_INPUT, "Bạn không thể tự xóa tài khoản của chính mình");
+        }
+
+        userRepository.delete(targetUser);
+    }
+
+    // ===================== SUSPEND / ACTIVATE =====================
     @Override
     @org.springframework.transaction.annotation.Transactional
     public void suspendUser(Long userId) {
         User targetUser = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "User not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "Không tìm thấy người dùng"));
 
         User currentUser = getCurrentUser();
         if (currentUser.getId().equals(targetUser.getId())) {
-            throw new AppException(ErrorCode.INVALID_INPUT, "You cannot suspend yourself");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Bạn không thể tự khóa tài khoản của chính mình");
         }
 
         targetUser.setStatus(AccountStatus.SUSPENDED);
@@ -108,17 +217,18 @@ public class AdminUserServiceImpl implements AdminUserService {
     @org.springframework.transaction.annotation.Transactional
     public void activateUser(Long userId) {
         User targetUser = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "User not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "Không tìm thấy người dùng"));
 
         User currentUser = getCurrentUser();
         if (currentUser.getId().equals(targetUser.getId())) {
-            throw new AppException(ErrorCode.INVALID_INPUT, "You cannot activate yourself");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Bạn không thể tự kích hoạt tài khoản của chính mình");
         }
 
         targetUser.setStatus(AccountStatus.ACTIVE);
         userRepository.save(targetUser);
     }
 
+    // ===================== HELPER =====================
     private User getCurrentUser() {
         org.springframework.security.core.Authentication authentication =
                 org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
@@ -139,5 +249,83 @@ public class AdminUserServiceImpl implements AdminUserService {
 
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    private void verifyAdmin() {
+        User currentUser = getCurrentUser();
+        if (currentUser.getRole() != Role.ADMIN) {
+            throw new AppException(ErrorCode.FORBIDDEN);
+        }
+    }
+
+    // ===================== CREATE ADMIN =====================
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public AdminUserResponseDTO createAdmin(CreateAdminRequest request) {
+        verifyAdmin();
+
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new AppException(ErrorCode.INVALID_INPUT, "Email đã được sử dụng");
+        }
+
+        User newAdmin = User.builder()
+                .email(request.getEmail().trim())
+                .fullName(request.getFullName().trim())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .role(Role.ADMIN)
+                .status(AccountStatus.ACTIVE)
+                .phone(request.getPhone() != null ? request.getPhone().trim() : null)
+                .build();
+
+        User saved = userRepository.save(newAdmin);
+
+        return AdminUserResponseDTO.builder()
+                .id(saved.getId())
+                .fullName(saved.getFullName())
+                .email(saved.getEmail())
+                .avatarUrl(saved.getAvatarUrl())
+                .role(saved.getRole() != null ? saved.getRole().name() : null)
+                .status(saved.getStatus() != null ? saved.getStatus().name() : null)
+                .reviewCount(0)
+                .joinedDate(saved.getCreatedAt() != null ? DateUtils.formatLocalDateTimeDoubleDash(saved.getCreatedAt()) : DateUtils.formatLocalDateTimeDoubleDash(java.time.LocalDateTime.now()))
+                .build();
+    }
+
+    // ===================== DASHBOARD STATS =====================
+    @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public DashboardStatsResponse getDashboardStats() {
+        verifyAdmin();
+
+        long totalUsers = userRepository.countByRole(Role.USER);
+        long totalOwners = userRepository.countByRole(Role.OWNER);
+        long totalAdmins = userRepository.countByRole(Role.ADMIN);
+
+        long totalRestaurants = restaurantRepository.count();
+        long pendingRestaurants = restaurantRepository.countByStatus(RestaurantStatus.PENDING);
+        long approvedRestaurants = restaurantRepository.countByStatus(RestaurantStatus.APPROVED);
+        long rejectedRestaurants = restaurantRepository.countByStatus(RestaurantStatus.REJECTED);
+
+        long totalReviews = reviewRepository.count();
+        long totalPostings = postingRepository.count();
+
+        long pendingReports = reportRepository.countByStatus(ReportStatus.PENDING);
+        long resolvedReports = reportRepository.countByStatus(ReportStatus.RESOLVED);
+        long rejectedReports = reportRepository.countByStatus(ReportStatus.REJECTED);
+
+        return DashboardStatsResponse.builder()
+                .totalUsers(totalUsers)
+                .totalOwners(totalOwners)
+                .totalAdmins(totalAdmins)
+                .totalRestaurants(totalRestaurants)
+                .pendingRestaurants(pendingRestaurants)
+                .approvedRestaurants(approvedRestaurants)
+                .rejectedRestaurants(rejectedRestaurants)
+                .totalReviews(totalReviews)
+                .totalPostings(totalPostings)
+                .pendingReports(pendingReports)
+                .resolvedReports(resolvedReports)
+                .rejectedReports(rejectedReports)
+                .build();
     }
 }

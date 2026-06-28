@@ -1,9 +1,32 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
-import { restaurants, popularDishes, events, communityPosts } from "@/data/restaurants";
-import { Search } from "lucide-react";
+import {
+  Calendar,
+  CheckCircle,
+  Clock,
+  DollarSign,
+  Heart,
+  Leaf,
+  MapPin,
+  MessageSquare,
+  PartyPopper,
+  Pencil,
+  Phone,
+  Search,
+  Send,
+  Share2,
+  Store,
+  Utensils,
+  Star,
+  X,
+  type LucideIcon,
+} from "lucide-react";
+import { getRestaurants } from "@/services/restaurant.service";
+import { getEvents } from "@/services/event.service";
+import { getMenus } from "@/services/menu.service";
+import type { RestaurantResponse, EventResponse, MenuResponse } from "@/types/restaurant";
 
 const tabs = ["Địa điểm ăn chay", "Món ăn nổi bật", "Sự kiện", "Bài đăng cộng đồng"] as const;
 type Tab = (typeof tabs)[number];
@@ -41,19 +64,38 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Tất cả");
 
+  // API data
+  const [apiRestaurants, setApiRestaurants] = useState<RestaurantResponse[]>([]);
+  const [apiEvents, setApiEvents] = useState<EventResponse[]>([]);
+  const [apiMenus, setApiMenus] = useState<MenuResponse[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
+
   // Community posts state
-  const [posts, setPosts] = useState<CommunityPost[]>(communityPosts);
+  const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(defaultForm);
   const [likedPosts, setLikedPosts] = useState<string[]>([]);
   const [submitted, setSubmitted] = useState(false);
 
-  const filteredRestaurants = restaurants.filter((r) => {
+  useEffect(() => {
+    Promise.allSettled([getRestaurants(), getEvents(), getMenus()]).then(
+      ([restResult, eventsResult, menusResult]) => {
+        if (restResult.status === "fulfilled") setApiRestaurants(restResult.value);
+        if (eventsResult.status === "fulfilled") setApiEvents(eventsResult.value);
+        if (menusResult.status === "fulfilled") setApiMenus(menusResult.value);
+        setDataLoading(false);
+      },
+    );
+  }, []);
+
+  const filteredRestaurants = apiRestaurants.filter((r) => {
     const matchSearch =
       r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.location.toLowerCase().includes(searchQuery.toLowerCase());
+      (r.address ?? "").toLowerCase().includes(searchQuery.toLowerCase());
     const matchCategory =
-      selectedCategory === "Tất cả" || r.category === selectedCategory;
+      selectedCategory === "Tất cả" ||
+      (r.typeRestaurantName &&
+        r.typeRestaurantName.toLowerCase().includes(selectedCategory.toLowerCase()));
     return matchSearch && matchCategory;
   });
 
@@ -100,12 +142,31 @@ export default function Home() {
 
 
   const renderCards = () => {
+    // Loading skeleton
+    if (dataLoading) {
+      return (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm animate-pulse">
+              <div className="h-56 bg-slate-200" />
+              <div className="space-y-3 p-6">
+                <div className="h-4 w-3/4 rounded-full bg-slate-200" />
+                <div className="h-3 w-1/2 rounded-full bg-slate-200" />
+                <div className="h-10 rounded-2xl bg-slate-200" />
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
     if (selectedTab === "Địa điểm ăn chay") {
+      const FALLBACK_IMG = "https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=1200&q=80";
       return (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredRestaurants.length === 0 ? (
             <div className="col-span-3 py-20 text-center">
-              <p className="text-4xl">🔍</p>
+              <Search className="mx-auto h-10 w-10 text-slate-300" />
               <p className="mt-4 text-slate-500">Không tìm thấy kết quả phù hợp</p>
               <button
                 onClick={() => { setSearchQuery(""); setSelectedCategory("Tất cả"); }}
@@ -122,35 +183,31 @@ export default function Home() {
               >
                 <div className="relative h-56 overflow-hidden bg-slate-100">
                   <img
-                    src={item.image}
+                    src={item.mediaList[0]?.url ?? FALLBACK_IMG}
                     alt={item.name}
                     className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 transition group-hover:opacity-100" />
-                  <div className="absolute right-4 top-4 rounded-full bg-white/95 px-3 py-1.5 text-sm font-bold text-amber-600 shadow-md backdrop-blur-sm">
-                    {item.rating} ★
-                  </div>
                   <span className="absolute left-4 top-4 rounded-full bg-emerald-600/90 px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm">
-                    {item.category}
+                    {item.typeRestaurantName}
                   </span>
                 </div>
                 <div className="space-y-4 p-6">
                   <div>
                     <h3 className="text-lg font-bold text-slate-900">{item.name}</h3>
                     <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-500">
-                      <span>📍</span> {item.location}
+                      <MapPin className="h-4 w-4 shrink-0" /> {item.address ?? "Chưa cập nhật"}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {item.tags.map((tag) => (
-                      <span key={tag} className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
-                        {tag}
+                    {item.typeRestaurantName && (
+                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+                        {item.typeRestaurantName}
                       </span>
-                    ))}
+                    )}
                   </div>
                   <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-400">
-                    <span className="flex items-center gap-1"><span>🕐</span> {item.hours}</span>
-                    <span>{item.reviews} đánh giá</span>
+                    <span className="flex items-center gap-1"><Phone className="h-3.5 w-3.5" /> {item.phoneNumber ?? "Chưa cập nhật"}</span>
                   </div>
                   <Link to={`/restaurant/${item.id}`}>
                     <Button className="w-full rounded-2xl bg-emerald-600 py-3 text-sm font-semibold text-white hover:bg-emerald-700 transition">
@@ -166,52 +223,87 @@ export default function Home() {
     }
 
     if (selectedTab === "Món ăn nổi bật") {
+      const DISH_FALLBACK = "https://images.unsplash.com/photo-1512058564366-c9e0de9e8c4f?auto=format&fit=crop&w=1200&q=80";
       return (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {popularDishes.map((dish) => (
-            <article key={dish.id} className="group overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
-              <div className="relative h-48 overflow-hidden bg-slate-100">
-                <img src={dish.image} alt={dish.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-110" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                <span className="absolute bottom-3 left-3 rounded-full bg-white/90 px-2.5 py-1 text-xs font-bold text-amber-600 backdrop-blur-sm">
-                  {dish.likes} ♥
-                </span>
-              </div>
-              <div className="space-y-2 p-4">
-                <p className="text-xs font-semibold uppercase tracking-widest text-emerald-600">{dish.type}</p>
-                <h3 className="font-bold text-slate-900 leading-snug">{dish.name}</h3>
-                <p className="text-sm text-slate-500">{dish.restaurant}</p>
-                <p className="text-xs text-slate-400">{dish.date}</p>
-              </div>
-            </article>
-          ))}
+          {apiMenus.length === 0 ? (
+            <div className="col-span-4 py-20 text-center">
+              <Utensils className="mx-auto h-10 w-10 text-slate-300" />
+              <p className="mt-4 text-slate-500">Chưa có món ăn nào</p>
+            </div>
+          ) : (
+            apiMenus.map((dish) => (
+              <article key={dish.id} className="group overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
+                <div className="relative h-48 overflow-hidden bg-slate-100">
+                  <img src={dish.imageUrl ?? DISH_FALLBACK} alt={dish.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-110" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                  <span className="absolute bottom-3 left-3 rounded-full bg-white/90 px-2.5 py-1 text-xs font-bold text-emerald-700 backdrop-blur-sm">
+                    {dish.category ?? "Món ăn"}
+                  </span>
+                </div>
+                <div className="space-y-2 p-4">
+                  <h3 className="font-bold text-slate-900 leading-snug">{dish.name}</h3>
+                  <p className="text-sm font-semibold text-emerald-600">
+                    {dish.price != null ? `${dish.price.toLocaleString("vi-VN")}đ` : "Liên hệ"}
+                  </p>
+                  {dish.description && (
+                    <p className="text-xs text-slate-400 line-clamp-2">{dish.description}</p>
+                  )}
+                </div>
+              </article>
+            ))
+          )}
         </div>
       );
     }
 
     if (selectedTab === "Sự kiện") {
+      const EVENT_FALLBACK = "https://images.unsplash.com/photo-1529042410759-befb1204b468?auto=format&fit=crop&w=1200&q=80";
+      const statusLabel: Record<string, string> = { UPCOMING: "Sắp diễn ra", ACTIVE: "Đang diễn ra", EXPIRED: "Đã kết thúc" };
+      const typeLabel: Record<string, string> = { CHARITY: "Từ thiện", DISCOUNT: "Giảm giá" };
+      const visibleEvents = apiEvents.filter((e) => e.status !== "HIDDEN");
       return (
         <div className="grid gap-6 lg:grid-cols-3">
-          {events.map((event) => (
-            <article key={event.id} className="group overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
-              <div className="relative h-52 overflow-hidden bg-slate-100">
-                <img src={event.image} alt={event.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-110" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                <span className="absolute left-4 top-4 rounded-full bg-rose-500 px-3 py-1 text-xs font-bold text-white shadow-sm">{event.badge}</span>
-                <span className={`absolute right-4 top-4 rounded-full px-3 py-1 text-xs font-bold text-white shadow-sm ${event.status === "Đang diễn ra" ? "bg-emerald-600" : "bg-amber-500"}`}>
-                  {event.status}
-                </span>
-              </div>
-              <div className="space-y-3 p-6">
-                <h3 className="font-bold text-slate-900">{event.title}</h3>
-                <p className="text-sm text-slate-500 leading-relaxed">{event.description}</p>
-                <div className="border-t border-slate-100 pt-3 space-y-1 text-xs text-slate-400">
-                  <p className="flex items-center gap-1.5"><span>📍</span> {event.venue}</p>
-                  <p className="flex items-center gap-1.5"><span>📅</span> {event.duration}</p>
+          {visibleEvents.length === 0 ? (
+            <div className="col-span-3 py-20 text-center">
+              <PartyPopper className="mx-auto h-10 w-10 text-slate-300" />
+              <p className="mt-4 text-slate-500">Chưa có sự kiện nào</p>
+            </div>
+          ) : (
+            visibleEvents.map((event) => (
+              <article key={event.id} className="group overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
+                <div className="relative h-52 overflow-hidden bg-slate-100">
+                  <img src={event.imageUrl ?? EVENT_FALLBACK} alt={event.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-110" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                  {event.eventType && (
+                    <span className="absolute left-4 top-4 rounded-full bg-rose-500 px-3 py-1 text-xs font-bold text-white shadow-sm">
+                      {typeLabel[event.eventType] ?? event.eventType}
+                    </span>
+                  )}
+                  {event.status && (
+                    <span className={`absolute right-4 top-4 rounded-full px-3 py-1 text-xs font-bold text-white shadow-sm ${
+                      event.status === "ACTIVE" ? "bg-emerald-600" : "bg-amber-500"
+                    }`}>
+                      {statusLabel[event.status] ?? event.status}
+                    </span>
+                  )}
                 </div>
-              </div>
-            </article>
-          ))}
+                <div className="space-y-3 p-6">
+                  <h3 className="font-bold text-slate-900">{event.title}</h3>
+                  <p className="text-sm text-slate-500 leading-relaxed line-clamp-2">{event.description}</p>
+                  <div className="border-t border-slate-100 pt-3 space-y-1 text-xs text-slate-400">
+                    <p className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> {event.restaurantName ?? "Chưa cập nhật"}</p>
+                    {event.startDate && event.endDate && (
+                      <p className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" />
+                        {new Intl.DateTimeFormat("vi-VN").format(new Date(event.startDate))} –{" "}
+                        {new Intl.DateTimeFormat("vi-VN").format(new Date(event.endDate))}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </article>
+            ))
+          )}
         </div>
       );
     }
@@ -222,7 +314,7 @@ export default function Home() {
         {/* Success toast */}
         {submitted && (
           <div className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 shadow-sm animate-pulse">
-            <span className="text-xl">✅</span>
+            <CheckCircle className="h-5 w-5 shrink-0 text-emerald-600" />
             <div>
               <p className="text-sm font-semibold text-emerald-800">Đăng bài thành công!</p>
               <p className="text-xs text-emerald-600">Cảm ơn bạn đã đóng góp cho cộng đồng ChayNow!</p>
@@ -242,10 +334,14 @@ export default function Home() {
           <div className="rounded-[2rem] border-2 border-violet-200 bg-violet-50/50 p-6 shadow-sm space-y-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-violet-600 text-white text-lg">📝</div>
+                <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-violet-600 text-white">
+                  <Pencil className="h-4 w-4" />
+                </div>
                 <p className="font-bold text-slate-900">Đăng quán chay mới</p>
               </div>
-              <button onClick={() => { setShowForm(false); setForm(defaultForm); }} className="text-slate-400 hover:text-slate-600 text-lg">✕</button>
+              <button onClick={() => { setShowForm(false); setForm(defaultForm); }} className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+                <X className="h-4 w-4" />
+              </button>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -332,7 +428,7 @@ export default function Home() {
                   disabled={!form.restaurantName.trim() || !form.location.trim() || !form.description.trim()}
                   className="rounded-2xl bg-violet-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-50 transition"
                 >
-                  📤 Đăng bài
+                  <Send className="mr-2 h-4 w-4" /> Đăng bài
                 </Button>
               </div>
             </div>
@@ -343,7 +439,7 @@ export default function Home() {
             className="group flex w-full items-center gap-4 rounded-[2rem] border-2 border-dashed border-violet-300 bg-violet-50/50 px-6 py-5 text-left transition hover:border-violet-500 hover:bg-violet-50"
           >
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-violet-600 text-white text-xl shadow-md group-hover:scale-110 transition-transform">
-              ✏️
+              <Pencil className="h-5 w-5" />
             </div>
             <div>
               <p className="font-bold text-slate-900">Bạn biết quán chay nào chưa có trên ChayNow?</p>
@@ -358,7 +454,7 @@ export default function Home() {
         {/* Posts List */}
         {posts.length === 0 ? (
           <div className="py-16 text-center">
-            <p className="text-4xl">🌿</p>
+              <Leaf className="mx-auto h-10 w-10 text-slate-300" />
             <p className="mt-3 text-slate-500">Chưa có bài đăng nào</p>
           </div>
         ) : (
@@ -390,14 +486,14 @@ export default function Home() {
                     </span>
                   </div>
                   <p className="flex items-center gap-1.5 text-sm text-slate-500">
-                    <span>📍</span> {post.location}
+                    <MapPin className="h-4 w-4 shrink-0" /> {post.location}
                   </p>
                   <div className="flex flex-wrap gap-3 text-xs text-slate-500">
                     {post.hours !== "Chưa cập nhật" && (
-                      <span className="flex items-center gap-1"><span>🕐</span> {post.hours}</span>
+                      <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {post.hours}</span>
                     )}
                     {post.priceRange !== "Chưa cập nhật" && (
-                      <span className="flex items-center gap-1"><span>💰</span> {post.priceRange}</span>
+                      <span className="flex items-center gap-1"><DollarSign className="h-3.5 w-3.5" /> {post.priceRange}</span>
                     )}
                   </div>
                 </div>
@@ -428,16 +524,16 @@ export default function Home() {
                         : "text-slate-500 hover:bg-slate-100"
                     }`}
                   >
-                    <span>{likedPosts.includes(post.id) ? "♥" : "♡"}</span>
+                    <Heart className={`h-4 w-4 ${likedPosts.includes(post.id) ? "fill-current" : ""}`} />
                     <span>{post.likes}</span>
                     <span className="text-xs">Hữu ích</span>
                   </button>
                   <div className="flex gap-2">
                     <button className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
-                      💬 Bình luận
+                      <MessageSquare className="h-3.5 w-3.5" /> Bình luận
                     </button>
-                    <button className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
-                      📤 Chia sẻ
+                    <button className="flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
+                      <Share2 className="h-3.5 w-3.5" /> Chia sẻ
                     </button>
                   </div>
                 </div>
@@ -451,16 +547,16 @@ export default function Home() {
 
   const counts = {
     "Địa điểm ăn chay": filteredRestaurants.length,
-    "Món ăn nổi bật": popularDishes.length,
-    "Sự kiện": events.length,
+    "Món ăn nổi bật": apiMenus.length,
+    "Sự kiện": apiEvents.filter((e) => e.status !== "HIDDEN").length,
     "Bài đăng cộng đồng": posts.length,
   };
 
-  const tabIcons: Record<Tab, string> = {
-    "Địa điểm ăn chay": "🏠",
-    "Món ăn nổi bật": "🍽️",
-    "Sự kiện": "🎉",
-    "Bài đăng cộng đồng": "✏️",
+  const tabIcons: Record<Tab, LucideIcon> = {
+    "Địa điểm ăn chay": Store,
+    "Món ăn nổi bật": Utensils,
+    "Sự kiện": PartyPopper,
+    "Bài đăng cộng đồng": Pencil,
   };
 
   const countLabels: Record<Tab, string> = {
@@ -482,7 +578,7 @@ export default function Home() {
         <div className="relative mx-auto max-w-7xl">
           <div className="max-w-3xl space-y-5">
             <span className="inline-block rounded-full bg-white/20 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm">
-              🌱 Cộng đồng ẩm thực chay TPHCM
+              <Leaf className="mr-2 inline h-4 w-4" /> Cộng đồng ẩm thực chay TPHCM
             </span>
             <h1 className="text-4xl font-extrabold leading-tight text-white sm:text-5xl lg:text-6xl">
               Khám phá <span className="text-emerald-200">ẩm thực chay</span> ngon nhất Sài Gòn
@@ -543,28 +639,31 @@ export default function Home() {
           {/* Tab Header */}
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex flex-wrap gap-2">
-              {tabs.map((tab) => (
-                <button
-                  key={tab}
-                  type="button"
-                  onClick={() => setSelectedTab(tab)}
-                  className={`flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-all ${
-                    selectedTab === tab
-                      ? tab === "Bài đăng cộng đồng"
-                        ? "bg-violet-600 text-white shadow-sm"
-                        : "bg-emerald-600 text-white shadow-sm"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  }`}
-                >
-                  {tabIcons[tab]}
-                  {tab}
-                  {tab === "Bài đăng cộng đồng" && (
-                    <span className={`rounded-full px-1.5 py-0.5 text-xs font-bold ${selectedTab === tab ? "bg-white/25 text-white" : "bg-violet-100 text-violet-700"}`}>
-                      {posts.length}
-                    </span>
-                  )}
-                </button>
-              ))}
+              {tabs.map((tab) => {
+                const Icon = tabIcons[tab];
+                return (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setSelectedTab(tab)}
+                    className={`flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-all ${
+                      selectedTab === tab
+                        ? tab === "Bài đăng cộng đồng"
+                          ? "bg-violet-600 text-white shadow-sm"
+                          : "bg-emerald-600 text-white shadow-sm"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {tab}
+                    {tab === "Bài đăng cộng đồng" && (
+                      <span className={`rounded-full px-1.5 py-0.5 text-xs font-bold ${selectedTab === tab ? "bg-white/25 text-white" : "bg-violet-100 text-violet-700"}`}>
+                        {posts.length}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
             <div className="flex items-center gap-3">
               <div className={`rounded-full px-4 py-2 text-sm font-semibold ${selectedTab === "Bài đăng cộng đồng" ? "bg-violet-50 text-violet-700" : "bg-emerald-50 text-emerald-700"}`}>
@@ -579,12 +678,12 @@ export default function Home() {
         {/* Features Banner */}
         <div className="mt-10 grid gap-4 sm:grid-cols-3">
           {[
-            { icon: "🌿", title: "100% Thuần chay", desc: "Tất cả địa điểm đều được xác minh và cam kết thuần chay" },
-            { icon: "⭐", title: "Đánh giá thực", desc: "Hàng nghìn đánh giá từ cộng đồng người dùng thực tế" },
-            { icon: "📍", title: "Khắp TPHCM", desc: "Từ quận 1 đến vùng ngoại ô, chúng tôi có mặt ở mọi nơi" },
+            { icon: Leaf, title: "100% Thuần chay", desc: "Tất cả địa điểm đều được xác minh và cam kết thuần chay" },
+            { icon: Star, title: "Đánh giá thực", desc: "Hàng nghìn đánh giá từ cộng đồng người dùng thực tế" },
+            { icon: MapPin, title: "Khắp TPHCM", desc: "Từ quận 1 đến vùng ngoại ô, chúng tôi có mặt ở mọi nơi" },
           ].map((f) => (
             <div key={f.title} className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm text-center">
-              <div className="text-4xl">{f.icon}</div>
+              <f.icon className="mx-auto h-10 w-10 text-emerald-600" />
               <h3 className="mt-3 font-bold text-slate-900">{f.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-slate-500">{f.desc}</p>
             </div>

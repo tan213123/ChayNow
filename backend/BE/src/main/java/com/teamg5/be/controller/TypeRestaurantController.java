@@ -42,4 +42,21 @@ public class TypeRestaurantController {
         TypeRestaurantResponse response = typeRestaurantService.getTypeRestaurantById(typeRestaurantId);
         return ResponseEntity.ok(response);
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<TypeRestaurantResponse> updateTypeRestaurant(
+            @PathVariable Long id,
+            @Valid @RequestBody CreateTypeRestaurantRequest request
+    ) {
+        TypeRestaurantResponse response = typeRestaurantService.updateTypeRestaurant(id, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteTypeRestaurant(
+            @PathVariable Long id
+    ) {
+        typeRestaurantService.deleteTypeRestaurant(id);
+        return ResponseEntity.ok().build();
+    }
 }

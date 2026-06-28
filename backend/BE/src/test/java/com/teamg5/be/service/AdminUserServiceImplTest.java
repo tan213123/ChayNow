@@ -1,11 +1,16 @@
 package com.teamg5.be.service;
 
 import com.teamg5.be.dto.AdminUserResponseDTO;
+import com.teamg5.be.dto.CreateAdminRequest;
 import com.teamg5.be.service.impl.AdminUserServiceImpl;
 import com.teamg5.be.entity.AccountStatus;
 import com.teamg5.be.entity.Role;
 import com.teamg5.be.entity.User;
 import com.teamg5.be.repository.UserRepository;
+import com.teamg5.be.repository.RestaurantRepository;
+import com.teamg5.be.repository.ReviewRepository;
+import com.teamg5.be.repository.PostingRepository;
+import com.teamg5.be.repository.ReportRepository;
 import com.teamg5.be.dto.PageResponse;
 import com.teamg5.be.exception.AppException;
 import com.teamg5.be.exception.ErrorCode;
@@ -39,6 +44,21 @@ public class AdminUserServiceImplTest {
     private UserRepository userRepository;
 
     @Mock
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    @Mock
+    private RestaurantRepository restaurantRepository;
+
+    @Mock
+    private ReviewRepository reviewRepository;
+
+    @Mock
+    private PostingRepository postingRepository;
+
+    @Mock
+    private ReportRepository reportRepository;
+
+    @Mock
     private SecurityContext securityContext;
 
     @Mock
@@ -49,7 +69,14 @@ public class AdminUserServiceImplTest {
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        adminUserService = new AdminUserServiceImpl(userRepository);
+        adminUserService = new AdminUserServiceImpl(
+                userRepository,
+                passwordEncoder,
+                restaurantRepository,
+                reviewRepository,
+                postingRepository,
+                reportRepository
+        );
         SecurityContextHolder.setContext(securityContext);
 
         currentUser = User.builder()
@@ -103,7 +130,7 @@ public class AdminUserServiceImplTest {
         assertEquals("ACTIVE", dto.getStatus());
         assertEquals(5, dto.getReviewCount());
         assertEquals("avatar.png", dto.getAvatarUrl());
-        assertEquals("06--06--2026", dto.getJoinedDate());
+        assertEquals("06-06-2026", dto.getJoinedDate());
     }
 
     @Test
@@ -112,7 +139,7 @@ public class AdminUserServiceImplTest {
         AppException exception = assertThrows(AppException.class, () -> {
             adminUserService.getAllUsers(0, 6, "", "INVALID_ROLE", "");
         });
-        assertTrue(exception.getMessage().contains("Invalid role parameter"));
+        assertTrue(exception.getMessage().contains("Tham số vai trò không hợp lệ"));
     }
 
     @Test
@@ -121,7 +148,7 @@ public class AdminUserServiceImplTest {
         AppException exception = assertThrows(AppException.class, () -> {
             adminUserService.getAllUsers(0, 6, "", "", "INVALID_STATUS");
         });
-        assertTrue(exception.getMessage().contains("Invalid status parameter"));
+        assertTrue(exception.getMessage().contains("Tham số trạng thái không hợp lệ"));
     }
 
     @Test
@@ -159,7 +186,7 @@ public class AdminUserServiceImplTest {
         // Act & Assert
         AppException exception = assertThrows(AppException.class, () -> adminUserService.suspendUser(1L));
         assertEquals(ErrorCode.INVALID_INPUT, exception.getErrorCode());
-        assertEquals("You cannot suspend yourself", exception.getMessage());
+        assertEquals("Bạn không thể tự khóa tài khoản của chính mình", exception.getMessage());
         verify(userRepository, never()).save(any(User.class));
     }
 
@@ -208,7 +235,7 @@ public class AdminUserServiceImplTest {
         // Act & Assert
         AppException exception = assertThrows(AppException.class, () -> adminUserService.activateUser(1L));
         assertEquals(ErrorCode.INVALID_INPUT, exception.getErrorCode());
-        assertEquals("You cannot activate yourself", exception.getMessage());
+        assertEquals("Bạn không thể tự kích hoạt tài khoản của chính mình", exception.getMessage());
         verify(userRepository, never()).save(any(User.class));
     }
 
@@ -220,5 +247,82 @@ public class AdminUserServiceImplTest {
         // Act & Assert
         AppException exception = assertThrows(AppException.class, () -> adminUserService.activateUser(99L));
         assertEquals(ErrorCode.USER_NOT_FOUND, exception.getErrorCode());
+    }
+
+    @Test
+    public void createAdmin_Success() {
+        // Arrange
+        CreateAdminRequest request = new CreateAdminRequest();
+        request.setEmail("new_admin@chaynow.com");
+        request.setPassword("admin123");
+        request.setFullName("New Admin");
+        request.setPhone("0987654321");
+
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn(currentUser);
+        when(userRepository.existsByEmail("new_admin@chaynow.com")).thenReturn(false);
+        when(passwordEncoder.encode("admin123")).thenReturn("encodedPassword");
+
+        User savedUser = User.builder()
+                .email("new_admin@chaynow.com")
+                .fullName("New Admin")
+                .password("encodedPassword")
+                .role(Role.ADMIN)
+                .status(AccountStatus.ACTIVE)
+                .phone("0987654321")
+                .build();
+        savedUser.setId(3L);
+        savedUser.setCreatedAt(LocalDateTime.now());
+
+        when(userRepository.save(any(User.class))).thenReturn(savedUser);
+
+        // Act
+        AdminUserResponseDTO response = adminUserService.createAdmin(request);
+
+        // Assert
+        assertNotNull(response);
+        assertEquals(3L, response.getId());
+        assertEquals("New Admin", response.getFullName());
+        assertEquals("new_admin@chaynow.com", response.getEmail());
+        assertEquals("ADMIN", response.getRole());
+        assertEquals("ACTIVE", response.getStatus());
+    }
+
+    @Test
+    public void createAdmin_Forbidden_NotAdmin() {
+        // Arrange
+        CreateAdminRequest request = new CreateAdminRequest();
+        User customerUser = User.builder()
+                .email("customer@chaynow.com")
+                .fullName("Customer")
+                .role(Role.USER)
+                .status(AccountStatus.ACTIVE)
+                .build();
+
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn(customerUser);
+
+        // Act & Assert
+        AppException exception = assertThrows(AppException.class, () -> adminUserService.createAdmin(request));
+        assertEquals(ErrorCode.FORBIDDEN, exception.getErrorCode());
+    }
+
+    @Test
+    public void createAdmin_EmailAlreadyInUse() {
+        // Arrange
+        CreateAdminRequest request = new CreateAdminRequest();
+        request.setEmail("existing@chaynow.com");
+
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn(currentUser);
+        when(userRepository.existsByEmail("existing@chaynow.com")).thenReturn(true);
+
+        // Act & Assert
+        AppException exception = assertThrows(AppException.class, () -> adminUserService.createAdmin(request));
+        assertEquals(ErrorCode.INVALID_INPUT, exception.getErrorCode());
+        assertTrue(exception.getMessage().contains("Email đã được sử dụng"));
     }
 }

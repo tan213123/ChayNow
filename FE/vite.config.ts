@@ -1,31 +1,33 @@
-import { defineConfig, loadEnv } from "vite";
+import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 
+const apiProxyTarget =
+  "https://1ceb-2001-ee0-4f0d-98b0-d1-682a-c996-692e.ngrok-free.app";
+
 // Proxy để call API Backend
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), "");
-  const apiProxyTarget = env.VITE_API_PROXY_TARGET || "http://localhost:8080";
+export default defineConfig({
+  plugins: [react()],
 
-  return {
-    plugins: [react()],
-
-    resolve: {
-      alias: {
-        "@": path.resolve(__dirname, "./src"),
-      },
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
     },
+  },
 
-    server: {
-      open: "/",
+  server: {
+    open: "/",
 
-      proxy: {
-        "/api": {
-          target: apiProxyTarget,
-          changeOrigin: true,
-          secure: false,
+    proxy: {
+      "/api": {
+        target: apiProxyTarget,
+        changeOrigin: true,
+        secure: false,
+
+        headers: {
+          "ngrok-skip-browser-warning": "true",
         },
       },
     },
-  };
+  },
 });

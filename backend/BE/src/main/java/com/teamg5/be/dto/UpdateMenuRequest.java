@@ -7,19 +7,19 @@ import lombok.Setter;
 @Getter
 @Setter
 public class UpdateMenuRequest {
-     @Size(max = 255, message = "Name of food cannot over 255 word!")
+     @Size(max = 255, message = "Tên món ăn không được vượt quá 255 ký tự")
     private String name;
 
-    @Size(max = 500, message = "Description cannot over 500 word!")
+    @Size(max = 500, message = "Mô tả không được vượt quá 500 ký tự")
     private String description;
 
-    @Min(value = 0, message = "Price of food cannot under 0đ")
+    @Min(value = 0, message = "Giá món ăn không được nhỏ hơn 0đ")
     private Integer price;
 
-    @Size(max = 100, message = "category cannot over 100 word!")
+    @Size(max = 100, message = "Danh mục không được vượt quá 100 ký tự")
     private String category;
 
-    @Size(max = 1000, message = "URL cannot over 1000 Word!")
+    @Size(max = 1000, message = "Đường dẫn không được vượt quá 1000 ký tự")
     private String imageUrl;
 
     private Boolean available;

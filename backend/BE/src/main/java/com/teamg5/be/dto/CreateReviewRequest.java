@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,11 +12,11 @@ import lombok.Setter;
 @Setter
 public class CreateReviewRequest {
     
-@NotNull(message = "The star rating cannot be left blank.")
-    @Min(value = 1, message = "The minimum star rating is 1.")
-    @Max(value = 5, message = "The maximum number of stars is 5.")
+    @NotNull(message = "Số sao đánh giá không được để trống.")
+    @Min(value = 1, message = "Đánh giá tối thiểu là 1 sao.")
+    @Max(value = 5, message = "Đánh giá tối đa là 5 sao.")
     private Integer rating;
 
-    @NotBlank(message = "The evaluation section must not be left blank.")
+    @NotBlank(message = "Nội dung đánh giá không được để trống.")
     private String context      ;
 }

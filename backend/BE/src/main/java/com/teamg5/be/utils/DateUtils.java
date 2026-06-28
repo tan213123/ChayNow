@@ -7,7 +7,7 @@ import java.time.format.DateTimeFormatter;
 public class DateUtils {
 
     private static final DateTimeFormatter STANDARD_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-    private static final DateTimeFormatter DOUBLE_DASH_FORMATTER = DateTimeFormatter.ofPattern("dd--MM--yyyy");
+    private static final DateTimeFormatter DOUBLE_DASH_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
     public static String formatDate(LocalDate date) {
         if (date == null) {

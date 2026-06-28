@@ -123,7 +123,7 @@ export const routes: RouteObject[] = [
     ),
   },
   {
-    path: "/manage/report",
+    path: "/admin/report",
     element: (
       <ProtectedRoute requiredRoles={["ADMIN"]}>
         <ReportManagement />

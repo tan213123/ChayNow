@@ -12,6 +12,10 @@ import com.teamg5.be.entity.BaseEntity;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.CascadeType;
+import java.util.ArrayList;
+import java.util.List;
 import com.teamg5.be.entity.User;
 
 @Entity
@@ -40,4 +44,8 @@ public class Review extends BaseEntity {
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String context;
+
+    @OneToMany(mappedBy = "review", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<Media> mediaList = new ArrayList<>();
 }

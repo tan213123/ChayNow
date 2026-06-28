@@ -1,171 +1,68 @@
 package com.teamg5.be.service;
 
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Service;
-
-import com.teamg5.be.repository.UserRepository;
 import com.teamg5.be.dto.CreateReviewRequest;
 import com.teamg5.be.dto.ReviewResponse;
-import com.teamg5.be.entity.Restaurant;
-import com.teamg5.be.entity.Review;
-import com.teamg5.be.repository.RestaurantRepository;
-import com.teamg5.be.repository.ReviewRepository;
-import com.teamg5.be.exception.AppException;
-import com.teamg5.be.exception.ErrorCode;
 
-import org.springframework.transaction.annotation.Transactional;
-import lombok.RequiredArgsConstructor;
-import com.teamg5.be.entity.User;
 import java.util.List;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 
+/**
+ * Service interface quản lý các đánh giá (Review) từ khách hàng đối với nhà hàng.
+ */
+public interface ReviewService {
 
-@Service
-@RequiredArgsConstructor
-@Transactional
-public class ReviewService {
-     private final ReviewRepository reviewRepository;
-    private final RestaurantRepository restaurantRepository;
-    private final UserRepository userRepository;
+    /**
+     * Tạo một đánh giá mới cho nhà hàng.
+     * Người tạo phải không phải là chủ nhà hàng và mỗi người dùng chỉ được đánh giá nhà hàng một lần duy nhất.
+     *
+     * @param restaurantId ID của nhà hàng được đánh giá
+     * @param request thông tin đánh giá (bao gồm số sao rating và nội dung context)
+     * @return ReviewResponse phản hồi chứa thông tin đánh giá đã tạo
+     */
+    ReviewResponse createReview(Long restaurantId, CreateReviewRequest request);
 
-    public ReviewResponse createReview(Long restaurantId, CreateReviewRequest request) {
+    /**
+     * Lấy danh sách tất cả các đánh giá của một nhà hàng cụ thể.
+     *
+     * @param restaurantId ID của nhà hàng
+     * @return List&lt;ReviewResponse&gt; danh sách các đánh giá của nhà hàng
+     */
+    List<ReviewResponse> getReviewsByRestaurant(Long restaurantId);
 
-        User currentUser = getCurrentUser();
+    /**
+     * Lấy danh sách tất cả đánh giá trong toàn bộ hệ thống (dành cho quản trị viên).
+     *
+     * @return List&lt;ReviewResponse&gt; danh sách tất cả đánh giá
+     */
+    List<ReviewResponse> getAllReviews();
 
-        Restaurant restaurant = restaurantRepository.findById(restaurantId)
-                .orElseThrow(() -> new AppException(ErrorCode.RESTAURANT_NOT_FOUND));
+    /**
+     * Lấy chi tiết một đánh giá bằng ID.
+     *
+     * @param reviewId ID của đánh giá
+     * @return ReviewResponse thông tin đánh giá tìm thấy
+     */
+    ReviewResponse getReviewById(Long reviewId);
 
-        boolean alreadyReviewed = reviewRepository.existsByUser_IdAndRestaurant_Id(
-                currentUser.getId(),
-                restaurantId
-        );
+    /**
+     * Cập nhật nội dung và số sao đánh giá của chính người dùng đã tạo.
+     *
+     * @param reviewId ID của đánh giá cần cập nhật
+     * @param request thông tin đánh giá mới
+     * @return ReviewResponse thông tin đánh giá sau khi cập nhật
+     */
+    ReviewResponse updateReview(Long reviewId, CreateReviewRequest request);
 
-        if (alreadyReviewed) {
-            throw new AppException(ErrorCode.REVIEW_ALREADY_EXISTS);
-        }
+    /**
+     * Người dùng tự xóa đánh giá của chính mình.
+     *
+     * @param reviewId ID của đánh giá cần xóa
+     */
+    void deleteReview(Long reviewId);
 
-        Review review = Review.builder()
-                .user(currentUser)
-                .restaurant(restaurant)
-                .rating(request.getRating())
-                .context(request.getContext())
-                .build();
-
-        Review savedReview = reviewRepository.save(review);
-
-        return ReviewResponse.from(savedReview);
-    }
-// lấy tất cả review của nhà hàng theo id
-    @Transactional(readOnly = true)
-    public List<ReviewResponse> getReviewsByRestaurant(Long restaurantId) {
-
-        restaurantRepository.findByIdAndActiveTrue(restaurantId)
-                .orElseThrow(() ->
-                        new AppException(
-                                ErrorCode.RESTAURANT_NOT_FOUND
-                        )
-                );
-
-        return reviewRepository.findByRestaurant_Id(restaurantId)
-                .stream()
-                .map(ReviewResponse::from)
-                .toList();
-    }
-    // lấy tất cả review của hệ thống
-     @Transactional(readOnly = true)
-    public List<ReviewResponse> getAllReviews() {
-
-        return reviewRepository.findAll()
-                .stream()
-                .map(ReviewResponse::from)
-                .toList();
-    }
-    @Transactional(readOnly = true)
-    public ReviewResponse getReviewById(Long reviewId) {
-
-        Review review = reviewRepository.findById(reviewId)
-                .orElseThrow(() ->
-                        new AppException(ErrorCode.REVIEW_NOT_FOUND)
-                );
-
-        return ReviewResponse.from(review);
-    }
-    // update
-    public ReviewResponse updateReview(
-            Long reviewId,
-            CreateReviewRequest request
-    ) {
-        User currentUser = getCurrentUser();
-
-        Review review = reviewRepository
-                .findByIdAndUser_Id(
-                        reviewId,
-                        currentUser.getId()
-                )
-                .orElseThrow(() ->
-                        new AppException(ErrorCode.REVIEW_NOT_FOUND)
-                );
-
-        review.setRating(request.getRating());
-        review.setContext(request.getContext().trim());
-
-        Review savedReview = reviewRepository.save(review);
-
-        return ReviewResponse.from(savedReview);
-    }
-    // được xóa bởi người dùng
-     public void deleteReview(Long reviewId) {
-
-        User currentUser = getCurrentUser();
-
-        Review review = reviewRepository
-                .findByIdAndUser_Id(
-                        reviewId,
-                        currentUser.getId()
-                )
-                .orElseThrow(() ->
-                        new AppException(ErrorCode.REVIEW_NOT_FOUND)
-                );
-
-        reviewRepository.delete(review);
-    }
-    // xóa bởi admin
-
-     public void adminDeleteReview(Long reviewId) {
-
-        Review review = reviewRepository.findById(reviewId)
-                .orElseThrow(() ->
-                        new AppException(ErrorCode.REVIEW_NOT_FOUND)
-                );
-
-        reviewRepository.delete(review);
-    }
-
-
-    private User getCurrentUser() {
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new AppException(ErrorCode.UNAUTHORIZED);
-        }
-
-        Object principal = authentication.getPrincipal();
-
-        if (principal instanceof User user) {
-            System.out.println(user);
-            return user;
-        }
-
-        String email = authentication.getName();
-
-        if (email == null || email.equals("anonymousUser")) {
-            throw new AppException(ErrorCode.UNAUTHORIZED);
-        }
-
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-    }
-    
+    /**
+     * Quản trị viên xóa đánh giá bất kỳ trong hệ thống.
+     *
+     * @param reviewId ID của đánh giá cần xóa
+     */
+    void adminDeleteReview(Long reviewId);
 }

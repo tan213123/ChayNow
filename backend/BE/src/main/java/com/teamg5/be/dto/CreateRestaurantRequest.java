@@ -1,39 +1,40 @@
 package com.teamg5.be.dto;
+
 import lombok.Getter;
 import lombok.Setter;
-import jakarta.persistence.Column;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 
-import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.List;
+
 @Getter
 @Setter
 public class CreateRestaurantRequest {
-    @NotBlank(message = "Name of restaurant is required")
+    @NotBlank(message = "Tên nhà hàng không được để trống")
     private String name;
+
+    @Size(max = 500, message = "Address must not exceed 500 characters")
     private String address;
 
     @Pattern(
-            regexp = "^(0|\\+84)[0-9]{8,10}$",
-            message = "Phone number are invalid. It should start with 0 or +84 and contain 9 to 11 digits."
+            regexp = "^$|^(0|\\+84)(3|5|7|8|9)[0-9]{8}$",
+            message = "Số điện thoại không hợp lệ. Phải bắt đầu bằng 0 hoặc +84, theo sau bởi các đầu số hợp lệ (3, 5, 7, 8, 9) và có 8 chữ số."
     )
+    @Size(max = 20, message = "Phone number must not exceed 20 characters")
     private String phoneNumber;
     
+    @Size(max = 5000, message = "Description must not exceed 5000 characters")
     private String description;
 
-    @NotNull(message = "Place cannot null!")
+    @NotNull(message = "Địa điểm không được để trống!")
     private Long placeId;
 
-    @NotNull(message = "Type restaurant ID is required")
+    @NotNull(message = "Mã loại nhà hàng không được để trống")
     private Long typeRestaurantId;
-    @NotNull(message = "Open time cannot null")
+    @NotNull(message = "Giờ mở cửa không được để trống")
     private LocalTime openTime;
-    @NotNull(message = "Closed time cannot null")
+    @NotNull(message = "Giờ đóng cửa không được để trống")
     private LocalTime closedTime;
-
-    private List<String> mediaUrls;
-
 }

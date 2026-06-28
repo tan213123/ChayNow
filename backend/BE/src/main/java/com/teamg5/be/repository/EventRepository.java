@@ -8,6 +8,11 @@ import java.util.List;
 
 @Repository
 public interface EventRepository extends JpaRepository<Event, Long> {
+    List<Event> findByRestaurantId(Long restaurantId);
+
+    List<Event> findByStatusNot(String status);
+
     List<Event> findAllByRestaurantId(Long restaurantId);
+
     List<Event> findAllByRestaurantIdOrderByCreatedAtDesc(Long restaurantId);
 }
