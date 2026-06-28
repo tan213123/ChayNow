@@ -73,11 +73,15 @@ export default function OwnerEdit() {
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingPlace, setIsSavingPlace] = useState(false);
   const [isCreatingType, setIsCreatingType] = useState(false);
+  const [isPlaceNameTouched, setIsPlaceNameTouched] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState("");
 
   const setField = (key: keyof RestaurantForm, value: string) => {
     setForm((current) => ({ ...current, [key]: value }));
+    if (key === "name" && isNewPlace && !isPlaceNameTouched) {
+      setPlaceDraft((current) => ({ ...current, name: value }));
+    }
   };
 
   useEffect(() => {
@@ -129,7 +133,7 @@ export default function OwnerEdit() {
             mapUrl: place.mapUrl ?? "",
           });
           if (!restaurantAddress && place.address) {
-            setField("address", place.address);
+            setForm((current) => ({ ...current, address: place.address }));
           }
         }
       }
@@ -162,6 +166,9 @@ export default function OwnerEdit() {
   };
 
   const setPlaceField = (key: keyof PlaceRequest, value: string) => {
+    if (key === "name") {
+      setIsPlaceNameTouched(true);
+    }
     setPlaceDraft((current) => ({ ...current, [key]: value }));
   };
 
@@ -218,6 +225,7 @@ export default function OwnerEdit() {
   const handlePlaceSelection = async (value: string) => {
     setField("placeId", value);
     setIsNewPlace(false);
+    setIsPlaceNameTouched(false);
 
     if (!value) {
       setPlaceDraft(emptyPlace);
@@ -276,6 +284,7 @@ export default function OwnerEdit() {
         setPlaces((current) => [...current, created]);
         setField("placeId", String(created.id));
         setIsNewPlace(false);
+        setIsPlaceNameTouched(false);
         toast.success("Tạo địa điểm thành công.");
       } else {
         const updated = await updatePlace(Number(form.placeId), placeDraft);
@@ -383,6 +392,22 @@ export default function OwnerEdit() {
     }
   };
 
+  const restaurantActionText = isSaving
+    ? "Đang lưu..."
+    : isEditing
+      ? "Lưu thay đổi"
+      : "Tạo nhà hàng";
+  const isRestaurantFormComplete =
+    Boolean(form.name.trim()) &&
+    Boolean(form.typeRestaurantId) &&
+    Boolean(form.placeId) &&
+    Boolean(form.openTime) &&
+    Boolean(form.closedTime);
+  const isRestaurantActionDisabled = isSaving || !isRestaurantFormComplete;
+  const restaurantActionTitle = isRestaurantFormComplete
+    ? undefined
+    : "Vui lòng nhập tên quán, loại hình, địa điểm và giờ hoạt động.";
+
   if (isLoading) {
     return (
       <OwnerLayout>
@@ -406,17 +431,6 @@ export default function OwnerEdit() {
                 Thông tin nhà hàng
               </h1>
             </div>
-            <Button
-              onClick={handleSaveRestaurant}
-              disabled={isSaving}
-              className="rounded-2xl bg-emerald-600 px-6 py-3 text-white hover:bg-emerald-700"
-            >
-              {isSaving
-                ? "Đang lưu..."
-                : isEditing
-                  ? "Lưu thay đổi"
-                  : "Tạo nhà hàng"}
-            </Button>
           </div>
 
           <div className="mt-8 grid gap-6 md:grid-cols-2">
@@ -563,13 +577,24 @@ export default function OwnerEdit() {
             </div>
             <Button
               onClick={() => {
+                if (isNewPlace) {
+                  setIsNewPlace(false);
+                  setPlaceDraft(emptyPlace);
+                  setIsPlaceNameTouched(false);
+                  return;
+                }
                 setIsNewPlace(true);
                 setField("placeId", "");
-                setPlaceDraft({ ...emptyPlace, address: form.address });
+                setIsPlaceNameTouched(false);
+                setPlaceDraft({
+                  ...emptyPlace,
+                  name: form.name.trim(),
+                  address: form.address,
+                });
               }}
               className="rounded-2xl border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100"
             >
-              Địa điểm mới
+              {isNewPlace ? "Quay lại chọn địa điểm" : "Địa điểm mới"}
             </Button>
           </div>
 
@@ -639,8 +664,28 @@ export default function OwnerEdit() {
                     Xóa địa điểm
                   </Button>
                 ) : null}
+                <Button
+                  onClick={handleSaveRestaurant}
+                  disabled={isRestaurantActionDisabled}
+                  title={restaurantActionTitle}
+                  className="w-full rounded-2xl bg-emerald-600 px-6 py-3 text-white hover:bg-emerald-700 sm:ml-auto sm:w-auto"
+                >
+                  {restaurantActionText}
+                </Button>
               </div>
             </>
+          ) : null}
+          {!(isNewPlace || form.placeId) ? (
+            <div className="mt-6 flex justify-end">
+              <Button
+                onClick={handleSaveRestaurant}
+                disabled={isRestaurantActionDisabled}
+                title={restaurantActionTitle}
+                className="w-full rounded-2xl bg-emerald-600 px-6 py-3 text-white hover:bg-emerald-700 sm:w-auto"
+              >
+                {restaurantActionText}
+              </Button>
+            </div>
           ) : null}
         </div>
 
