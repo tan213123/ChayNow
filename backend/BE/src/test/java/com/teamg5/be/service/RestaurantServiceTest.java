@@ -4,6 +4,7 @@ import com.teamg5.be.dto.CreateRestaurantRequest;
 import com.teamg5.be.dto.RestaurantResponse;
 import com.teamg5.be.entity.Place;
 import com.teamg5.be.entity.Restaurant;
+import com.teamg5.be.entity.RestaurantStatus;
 import com.teamg5.be.entity.TypeRestaurant;
 import com.teamg5.be.entity.User;
 import com.teamg5.be.exception.AppException;
@@ -22,6 +23,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import com.teamg5.be.service.impl.RestaurantServiceImpl;
 
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -40,7 +42,7 @@ import static org.mockito.Mockito.when;
 public class RestaurantServiceTest {
 
     @InjectMocks
-    private RestaurantService restaurantService;
+    private RestaurantServiceImpl restaurantService;
 
     @Mock
     private RestaurantRepository restaurantRepository;
@@ -198,7 +200,7 @@ public class RestaurantServiceTest {
                 .build();
         restaurant.setId(10L);
 
-        when(restaurantRepository.findAllByActiveTrue()).thenReturn(Collections.singletonList(restaurant));
+        when(restaurantRepository.findAllByActiveTrueAndStatus(RestaurantStatus.APPROVED)).thenReturn(Collections.singletonList(restaurant));
 
         java.util.List<RestaurantResponse> responses = restaurantService.getAllRestaurant();
 

@@ -9,15 +9,19 @@ import {
   getRestaurantReviews,
 } from "@/services/restaurant.service";
 import { getRestaurantEvents } from "@/services/event.service";
+import { getRestaurantMenus } from "@/services/menu.service";
 import { mediaService } from "@/services/media.service";
 import { useAuthStore } from "@/store/authStore";
+import { addFavourite, isFavourite, removeFavourite } from "@/services/favourite.service";
+import { createReport } from "@/services/report.service";
 import type {
   RestaurantResponse,
   ReviewResponse,
   EventResponse,
+  MenuResponse,
 } from "@/types/restaurant";
 
-const tabLabels = ["Thông tin", "Sự kiện", "Thực đơn", "Đánh giá", "Giới thiệu"] as const;
+const tabLabels = ["Thông tin", "Sự kiện", "Thực đơn", "Đánh giá"] as const;
 type Tab = (typeof tabLabels)[number];
 
 const tabIcons: Record<Tab, string> = {
@@ -25,8 +29,17 @@ const tabIcons: Record<Tab, string> = {
   "Sự kiện": "🎉",
   "Thực đơn": "🍽️",
   "Đánh giá": "⭐",
-  "Giới thiệu": "📖",
 };
+
+const reviewSuggestions = [
+  "Món ăn ngon",
+  "Phục vụ nhiệt tình",
+  "Không gian yên tĩnh",
+  "Giá cả hợp lý",
+  "Sạch sẽ",
+  "Lên món nhanh",
+  "Thực đơn đa dạng"
+];
 
 export default function RestaurantDetail() {
   const { id } = useParams();
@@ -36,6 +49,7 @@ export default function RestaurantDetail() {
     useState<RestaurantResponse | null>(null);
   const [apiReviews, setApiReviews] = useState<ReviewResponse[]>([]);
   const [apiEvents, setApiEvents] = useState<EventResponse[]>([]);
+  const [apiMenus, setApiMenus] = useState<MenuResponse[]>([]);
   const [isLoading, setIsLoading] = useState(isValidId);
   const { user } = useAuthStore();
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -46,6 +60,12 @@ export default function RestaurantDetail() {
   const [hoverRating, setHoverRating] = useState(0);
   const [selectedRating, setSelectedRating] = useState(0);
   const [reviewImages, setReviewImages] = useState<File[]>([]);
+
+  // Báo cáo state
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [reportDescription, setReportDescription] = useState("");
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
 
   const isOwner = useMemo(() => {
     return user?.id !== undefined && apiRestaurant?.ownerId !== undefined && user.id === apiRestaurant.ownerId;
@@ -70,13 +90,27 @@ export default function RestaurantDetail() {
             console.error("Failed to load events", err);
             return [] as EventResponse[];
           }),
+          getRestaurantMenus(restaurantId).catch((err) => {
+            console.error("Failed to load menus", err);
+            return [] as MenuResponse[];
+          }),
+          user
+            ? isFavourite(restaurantId)
+                .then((res) => (res.success ? res.data : false))
+                .catch((err) => {
+                  console.error("Failed to check favorite status", err);
+                  return false;
+                })
+            : Promise.resolve(false),
         ]);
       })
-      .then(([restaurantResponse, reviewsResponse, eventsResponse]) => {
+      .then(([restaurantResponse, reviewsResponse, eventsResponse, menusResponse, isFavResponse]) => {
         if (!cancelled) {
           setApiRestaurant(restaurantResponse);
           setApiReviews(reviewsResponse);
           setApiEvents(eventsResponse);
+          setApiMenus(menusResponse);
+          setIsFavorite(!!isFavResponse);
         }
       })
       .catch((error: unknown) => {
@@ -95,7 +129,60 @@ export default function RestaurantDetail() {
     return () => {
       cancelled = true;
     };
-  }, [restaurantId, isValidId]);
+  }, [restaurantId, isValidId, user]);
+
+  const handleToggleFavorite = async () => {
+    if (!user) {
+      toast.error("Vui lòng đăng nhập để lưu địa điểm yêu thích!");
+      return;
+    }
+    try {
+      if (isFavorite) {
+        const res = await removeFavourite(restaurantId);
+        if (res.success) {
+          setIsFavorite(false);
+          toast.success("Đã xóa khỏi danh sách yêu thích");
+        }
+      } else {
+        const res = await addFavourite(restaurantId);
+        if (res.success) {
+          setIsFavorite(true);
+          toast.success("Đã thêm vào danh sách yêu thích");
+        }
+      }
+    } catch (error) {
+      console.error("Lỗi khi thay đổi trạng thái yêu thích:", error);
+      toast.error("Đã xảy ra lỗi khi thay đổi trạng thái yêu thích");
+    }
+  };
+
+  const handleSubmitReport = async () => {
+    if (!user) {
+      toast.error("Vui lòng đăng nhập để báo cáo!");
+      return;
+    }
+    if (!reportReason.trim()) {
+      toast.error("Vui lòng chọn hoặc nhập lý do báo cáo!");
+      return;
+    }
+    try {
+      setIsSubmittingReport(true);
+      await createReport({
+        type: "RESTAURANT",
+        targetId: restaurantId,
+        reason: reportReason,
+        description: reportDescription,
+      });
+      toast.success("Đã gửi báo cáo thành công. Quản trị viên sẽ xử lý sớm.");
+      setIsReportModalOpen(false);
+      setReportReason("");
+      setReportDescription("");
+    } catch (error) {
+      toast.error("Không thể gửi báo cáo. Vui lòng thử lại sau.");
+    } finally {
+      setIsSubmittingReport(false);
+    }
+  };
 
   const restaurant = useMemo(() => {
     if (!apiRestaurant) return undefined;
@@ -110,8 +197,12 @@ export default function RestaurantDetail() {
       id: String(apiRestaurant.id),
       name: apiRestaurant.name,
       location: apiRestaurant.address ?? "Chưa cập nhật địa chỉ",
-      hours: "Chưa cập nhật",
-      priceRange: "Chưa cập nhật",
+      hours: apiRestaurant.openTime && apiRestaurant.closedTime
+        ? `${apiRestaurant.openTime.substring(0, 5)} - ${apiRestaurant.closedTime.substring(0, 5)}`
+        : "Chưa cập nhật",
+      priceRange: apiMenus.length > 0
+        ? `${Math.min(...apiMenus.map((m) => m.price)).toLocaleString("vi-VN")}đ - ${Math.max(...apiMenus.map((m) => m.price)).toLocaleString("vi-VN")}đ`
+        : "Chưa cập nhật",
       rating: Number(rating.toFixed(1)),
       reviews: apiReviews.length,
       category: apiRestaurant.typeRestaurantName,
@@ -123,7 +214,12 @@ export default function RestaurantDetail() {
       address: apiRestaurant.address ?? "Chưa cập nhật địa chỉ",
       phone: apiRestaurant.phoneNumber ?? "Chưa cập nhật",
       mapAlt: `Bản đồ ${apiRestaurant.name}`,
-      menu: [] as Array<{ name: string; price: string; category: string }>,
+      menu: apiMenus.map((item) => ({
+        name: item.name,
+        price: item.price != null ? `${item.price.toLocaleString("vi-VN")}đ` : "Liên hệ",
+        category: item.category ?? "Món ăn",
+        image: item.imageUrl,
+      })),
       reviewsList: apiReviews.map((review) => ({
         name: review.userName ?? `Người dùng #${review.userId}`,
         rating: review.rating,
@@ -135,7 +231,7 @@ export default function RestaurantDetail() {
       })),
       features: [apiRestaurant.typeRestaurantName].filter(Boolean),
     };
-  }, [apiRestaurant, apiReviews]);
+  }, [apiRestaurant, apiReviews, apiMenus]);
 
   const handleReviewImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -240,7 +336,7 @@ export default function RestaurantDetail() {
                 <span className="text-white/70 text-xs">({restaurant.reviews})</span>
               </div>
               <button
-                onClick={() => setIsFavorite(!isFavorite)}
+                onClick={handleToggleFavorite}
                 className={`flex h-10 w-10 items-center justify-center rounded-full text-lg backdrop-blur-sm transition ${
                   isFavorite ? "bg-red-500 text-white" : "bg-white/20 text-white hover:bg-white/30"
                 }`}
@@ -425,9 +521,17 @@ export default function RestaurantDetail() {
                         className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50 p-4 transition hover:border-emerald-200 hover:bg-emerald-50/50"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-lg">
-                            🍽️
-                          </div>
+                          {dish.image ? (
+                            <img
+                              src={dish.image}
+                              alt={dish.name}
+                              className="h-10 w-10 rounded-xl object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-lg">
+                              🍽️
+                            </div>
+                          )}
                           <div>
                             <p className="font-semibold text-slate-900">{dish.name}</p>
                             <p className="text-xs text-slate-500">{dish.category}</p>
@@ -483,6 +587,31 @@ export default function RestaurantDetail() {
                           placeholder="Chia sẻ trải nghiệm của bạn..."
                           className="mt-3 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition resize-none"
                         />
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {reviewSuggestions.map((suggestion) => {
+                            const isSelected = reviewText.includes(suggestion);
+                            return (
+                              <button
+                                key={suggestion}
+                                type="button"
+                                onClick={() => {
+                                  if (isSelected) {
+                                    setReviewText(prev => prev.replace(suggestion, '').replace(/^,\s*|,\s*$/g, '').replace(/,\s*,/g, ', ').trim());
+                                  } else {
+                                    setReviewText(prev => prev ? `${prev}, ${suggestion}` : suggestion);
+                                  }
+                                }}
+                                className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                                  isSelected 
+                                    ? "border-emerald-500 bg-emerald-50 text-emerald-700" 
+                                    : "border-slate-200 bg-white text-slate-600 hover:border-emerald-300 hover:bg-emerald-50"
+                                }`}
+                              >
+                                {isSelected ? "✓ " : "+ "}{suggestion}
+                              </button>
+                            );
+                          })}
+                        </div>
                         {reviewImages.length > 0 && (
                           <div className="mt-3 flex flex-wrap gap-2">
                             {reviewImages.map((file, idx) => (
@@ -582,25 +711,6 @@ export default function RestaurantDetail() {
                   </div>
                 )}
 
-                {/* Giới thiệu Tab */}
-                {activeTab === "Giới thiệu" && (
-                  <div className="space-y-5">
-                    <p className="text-sm text-slate-500 leading-relaxed">
-                      Các thuộc tính này được khách hàng đề xuất và quản trị viên xác nhận.
-                    </p>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {restaurant.features.map((feature) => (
-                        <div
-                          key={feature}
-                          className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3"
-                        >
-                          <span className="text-emerald-500 text-lg">✓</span>
-                          <span className="text-sm font-medium text-emerald-800">{feature}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -613,7 +723,7 @@ export default function RestaurantDetail() {
             <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm space-y-3">
               <p className="text-sm font-bold uppercase tracking-widest text-slate-400">Hành động nhanh</p>
               <button
-                onClick={() => setIsFavorite(!isFavorite)}
+                onClick={handleToggleFavorite}
                 className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
                   isFavorite
                     ? "bg-red-50 text-red-600 border border-red-200"
@@ -629,6 +739,20 @@ export default function RestaurantDetail() {
               >
                 <span className="text-lg">⭐</span>
                 {isOwner ? "Xem đánh giá" : "Viết đánh giá"}
+              </button>
+              
+              <button
+                onClick={() => {
+                  if (!user) {
+                    toast.error("Vui lòng đăng nhập để báo cáo!");
+                    return;
+                  }
+                  setIsReportModalOpen(true);
+                }}
+                className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 hover:border-red-200 hover:bg-red-50 hover:text-red-700 transition"
+              >
+                <span className="text-lg">🚩</span>
+                Báo cáo nhà hàng
               </button>
 
             </div>
@@ -668,6 +792,63 @@ export default function RestaurantDetail() {
           </aside>
         </div>
       </section>
+
+      {/* Report Modal */}
+      {isReportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+            <h3 className="text-xl font-bold text-slate-900">Báo cáo nhà hàng</h3>
+            <p className="mt-2 text-sm text-slate-500">
+              Vui lòng cho chúng tôi biết vấn đề của nhà hàng này.
+            </p>
+            
+            <div className="mt-5 space-y-4">
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-slate-700">Lý do báo cáo *</label>
+                <select
+                  value={reportReason}
+                  onChange={(e) => setReportReason(e.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-red-400 focus:ring-4 focus:ring-red-100 transition"
+                >
+                  <option value="">Chọn lý do...</option>
+                  <option value="Thông tin không chính xác">Thông tin không chính xác</option>
+                  <option value="Nhà hàng đã đóng cửa">Nhà hàng đã đóng cửa</option>
+                  <option value="Không phải nhà hàng chay">Không phải nhà hàng chay</option>
+                  <option value="Nội dung không phù hợp">Nội dung không phù hợp</option>
+                  <option value="Khác">Khác</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-slate-700">Mô tả thêm</label>
+                <textarea
+                  rows={3}
+                  value={reportDescription}
+                  onChange={(e) => setReportDescription(e.target.value)}
+                  placeholder="Cung cấp thêm chi tiết để chúng tôi xử lý nhanh hơn..."
+                  className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-red-400 focus:ring-4 focus:ring-red-100 transition"
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => setIsReportModalOpen(false)}
+                className="rounded-2xl px-5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 transition"
+              >
+                Hủy
+              </button>
+              <Button
+                onClick={handleSubmitReport}
+                disabled={isSubmittingReport || !reportReason}
+                className="rounded-2xl bg-red-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50 transition"
+              >
+                {isSubmittingReport ? "Đang gửi..." : "Gửi báo cáo"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

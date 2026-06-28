@@ -59,8 +59,9 @@ public class DatabaseSeeder implements CommandLineRunner {
             log.info("Created admin account: {}", adminEmail);
         } else {
             admin.setPassword(passwordEncoder.encode("123456"));
+            admin.setStatus(AccountStatus.ACTIVE);
             userRepository.save(admin);
-            log.info("Updated admin account password to 123456: {}", adminEmail);
+            log.info("Updated admin account password to 123456 and status to ACTIVE: {}", adminEmail);
         }
     }
 

@@ -11,6 +11,7 @@ import {
   updateMenu,
 } from "@/services/menu.service";
 import { getRestaurant } from "@/services/restaurant.service";
+import { mediaService } from "@/services/media.service";
 import type {
   CreateMenuRequest,
   MenuResponse,
@@ -55,6 +56,7 @@ export default function OwnerNewDish() {
   const [isLoading, setIsLoading] = useState(Boolean(restaurantId));
   const [isSaving, setIsSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (!restaurantId) {
@@ -116,6 +118,28 @@ export default function OwnerNewDish() {
       featured: menu.featured,
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploading(true);
+      const response = await mediaService.upload(file, restaurantId ?? undefined);
+      if (response.success && response.data) {
+        setField("imageUrl", response.data.url);
+        toast.success("Tải ảnh lên thành công.");
+      } else {
+        toast.error("Không nhận được URL ảnh từ server.");
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Tải ảnh lên thất bại."
+      );
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -304,16 +328,51 @@ export default function OwnerNewDish() {
                   className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-normal outline-none focus:border-emerald-500"
                 />
               </label>
-              <label className="block space-y-2 text-sm font-semibold text-slate-700">
-                URL hình ảnh
+              <div className="space-y-2">
+                <span className="block text-sm font-semibold text-slate-700">Hình ảnh món ăn</span>
+                
+                {form.imageUrl ? (
+                  <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+                    <img
+                      src={form.imageUrl}
+                      alt="Xem trước món ăn"
+                      className="h-40 w-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setField("imageUrl", "")}
+                      className="absolute right-2 top-2 rounded-full bg-slate-900/60 p-1.5 text-white hover:bg-slate-900/80 transition"
+                      title="Xóa ảnh"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex h-40 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 transition hover:bg-slate-100/80">
+                    <div className="flex flex-col items-center justify-center pb-6 pt-5">
+                      <span className="text-3xl">📷</span>
+                      <p className="mt-2 text-sm text-slate-500 font-normal">
+                        {isUploading ? "Đang tải ảnh lên..." : "Click để tải ảnh lên"}
+                      </p>
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={isUploading}
+                      className="hidden"
+                    />
+                  </label>
+                )}
+                
                 <input
                   value={form.imageUrl}
                   onChange={(event) => setField("imageUrl", event.target.value)}
                   type="text"
-                  placeholder="Nhập đường dẫn hình ảnh"
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-normal outline-none focus:border-emerald-500"
+                  placeholder="Hoặc nhập đường dẫn ảnh (URL)"
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-normal outline-none focus:border-emerald-500"
                 />
-              </label>
+              </div>
               <label className="block space-y-2 text-sm font-semibold text-slate-700">
                 Mô tả
                 <textarea

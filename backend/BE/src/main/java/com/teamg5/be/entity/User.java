@@ -56,7 +56,7 @@ public class User extends BaseEntity implements UserDetails {
 
     @Column(name = "warning_count")
     @Builder.Default
-    private int warningCount = 0;
+    private Integer warningCount = 0;
 
     @jakarta.persistence.OneToMany(mappedBy = "user", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
     @lombok.Builder.Default

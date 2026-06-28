@@ -187,3 +187,18 @@ export interface ApiResponse<T> {
   data: T;
   timestamp: string | number[];
 }
+
+export interface FavouritePlaceResponse {
+  id: number;
+  restaurant: RestaurantResponse;
+  createdAt: string;
+}
+
+export interface PageResponse<T> {
+  content: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  last: boolean;
+}
