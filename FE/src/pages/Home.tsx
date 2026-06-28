@@ -2,7 +2,27 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
-import { Search } from "lucide-react";
+import {
+  Calendar,
+  CheckCircle,
+  Clock,
+  DollarSign,
+  Heart,
+  Leaf,
+  MapPin,
+  MessageSquare,
+  PartyPopper,
+  Pencil,
+  Phone,
+  Search,
+  Send,
+  Share2,
+  Store,
+  Utensils,
+  Star,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import { getRestaurants } from "@/services/restaurant.service";
 import { getEvents } from "@/services/event.service";
 import { getMenus } from "@/services/menu.service";
@@ -146,7 +166,7 @@ export default function Home() {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredRestaurants.length === 0 ? (
             <div className="col-span-3 py-20 text-center">
-              <p className="text-4xl">🔍</p>
+              <Search className="mx-auto h-10 w-10 text-slate-300" />
               <p className="mt-4 text-slate-500">Không tìm thấy kết quả phù hợp</p>
               <button
                 onClick={() => { setSearchQuery(""); setSelectedCategory("Tất cả"); }}
@@ -176,7 +196,7 @@ export default function Home() {
                   <div>
                     <h3 className="text-lg font-bold text-slate-900">{item.name}</h3>
                     <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-500">
-                      <span>📍</span> {item.address ?? "Chưa cập nhật"}
+                      <MapPin className="h-4 w-4 shrink-0" /> {item.address ?? "Chưa cập nhật"}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -187,7 +207,7 @@ export default function Home() {
                     )}
                   </div>
                   <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-400">
-                    <span className="flex items-center gap-1"><span>📞</span> {item.phoneNumber ?? "Chưa cập nhật"}</span>
+                    <span className="flex items-center gap-1"><Phone className="h-3.5 w-3.5" /> {item.phoneNumber ?? "Chưa cập nhật"}</span>
                   </div>
                   <Link to={`/restaurant/${item.id}`}>
                     <Button className="w-full rounded-2xl bg-emerald-600 py-3 text-sm font-semibold text-white hover:bg-emerald-700 transition">
@@ -208,7 +228,7 @@ export default function Home() {
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {apiMenus.length === 0 ? (
             <div className="col-span-4 py-20 text-center">
-              <p className="text-4xl">🍽️</p>
+              <Utensils className="mx-auto h-10 w-10 text-slate-300" />
               <p className="mt-4 text-slate-500">Chưa có món ăn nào</p>
             </div>
           ) : (
@@ -246,7 +266,7 @@ export default function Home() {
         <div className="grid gap-6 lg:grid-cols-3">
           {visibleEvents.length === 0 ? (
             <div className="col-span-3 py-20 text-center">
-              <p className="text-4xl">🎉</p>
+              <PartyPopper className="mx-auto h-10 w-10 text-slate-300" />
               <p className="mt-4 text-slate-500">Chưa có sự kiện nào</p>
             </div>
           ) : (
@@ -272,9 +292,9 @@ export default function Home() {
                   <h3 className="font-bold text-slate-900">{event.title}</h3>
                   <p className="text-sm text-slate-500 leading-relaxed line-clamp-2">{event.description}</p>
                   <div className="border-t border-slate-100 pt-3 space-y-1 text-xs text-slate-400">
-                    <p className="flex items-center gap-1.5"><span>📍</span> {event.restaurantName ?? "Chưa cập nhật"}</p>
+                    <p className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> {event.restaurantName ?? "Chưa cập nhật"}</p>
                     {event.startDate && event.endDate && (
-                      <p className="flex items-center gap-1.5"><span>📅</span>
+                      <p className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" />
                         {new Intl.DateTimeFormat("vi-VN").format(new Date(event.startDate))} –{" "}
                         {new Intl.DateTimeFormat("vi-VN").format(new Date(event.endDate))}
                       </p>
@@ -294,7 +314,7 @@ export default function Home() {
         {/* Success toast */}
         {submitted && (
           <div className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 shadow-sm animate-pulse">
-            <span className="text-xl">✅</span>
+            <CheckCircle className="h-5 w-5 shrink-0 text-emerald-600" />
             <div>
               <p className="text-sm font-semibold text-emerald-800">Đăng bài thành công!</p>
               <p className="text-xs text-emerald-600">Cảm ơn bạn đã đóng góp cho cộng đồng ChayNow!</p>
@@ -314,10 +334,14 @@ export default function Home() {
           <div className="rounded-[2rem] border-2 border-violet-200 bg-violet-50/50 p-6 shadow-sm space-y-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-violet-600 text-white text-lg">📝</div>
+                <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-violet-600 text-white">
+                  <Pencil className="h-4 w-4" />
+                </div>
                 <p className="font-bold text-slate-900">Đăng quán chay mới</p>
               </div>
-              <button onClick={() => { setShowForm(false); setForm(defaultForm); }} className="text-slate-400 hover:text-slate-600 text-lg">✕</button>
+              <button onClick={() => { setShowForm(false); setForm(defaultForm); }} className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+                <X className="h-4 w-4" />
+              </button>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -404,7 +428,7 @@ export default function Home() {
                   disabled={!form.restaurantName.trim() || !form.location.trim() || !form.description.trim()}
                   className="rounded-2xl bg-violet-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-50 transition"
                 >
-                  📤 Đăng bài
+                  <Send className="mr-2 h-4 w-4" /> Đăng bài
                 </Button>
               </div>
             </div>
@@ -415,7 +439,7 @@ export default function Home() {
             className="group flex w-full items-center gap-4 rounded-[2rem] border-2 border-dashed border-violet-300 bg-violet-50/50 px-6 py-5 text-left transition hover:border-violet-500 hover:bg-violet-50"
           >
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-violet-600 text-white text-xl shadow-md group-hover:scale-110 transition-transform">
-              ✏️
+              <Pencil className="h-5 w-5" />
             </div>
             <div>
               <p className="font-bold text-slate-900">Bạn biết quán chay nào chưa có trên ChayNow?</p>
@@ -430,7 +454,7 @@ export default function Home() {
         {/* Posts List */}
         {posts.length === 0 ? (
           <div className="py-16 text-center">
-            <p className="text-4xl">🌿</p>
+              <Leaf className="mx-auto h-10 w-10 text-slate-300" />
             <p className="mt-3 text-slate-500">Chưa có bài đăng nào</p>
           </div>
         ) : (
@@ -462,14 +486,14 @@ export default function Home() {
                     </span>
                   </div>
                   <p className="flex items-center gap-1.5 text-sm text-slate-500">
-                    <span>📍</span> {post.location}
+                    <MapPin className="h-4 w-4 shrink-0" /> {post.location}
                   </p>
                   <div className="flex flex-wrap gap-3 text-xs text-slate-500">
                     {post.hours !== "Chưa cập nhật" && (
-                      <span className="flex items-center gap-1"><span>🕐</span> {post.hours}</span>
+                      <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {post.hours}</span>
                     )}
                     {post.priceRange !== "Chưa cập nhật" && (
-                      <span className="flex items-center gap-1"><span>💰</span> {post.priceRange}</span>
+                      <span className="flex items-center gap-1"><DollarSign className="h-3.5 w-3.5" /> {post.priceRange}</span>
                     )}
                   </div>
                 </div>
@@ -500,16 +524,16 @@ export default function Home() {
                         : "text-slate-500 hover:bg-slate-100"
                     }`}
                   >
-                    <span>{likedPosts.includes(post.id) ? "♥" : "♡"}</span>
+                    <Heart className={`h-4 w-4 ${likedPosts.includes(post.id) ? "fill-current" : ""}`} />
                     <span>{post.likes}</span>
                     <span className="text-xs">Hữu ích</span>
                   </button>
                   <div className="flex gap-2">
                     <button className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
-                      💬 Bình luận
+                      <MessageSquare className="h-3.5 w-3.5" /> Bình luận
                     </button>
-                    <button className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
-                      📤 Chia sẻ
+                    <button className="flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
+                      <Share2 className="h-3.5 w-3.5" /> Chia sẻ
                     </button>
                   </div>
                 </div>
@@ -528,11 +552,11 @@ export default function Home() {
     "Bài đăng cộng đồng": posts.length,
   };
 
-  const tabIcons: Record<Tab, string> = {
-    "Địa điểm ăn chay": "🏠",
-    "Món ăn nổi bật": "🍽️",
-    "Sự kiện": "🎉",
-    "Bài đăng cộng đồng": "✏️",
+  const tabIcons: Record<Tab, LucideIcon> = {
+    "Địa điểm ăn chay": Store,
+    "Món ăn nổi bật": Utensils,
+    "Sự kiện": PartyPopper,
+    "Bài đăng cộng đồng": Pencil,
   };
 
   const countLabels: Record<Tab, string> = {
@@ -554,7 +578,7 @@ export default function Home() {
         <div className="relative mx-auto max-w-7xl">
           <div className="max-w-3xl space-y-5">
             <span className="inline-block rounded-full bg-white/20 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm">
-              🌱 Cộng đồng ẩm thực chay TPHCM
+              <Leaf className="mr-2 inline h-4 w-4" /> Cộng đồng ẩm thực chay TPHCM
             </span>
             <h1 className="text-4xl font-extrabold leading-tight text-white sm:text-5xl lg:text-6xl">
               Khám phá <span className="text-emerald-200">ẩm thực chay</span> ngon nhất Sài Gòn
@@ -615,28 +639,31 @@ export default function Home() {
           {/* Tab Header */}
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex flex-wrap gap-2">
-              {tabs.map((tab) => (
-                <button
-                  key={tab}
-                  type="button"
-                  onClick={() => setSelectedTab(tab)}
-                  className={`flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-all ${
-                    selectedTab === tab
-                      ? tab === "Bài đăng cộng đồng"
-                        ? "bg-violet-600 text-white shadow-sm"
-                        : "bg-emerald-600 text-white shadow-sm"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  }`}
-                >
-                  {tabIcons[tab]}
-                  {tab}
-                  {tab === "Bài đăng cộng đồng" && (
-                    <span className={`rounded-full px-1.5 py-0.5 text-xs font-bold ${selectedTab === tab ? "bg-white/25 text-white" : "bg-violet-100 text-violet-700"}`}>
-                      {posts.length}
-                    </span>
-                  )}
-                </button>
-              ))}
+              {tabs.map((tab) => {
+                const Icon = tabIcons[tab];
+                return (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setSelectedTab(tab)}
+                    className={`flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-all ${
+                      selectedTab === tab
+                        ? tab === "Bài đăng cộng đồng"
+                          ? "bg-violet-600 text-white shadow-sm"
+                          : "bg-emerald-600 text-white shadow-sm"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {tab}
+                    {tab === "Bài đăng cộng đồng" && (
+                      <span className={`rounded-full px-1.5 py-0.5 text-xs font-bold ${selectedTab === tab ? "bg-white/25 text-white" : "bg-violet-100 text-violet-700"}`}>
+                        {posts.length}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
             <div className="flex items-center gap-3">
               <div className={`rounded-full px-4 py-2 text-sm font-semibold ${selectedTab === "Bài đăng cộng đồng" ? "bg-violet-50 text-violet-700" : "bg-emerald-50 text-emerald-700"}`}>
@@ -651,12 +678,12 @@ export default function Home() {
         {/* Features Banner */}
         <div className="mt-10 grid gap-4 sm:grid-cols-3">
           {[
-            { icon: "🌿", title: "100% Thuần chay", desc: "Tất cả địa điểm đều được xác minh và cam kết thuần chay" },
-            { icon: "⭐", title: "Đánh giá thực", desc: "Hàng nghìn đánh giá từ cộng đồng người dùng thực tế" },
-            { icon: "📍", title: "Khắp TPHCM", desc: "Từ quận 1 đến vùng ngoại ô, chúng tôi có mặt ở mọi nơi" },
+            { icon: Leaf, title: "100% Thuần chay", desc: "Tất cả địa điểm đều được xác minh và cam kết thuần chay" },
+            { icon: Star, title: "Đánh giá thực", desc: "Hàng nghìn đánh giá từ cộng đồng người dùng thực tế" },
+            { icon: MapPin, title: "Khắp TPHCM", desc: "Từ quận 1 đến vùng ngoại ô, chúng tôi có mặt ở mọi nơi" },
           ].map((f) => (
             <div key={f.title} className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm text-center">
-              <div className="text-4xl">{f.icon}</div>
+              <f.icon className="mx-auto h-10 w-10 text-emerald-600" />
               <h3 className="mt-3 font-bold text-slate-900">{f.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-slate-500">{f.desc}</p>
             </div>

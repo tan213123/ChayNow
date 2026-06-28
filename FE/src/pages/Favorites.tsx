@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
+import { Heart, Leaf, MapPin, Phone, Search, Sprout } from "lucide-react";
 import { getFavourites, removeFavourite } from "@/services/favourite.service";
 import type { RestaurantResponse } from "@/types/restaurant";
 
@@ -63,7 +64,7 @@ export default function Favorites() {
         <div className="mx-auto max-w-7xl">
           <div className="max-w-2xl">
             <span className="inline-block rounded-full bg-white/20 px-4 py-1.5 text-sm font-semibold text-white backdrop-blur-sm">
-              ♥ Danh sách yêu thích
+              <Heart className="mr-2 inline h-4 w-4 fill-current" /> Danh sách yêu thích
             </span>
             <h1 className="mt-3 text-4xl font-extrabold text-white">
               Địa điểm bạn đã lưu
@@ -78,13 +79,16 @@ export default function Favorites() {
       <section className="mx-auto max-w-7xl px-6 py-10">
         {/* Controls */}
         <div className="-mt-6 mb-8 flex flex-col gap-4 rounded-[2rem] border border-slate-200 bg-white p-5 shadow-lg sm:flex-row sm:items-center">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="🔍 Tìm trong danh sách yêu thích..."
-            className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition"
-          />
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Tìm trong danh sách yêu thích..."
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition"
+            />
+          </div>
           <div className="flex items-center gap-2">
             <span className="text-sm text-slate-500 whitespace-nowrap">Sắp xếp:</span>
             <div className="flex gap-1">
@@ -154,7 +158,7 @@ export default function Favorites() {
                     title="Xoá khỏi danh sách"
                     className="absolute left-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-white shadow-md text-sm transition hover:bg-red-600 hover:scale-110"
                   >
-                    ♥
+                    <Heart className="h-4 w-4 fill-current" />
                   </button>
                 </div>
                 <div className="space-y-4 p-5">
@@ -162,7 +166,7 @@ export default function Favorites() {
                     <div>
                       <h2 className="font-bold text-slate-900">{restaurant.name}</h2>
                       <p className="mt-1 flex items-center gap-1 text-sm text-slate-500">
-                        <span>📍</span> {restaurant.address ?? "Chưa cập nhật"}
+                        <MapPin className="h-4 w-4 shrink-0" /> {restaurant.address ?? "Chưa cập nhật"}
                       </p>
                     </div>
                     <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
@@ -170,7 +174,7 @@ export default function Favorites() {
                     </span>
                   </div>
                   <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-400">
-                    <span>📞 {restaurant.phoneNumber ?? "Chưa cập nhật"}</span>
+                    <span className="flex items-center gap-1"><Phone className="h-3.5 w-3.5" /> {restaurant.phoneNumber ?? "Chưa cập nhật"}</span>
                   </div>
                   <Link to={`/restaurant/${restaurant.id}`}>
                     <Button className="w-full rounded-2xl bg-emerald-600 py-3 text-sm font-semibold text-white hover:bg-emerald-700 transition">
@@ -183,7 +187,7 @@ export default function Favorites() {
           </div>
         ) : (
           <div className="py-24 text-center">
-            <div className="text-6xl">🍃</div>
+            <Leaf className="mx-auto h-14 w-14 text-slate-300" />
             <h2 className="mt-5 text-xl font-bold text-slate-900">
               {search ? "Không có kết quả phù hợp" : "Chưa có địa điểm yêu thích"}
             </h2>
@@ -194,7 +198,7 @@ export default function Favorites() {
             </p>
             <Link to="/">
               <Button className="mt-6 rounded-2xl bg-emerald-600 px-8 py-3 text-sm font-semibold text-white hover:bg-emerald-700">
-                Khám phá ngay 🌱
+                <Sprout className="mr-2 h-4 w-4" /> Khám phá ngay
               </Button>
             </Link>
           </div>

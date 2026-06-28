@@ -2,6 +2,22 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
+import {
+  BarChart3,
+  Calendar,
+  Camera,
+  ClipboardList,
+  Heart,
+  Leaf,
+  Mail,
+  MapPin,
+  Phone,
+  Settings,
+  Sprout,
+  Star,
+  Trophy,
+  User,
+} from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import type { Role } from "@/types/auth";
 import { getRestaurants } from "@/services/restaurant.service";
@@ -14,25 +30,25 @@ const roleLabels: Record<Role, string> = {
 };
 
 const activityLog = [
-  { id: 1, type: "review", text: "Đã đánh giá Hum Vegetarian ★★★★★", time: "2 giờ trước", icon: "⭐" },
-  { id: 2, type: "favorite", text: "Đã lưu Loving Hut vào yêu thích", time: "1 ngày trước", icon: "♥" },
-  { id: 3, type: "visit", text: "Đã ghé thăm An Lạc Chay", time: "3 ngày trước", icon: "📍" },
-  { id: 4, type: "review", text: "Đã đánh giá Loving Hut ★★★★", time: "1 tuần trước", icon: "⭐" },
-  { id: 5, type: "favorite", text: "Đã lưu Hum Vegetarian vào yêu thích", time: "2 tuần trước", icon: "♥" },
+  { id: 1, type: "review", text: "Đã đánh giá Hum Vegetarian 5 sao", time: "2 giờ trước", icon: Star },
+  { id: 2, type: "favorite", text: "Đã lưu Loving Hut vào yêu thích", time: "1 ngày trước", icon: Heart },
+  { id: 3, type: "visit", text: "Đã ghé thăm An Lạc Chay", time: "3 ngày trước", icon: MapPin },
+  { id: 4, type: "review", text: "Đã đánh giá Loving Hut 4 sao", time: "1 tuần trước", icon: Star },
+  { id: 5, type: "favorite", text: "Đã lưu Hum Vegetarian vào yêu thích", time: "2 tuần trước", icon: Heart },
 ];
 
 const achievements = [
-  { id: 1, icon: "🌱", title: "Người mới", desc: "Đã tham gia cộng đồng chay", unlocked: true },
-  { id: 2, icon: "⭐", title: "Nhà phê bình", desc: "Đã viết 5 đánh giá", unlocked: true },
-  { id: 3, icon: "♥", title: "Tín đồ chay", desc: "Đã lưu 10 địa điểm yêu thích", unlocked: false },
-  { id: 4, icon: "🏆", title: "Chuyên gia", desc: "Đã thử 20 nhà hàng chay", unlocked: false },
+  { id: 1, icon: Sprout, title: "Người mới", desc: "Đã tham gia cộng đồng chay", unlocked: true },
+  { id: 2, icon: Star, title: "Nhà phê bình", desc: "Đã viết 5 đánh giá", unlocked: true },
+  { id: 3, icon: Heart, title: "Tín đồ chay", desc: "Đã lưu 10 địa điểm yêu thích", unlocked: false },
+  { id: 4, icon: Trophy, title: "Chuyên gia", desc: "Đã thử 20 nhà hàng chay", unlocked: false },
 ];
 
 export default function Profile() {
   const user = useAuthStore((state) => state.user);
   const [activeTab, setActiveTab] = useState<"overview" | "favorites" | "activity" | "settings">("overview");
   const [name, setName] = useState(user?.fullName || "Nguyễn Văn A");
-  const [bio, setBio] = useState(user?.bio || "Yêu thích ẩm thực chay, tìm kiếm những quán ngon tại TPHCM 🌱");
+  const [bio, setBio] = useState(user?.bio || "Yêu thích ẩm thực chay, tìm kiếm những quán ngon tại TPHCM");
   const [phone, setPhone] = useState(user?.phone || "0901 234 567");
   const [apiRestaurants, setApiRestaurants] = useState<RestaurantResponse[]>([]);
   const [restLoading, setRestLoading] = useState(true);
@@ -52,10 +68,10 @@ export default function Profile() {
   const roleLabel = roleLabels[user.role];
 
   const tabItems = [
-    { id: "overview" as const, label: "Tổng quan", icon: "📊" },
-    { id: "favorites" as const, label: "Yêu thích", icon: "♥" },
-    { id: "activity" as const, label: "Hoạt động", icon: "📋" },
-    { id: "settings" as const, label: "Cài đặt", icon: "⚙️" },
+    { id: "overview" as const, label: "Tổng quan", icon: BarChart3 },
+    { id: "favorites" as const, label: "Yêu thích", icon: Heart },
+    { id: "activity" as const, label: "Hoạt động", icon: ClipboardList },
+    { id: "settings" as const, label: "Cài đặt", icon: Settings },
   ];
 
   return (
@@ -70,7 +86,7 @@ export default function Profile() {
                 {getInitials()}
               </div>
               <button className="absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full bg-white text-sm shadow-lg hover:bg-slate-100 transition">
-                📷
+                <Camera className="h-4 w-4" />
               </button>
             </div>
 
@@ -116,20 +132,23 @@ export default function Profile() {
       <section className="mx-auto max-w-7xl px-6">
         <div className="-mt-8 rounded-[2rem] border border-slate-200 bg-white shadow-xl">
           <div className="flex flex-wrap gap-1 border-b border-slate-100 p-2">
-            {tabItems.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-semibold transition-all ${
-                  activeTab === tab.id
-                    ? "bg-emerald-600 text-white shadow-sm"
-                    : "text-slate-600 hover:bg-slate-100"
-                }`}
-              >
-                <span>{tab.icon}</span>
-                {tab.label}
-              </button>
-            ))}
+            {tabItems.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-semibold transition-all ${
+                    activeTab === tab.id
+                      ? "bg-emerald-600 text-white shadow-sm"
+                      : "text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
 
           <div className="p-6">
@@ -140,13 +159,13 @@ export default function Profile() {
                     <h2 className="text-lg font-semibold text-slate-900">Thông tin cá nhân</h2>
                     <div className="space-y-3 rounded-[1.5rem] bg-slate-50 p-5">
                       {[
-                        { label: "Email", value: user.email, icon: "📧" },
-                        { label: "Số điện thoại", value: phone, icon: "📱" },
-                        { label: "Loại tài khoản", value: roleLabel, icon: "👤" },
-                        { label: "Tham gia từ", value: "Tháng 5/2026", icon: "📅" },
+                        { label: "Email", value: user.email, icon: Mail },
+                        { label: "Số điện thoại", value: phone, icon: Phone },
+                        { label: "Loại tài khoản", value: roleLabel, icon: User },
+                        { label: "Tham gia từ", value: "Tháng 5/2026", icon: Calendar },
                       ].map((item) => (
                         <div key={item.label} className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm">
-                          <span className="text-lg">{item.icon}</span>
+                          <item.icon className="h-5 w-5 text-emerald-600" />
                           <div>
                             <p className="text-xs text-slate-500">{item.label}</p>
                             <p className="text-sm font-medium text-slate-900">{item.value}</p>
@@ -168,7 +187,7 @@ export default function Profile() {
                               : "border-slate-200 bg-slate-50 opacity-50"
                           }`}
                         >
-                          <div className="text-3xl">{a.icon}</div>
+                          <a.icon className={`mx-auto h-8 w-8 ${a.unlocked ? "text-emerald-600" : "text-slate-400"}`} />
                           <p className={`mt-2 text-sm font-semibold ${a.unlocked ? "text-emerald-800" : "text-slate-500"}`}>
                             {a.title}
                           </p>
@@ -190,17 +209,20 @@ export default function Profile() {
                     </button>
                   </div>
                   <div className="mt-4 space-y-3">
-                    {activityLog.slice(0, 3).map((item) => (
+                    {activityLog.slice(0, 3).map((item) => {
+                      const Icon = item.icon;
+                      return (
                       <div key={item.id} className="flex items-center gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
                         <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-lg">
-                          {item.icon}
+                          <Icon className="h-5 w-5 text-emerald-600" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-slate-900 truncate">{item.text}</p>
                           <p className="text-xs text-slate-400">{item.time}</p>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -256,7 +278,7 @@ export default function Profile() {
                 )}
                 {!restLoading && apiRestaurants.length === 0 && (
                   <div className="py-20 text-center">
-                    <p className="text-4xl">🍃</p>
+                    <Leaf className="mx-auto h-10 w-10 text-slate-300" />
                     <p className="mt-4 text-slate-500">Chưa có địa điểm yêu thích nào</p>
                     <Link to="/" className="mt-4 inline-block text-sm font-medium text-emerald-600 hover:underline">
                       Khám phá ngay →
@@ -271,17 +293,20 @@ export default function Profile() {
                 <h2 className="text-lg font-semibold text-slate-900">Lịch sử hoạt động</h2>
                 <div className="relative space-y-4 pl-6">
                   <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-slate-200" />
-                  {activityLog.map((item) => (
+                  {activityLog.map((item) => {
+                    const Icon = item.icon;
+                    return (
                     <div key={item.id} className="relative flex items-start gap-4">
                       <div className="absolute -left-4 flex h-8 w-8 items-center justify-center rounded-full bg-white border-2 border-emerald-200 text-base shadow-sm">
-                        {item.icon}
+                        <Icon className="h-4 w-4 text-emerald-600" />
                       </div>
                       <div className="ml-6 flex-1 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
                         <p className="text-sm font-medium text-slate-900">{item.text}</p>
                         <p className="mt-1 text-xs text-slate-400">{item.time}</p>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}

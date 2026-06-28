@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import OwnerLayout from "@/components/OwnerLayout";
+import { Star } from "lucide-react";
 import {
   getRestaurant,
   getRestaurantReviews,
@@ -168,7 +169,9 @@ export default function OwnerReviews() {
               return (
                 <div key={item.star} className="flex items-center gap-4 text-sm">
                   <span className="w-10 font-medium text-slate-700">
-                    {item.star} ★
+                    <span className="inline-flex items-center gap-1">
+                      {item.star} <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                    </span>
                   </span>
                   <div className="h-3 flex-1 rounded-full bg-slate-100">
                     <div
@@ -207,10 +210,17 @@ export default function OwnerReviews() {
                       <p className="font-semibold text-slate-900">
                         Người dùng #{review.userId}
                       </p>
-                      <p className="mt-1 text-amber-500">
-                        {Array.from({ length: 5 }, (_, index) =>
-                          index < review.rating ? "★" : "☆",
-                        ).join("")}
+                      <p className="mt-1 flex gap-0.5 text-amber-500">
+                        {Array.from({ length: 5 }, (_, index) => (
+                          <Star
+                            key={index}
+                            className={`h-4 w-4 ${
+                              index < review.rating
+                                ? "fill-amber-400 text-amber-400"
+                                : "text-slate-300"
+                            }`}
+                          />
+                        ))}
                       </p>
                     </div>
                     <Button
@@ -239,10 +249,17 @@ export default function OwnerReviews() {
             <h2 className="mt-2 text-2xl font-bold text-slate-900">
               {selectedReview.restaurantName}
             </h2>
-            <p className="mt-4 text-amber-500">
-              {Array.from({ length: 5 }, (_, index) =>
-                index < selectedReview.rating ? "★" : "☆",
-              ).join("")}
+            <p className="mt-4 flex gap-0.5 text-amber-500">
+              {Array.from({ length: 5 }, (_, index) => (
+                <Star
+                  key={index}
+                  className={`h-4 w-4 ${
+                    index < selectedReview.rating
+                      ? "fill-amber-400 text-amber-400"
+                      : "text-slate-300"
+                  }`}
+                />
+              ))}
             </p>
             <p className="mt-4 text-sm leading-7 text-slate-600">
               {selectedReview.context}
