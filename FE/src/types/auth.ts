@@ -11,6 +11,7 @@ export interface User {
   phone?: string;
   avatarUrl?: string | null;
   bio?: string;
+  createdAt?: string;
 }
 
 export interface LoginRequest {
@@ -40,6 +41,22 @@ export interface TokenApiData {
   id: number;
   avtUrl: string | null;
   status: AccountStatus;
+  createdAt: string;
+  refreshToken?: string;
+}
+
+export interface UserProfileResponse {
+  id: number;
+  email: string;
+  fullName: string;
+  role: string;
+  status: string;
+  phone: string;
+  avatarUrl: string;
+  bio: string;
+  warningCount: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ApiResponse<T> {
@@ -57,4 +74,5 @@ export interface AuthState {
 
   login: (data: LoginResponse) => void;
   logout: () => void;
+  updateUser: (partial: Partial<User>) => void;
 }

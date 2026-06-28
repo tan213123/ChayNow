@@ -4,9 +4,6 @@ import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import {
   Calendar,
-  CheckCircle,
-  Clock,
-  DollarSign,
   Heart,
   Leaf,
   MapPin,
@@ -20,44 +17,18 @@ import {
   Store,
   Utensils,
   Star,
-  X,
-  type LucideIcon,
 } from "lucide-react";
 import { getRestaurants } from "@/services/restaurant.service";
 import { getEvents } from "@/services/event.service";
 import { getMenus } from "@/services/menu.service";
+import { getComments, createComment, type CommentResponse } from "@/services/comment.service";
 import type { RestaurantResponse, EventResponse, MenuResponse } from "@/types/restaurant";
+import { getPublicPostings, type PostingResponse } from "@/services/posting.service";
 
 const tabs = ["Địa điểm ăn chay", "Món ăn nổi bật", "Sự kiện", "Bài đăng cộng đồng"] as const;
 type Tab = (typeof tabs)[number];
 
 const categoryFilters = ["Tất cả", "Cao Cấp", "Bình Dân", "Từ Thiện"];
-const postCategories = ["Bình Dân", "Cao Cấp", "Gia Đình", "Vỉa Hè", "Chay Nhanh", "Quán Nhỏ"];
-
-type CommunityPost = {
-  id: string;
-  restaurantName: string;
-  location: string;
-  description: string;
-  category: string;
-  priceRange: string;
-  hours: string;
-  tags: string[];
-  postedBy: string;
-  postedAt: string;
-  likes: number;
-  avatar: string;
-};
-
-const defaultForm = {
-  restaurantName: "",
-  location: "",
-  description: "",
-  category: "Bình Dân",
-  priceRange: "",
-  hours: "",
-  tags: "",
-};
 
 export default function Home() {
   const [selectedTab, setSelectedTab] = useState<Tab>(tabs[0]);
@@ -68,21 +39,66 @@ export default function Home() {
   const [apiRestaurants, setApiRestaurants] = useState<RestaurantResponse[]>([]);
   const [apiEvents, setApiEvents] = useState<EventResponse[]>([]);
   const [apiMenus, setApiMenus] = useState<MenuResponse[]>([]);
+  const [apiPostings, setApiPostings] = useState<PostingResponse[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
 
-  // Community posts state
-  const [posts, setPosts] = useState<CommunityPost[]>([]);
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState(defaultForm);
-  const [likedPosts, setLikedPosts] = useState<string[]>([]);
-  const [submitted, setSubmitted] = useState(false);
+  // Comments state
+  const [activeCommentPostId, setActiveCommentPostId] = useState<number | null>(null);
+  const [commentInput, setCommentInput] = useState("");
+  const [apiComments, setApiComments] = useState<CommentResponse[]>([]);
+  const [loadingComments, setLoadingComments] = useState(false);
+  
+  const [likedPosts, setLikedPosts] = useState<number[]>(() => {
+    const saved = localStorage.getItem("communityLikedPosts");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const toggleComments = async (postId: number) => {
+    if (activeCommentPostId === postId) {
+      setActiveCommentPostId(null);
+      return;
+    }
+    setActiveCommentPostId(postId);
+    setLoadingComments(true);
+    try {
+      const res = await getComments(postId);
+      setApiComments(res.content || []);
+    } catch (error) {
+      console.error("Failed to fetch comments", error);
+      setApiComments([]);
+    } finally {
+      setLoadingComments(false);
+    }
+  };
+
+  const handleCreateComment = async (postId: number) => {
+    if (!commentInput.trim()) return;
+    try {
+      const newComment = await createComment(postId, commentInput);
+      setApiComments((prev) => [newComment, ...prev]);
+      setCommentInput("");
+    } catch (error) {
+      console.error("Failed to create comment", error);
+    }
+  };
+
+  const handleLike = (postId: number) => {
+    setLikedPosts((prev) =>
+      prev.includes(postId) ? prev.filter((id) => id !== postId) : [...prev, postId]
+    );
+  };
 
   useEffect(() => {
-    Promise.allSettled([getRestaurants(), getEvents(), getMenus()]).then(
-      ([restResult, eventsResult, menusResult]) => {
+    localStorage.setItem("communityLikedPosts", JSON.stringify(likedPosts));
+  }, [likedPosts]);
+
+  useEffect(() => {
+    Promise.allSettled([getRestaurants(), getEvents(), getMenus(), getPublicPostings()]).then(
+      ([restResult, eventsResult, menusResult, postingsResult]) => {
         if (restResult.status === "fulfilled") setApiRestaurants(restResult.value);
         if (eventsResult.status === "fulfilled") setApiEvents(eventsResult.value);
         if (menusResult.status === "fulfilled") setApiMenus(menusResult.value);
+        if (postingsResult.status === "fulfilled") setApiPostings(postingsResult.value.content || []);
         setDataLoading(false);
       },
     );
@@ -98,48 +114,6 @@ export default function Home() {
         r.typeRestaurantName.toLowerCase().includes(selectedCategory.toLowerCase()));
     return matchSearch && matchCategory;
   });
-
-  const handleFormChange = (key: keyof typeof defaultForm, value: string) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const handleSubmitPost = () => {
-    if (!form.restaurantName.trim() || !form.location.trim() || !form.description.trim()) return;
-    const newPost: CommunityPost = {
-      id: `post-${Date.now()}`,
-      restaurantName: form.restaurantName,
-      location: form.location,
-      description: form.description,
-      category: form.category,
-      priceRange: form.priceRange || "Chưa cập nhật",
-      hours: form.hours || "Chưa cập nhật",
-      tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
-      postedBy: "Bạn",
-      postedAt: "Vừa xong",
-      likes: 0,
-      avatar: "BN",
-    };
-    setPosts((prev) => [newPost, ...prev]);
-    setForm(defaultForm);
-    setShowForm(false);
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 4000);
-  };
-
-  const handleLike = (postId: string) => {
-    setLikedPosts((prev) =>
-      prev.includes(postId) ? prev.filter((id) => id !== postId) : [...prev, postId]
-    );
-    setPosts((prev) =>
-      prev.map((p) =>
-        p.id === postId
-          ? { ...p, likes: likedPosts.includes(postId) ? p.likes - 1 : p.likes + 1 }
-          : p
-      )
-    );
-  };
-
-
 
   const renderCards = () => {
     // Loading skeleton
@@ -309,250 +283,160 @@ export default function Home() {
     }
 
     // ── COMMUNITY POSTS TAB ──────────────────────────────────────────
-    return (
-      <div className="space-y-6">
-        {/* Success toast */}
-        {submitted && (
-          <div className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 shadow-sm animate-pulse">
-            <CheckCircle className="h-5 w-5 shrink-0 text-emerald-600" />
-            <div>
-              <p className="text-sm font-semibold text-emerald-800">Đăng bài thành công!</p>
-              <p className="text-xs text-emerald-600">Cảm ơn bạn đã đóng góp cho cộng đồng ChayNow!</p>
-            </div>
+    if (selectedTab === "Bài đăng cộng đồng") {
+      return (
+        <div className="space-y-6">
+          <div>
+            <p className="text-sm text-slate-500">
+              Khám phá những bài đăng và đánh giá mới nhất từ cộng đồng về các quán chay.
+            </p>
           </div>
-        )}
 
-        {/* Header row */}
-        <div>
-          <p className="text-sm text-slate-500">
-            Chia sẻ những quán chay bạn biết nhưng chưa có trên ChayNow. Giúp cộng đồng khám phá thêm!
-          </p>
-        </div>
-
-        {/* Submit Form */}
-        {showForm ? (
-          <div className="rounded-[2rem] border-2 border-violet-200 bg-violet-50/50 p-6 shadow-sm space-y-5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-violet-600 text-white">
-                  <Pencil className="h-4 w-4" />
-                </div>
-                <p className="font-bold text-slate-900">Đăng quán chay mới</p>
-              </div>
-              <button onClick={() => { setShowForm(false); setForm(defaultForm); }} className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-1.5 block text-sm font-semibold text-slate-700">Tên quán <span className="text-red-500">*</span></label>
-                <input
-                  value={form.restaurantName}
-                  onChange={(e) => handleFormChange("restaurantName", e.target.value)}
-                  placeholder="VD: Quán Chay Bà Ba"
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition"
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-semibold text-slate-700">Địa chỉ <span className="text-red-500">*</span></label>
-                <input
-                  value={form.location}
-                  onChange={(e) => handleFormChange("location", e.target.value)}
-                  placeholder="VD: 12 Nguyễn Huệ, Quận 1"
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition"
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-semibold text-slate-700">Loại hình</label>
-                <select
-                  value={form.category}
-                  onChange={(e) => handleFormChange("category", e.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition"
-                >
-                  {postCategories.map((c) => <option key={c}>{c}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-semibold text-slate-700">Khoảng giá</label>
-                <input
-                  value={form.priceRange}
-                  onChange={(e) => handleFormChange("priceRange", e.target.value)}
-                  placeholder="VD: 30.000đ - 80.000đ"
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition"
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-semibold text-slate-700">Giờ mở cửa</label>
-                <input
-                  value={form.hours}
-                  onChange={(e) => handleFormChange("hours", e.target.value)}
-                  placeholder="VD: 07:00 - 21:00"
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition"
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-semibold text-slate-700">Tags (phân cách bằng dấu phẩy)</label>
-                <input
-                  value={form.tags}
-                  onChange={(e) => handleFormChange("tags", e.target.value)}
-                  placeholder="VD: Cơm chay, Bún, Healthy"
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-sm font-semibold text-slate-700">Mô tả trải nghiệm <span className="text-red-500">*</span></label>
-              <textarea
-                rows={4}
-                value={form.description}
-                onChange={(e) => handleFormChange("description", e.target.value)}
-                placeholder="Chia sẻ về quán: món ngon, không gian, giá cả, cảm nhận của bạn..."
-                className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition"
-              />
-              <p className="mt-1 text-right text-xs text-slate-400">{form.description.length}/500</p>
-            </div>
-
-            <div className="flex items-center justify-between border-t border-violet-100 pt-4">
-              <p className="text-xs text-slate-400">Bài đăng sẽ hiển thị ngay và chờ cộng đồng xác nhận.</p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => { setShowForm(false); setForm(defaultForm); }}
-                  className="rounded-2xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition"
-                >
-                  Huỷ
-                </button>
-                <Button
-                  onClick={handleSubmitPost}
-                  disabled={!form.restaurantName.trim() || !form.location.trim() || !form.description.trim()}
-                  className="rounded-2xl bg-violet-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-50 transition"
-                >
-                  <Send className="mr-2 h-4 w-4" /> Đăng bài
-                </Button>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <button
-            onClick={() => setShowForm(true)}
-            className="group flex w-full items-center gap-4 rounded-[2rem] border-2 border-dashed border-violet-300 bg-violet-50/50 px-6 py-5 text-left transition hover:border-violet-500 hover:bg-violet-50"
-          >
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-violet-600 text-white text-xl shadow-md group-hover:scale-110 transition-transform">
-              <Pencil className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="font-bold text-slate-900">Bạn biết quán chay nào chưa có trên ChayNow?</p>
-              <p className="mt-0.5 text-sm text-slate-500">Chia sẻ để giúp cộng đồng khám phá thêm → Nhấn để đăng bài</p>
-            </div>
-            <span className="ml-auto shrink-0 rounded-full bg-violet-600 px-4 py-2 text-sm font-bold text-white shadow-sm group-hover:bg-violet-700 transition">
-              + Đăng ngay
-            </span>
-          </button>
-        )}
-
-        {/* Posts List */}
-        {posts.length === 0 ? (
-          <div className="py-16 text-center">
+          {/* Posts List */}
+          {apiPostings.length === 0 ? (
+            <div className="py-16 text-center">
               <Leaf className="mx-auto h-10 w-10 text-slate-300" />
-            <p className="mt-3 text-slate-500">Chưa có bài đăng nào</p>
-          </div>
-        ) : (
-          <div className="grid gap-5 lg:grid-cols-2">
-            {posts.map((post) => (
-              <article
-                key={post.id}
-                className="group rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-              >
-                {/* Post header */}
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-100 text-sm font-bold text-violet-700">
-                      {post.avatar}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900">{post.postedBy}</p>
-                      <p className="text-xs text-slate-400">{post.postedAt}</p>
+              <p className="mt-3 text-slate-500">Chưa có bài đăng nào</p>
+            </div>
+          ) : (
+            <div className="grid gap-5 lg:grid-cols-2">
+              {apiPostings.map((post) => (
+                <article
+                  key={post.id}
+                  className="group rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                >
+                  {/* Post header */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-100 text-sm font-bold text-violet-700 overflow-hidden">
+                        {post.authorAvatarUrl ? <img src={post.authorAvatarUrl} className="h-full w-full object-cover" /> : (post.authorName ? post.authorName.charAt(0).toUpperCase() : "U")}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">{post.authorName || "Người dùng ẩn danh"}</p>
+                        <p className="text-xs text-slate-400">{new Intl.DateTimeFormat('vi-VN').format(new Date(post.createdAt))}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Restaurant info */}
-                <div className="mt-4 rounded-2xl bg-slate-50 p-4 space-y-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-bold text-slate-900 text-base">{post.restaurantName}</h3>
-                    <span className="shrink-0 rounded-full bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700">
-                      {post.category}
-                    </span>
-                  </div>
-                  <p className="flex items-center gap-1.5 text-sm text-slate-500">
-                    <MapPin className="h-4 w-4 shrink-0" /> {post.location}
+                  {/* Restaurant info */}
+                  {post.restaurantName && (
+                    <div className="mt-4 rounded-2xl bg-slate-50 p-4 space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="font-bold text-slate-900 text-base">{post.restaurantName}</h3>
+                        <span className="shrink-0 rounded-full bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700">
+                          {post.category || "Bài Đăng"}
+                        </span>
+                      </div>
+                      {post.restaurantAddress && (
+                        <p className="flex items-center gap-1.5 text-sm text-slate-500">
+                          <MapPin className="h-4 w-4 shrink-0" /> {post.restaurantAddress}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Title & Description */}
+                  <h4 className="mt-3 font-bold text-slate-900">{post.title}</h4>
+                  <p className="mt-1 text-sm leading-relaxed text-slate-600 line-clamp-3">
+                    {post.content}
                   </p>
-                  <div className="flex flex-wrap gap-3 text-xs text-slate-500">
-                    {post.hours !== "Chưa cập nhật" && (
-                      <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {post.hours}</span>
-                    )}
-                    {post.priceRange !== "Chưa cập nhật" && (
-                      <span className="flex items-center gap-1"><DollarSign className="h-3.5 w-3.5" /> {post.priceRange}</span>
-                    )}
-                  </div>
-                </div>
 
-                {/* Description */}
-                <p className="mt-3 text-sm leading-relaxed text-slate-600 line-clamp-3">
-                  "{post.description}"
-                </p>
+                  {/* Image (if exists) */}
+                  {post.thumbnailUrl && (
+                    <div className="mt-3 h-48 w-full overflow-hidden rounded-xl">
+                      <img src={post.thumbnailUrl} alt={post.title} className="h-full w-full object-cover" />
+                    </div>
+                  )}
 
-                {/* Tags */}
-                {post.tags.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {post.tags.map((tag) => (
-                      <span key={tag} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                {/* Footer actions */}
-                <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
-                  <button
-                    onClick={() => handleLike(post.id)}
-                    className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold transition ${
-                      likedPosts.includes(post.id)
-                        ? "bg-red-50 text-red-500"
-                        : "text-slate-500 hover:bg-slate-100"
-                    }`}
-                  >
-                    <Heart className={`h-4 w-4 ${likedPosts.includes(post.id) ? "fill-current" : ""}`} />
-                    <span>{post.likes}</span>
-                    <span className="text-xs">Hữu ích</span>
-                  </button>
-                  <div className="flex gap-2">
-                    <button className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
-                      <MessageSquare className="h-3.5 w-3.5" /> Bình luận
+                  {/* Footer actions */}
+                  <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+                    <button
+                      onClick={() => handleLike(post.id)}
+                      className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold transition ${
+                        likedPosts.includes(post.id)
+                          ? "bg-red-50 text-red-500"
+                          : "text-slate-500 hover:bg-slate-100"
+                      }`}
+                    >
+                      <Heart className={`h-4 w-4 ${likedPosts.includes(post.id) ? "fill-current" : ""}`} />
+                      <span>{post.likeCount + (likedPosts.includes(post.id) ? 1 : 0)}</span>
+                      <span className="text-xs">Hữu ích</span>
                     </button>
-                    <button className="flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
-                      <Share2 className="h-3.5 w-3.5" /> Chia sẻ
-                    </button>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => toggleComments(post.id)}
+                        className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition"
+                      >
+                        <MessageSquare className="h-3.5 w-3.5" /> Bình luận ({post.commentCount || 0})
+                      </button>
+                      <button className="flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
+                        <Share2 className="h-3.5 w-3.5" /> Chia sẻ
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
-      </div>
-    );
+
+                  {/* Comment Section */}
+                  {activeCommentPostId === post.id && (
+                    <div className="mt-4 border-t border-slate-100 pt-4">
+                      <div className="space-y-4 mb-4">
+                        {loadingComments ? (
+                          <p className="text-sm text-slate-400 text-center py-2">Đang tải bình luận...</p>
+                        ) : apiComments.length === 0 ? (
+                          <p className="text-sm text-slate-400 text-center py-2">Chưa có bình luận nào. Hãy là người đầu tiên!</p>
+                        ) : (
+                          apiComments.map(comment => (
+                            <div key={comment.id} className="flex gap-3">
+                              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-600 overflow-hidden">
+                                {comment.authorAvatarUrl ? <img src={comment.authorAvatarUrl} className="h-full w-full object-cover" /> : (comment.authorName ? comment.authorName.charAt(0).toUpperCase() : "U")}
+                              </div>
+                              <div className="flex-1 rounded-2xl bg-slate-50 px-4 py-2 text-sm">
+                                <p className="font-semibold text-slate-900">{comment.authorName || "Người dùng ẩn danh"}</p>
+                                <p className="text-slate-600">{comment.content}</p>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-100 text-xs font-bold text-violet-700">
+                          BN
+                        </div>
+                        <input
+                          value={commentInput}
+                          onChange={(e) => setCommentInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleCreateComment(post.id);
+                          }}
+                          placeholder="Viết bình luận..."
+                          className="flex-1 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm outline-none focus:border-violet-400 focus:bg-white transition"
+                        />
+                        <button
+                          onClick={() => handleCreateComment(post.id)}
+                          disabled={!commentInput.trim()}
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-600 text-white disabled:opacity-50 transition"
+                        >
+                          <Send className="h-4 w-4 -ml-0.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
   };
 
   const counts = {
     "Địa điểm ăn chay": filteredRestaurants.length,
     "Món ăn nổi bật": apiMenus.length,
     "Sự kiện": apiEvents.filter((e) => e.status !== "HIDDEN").length,
-    "Bài đăng cộng đồng": posts.length,
+    "Bài đăng cộng đồng": apiPostings.length,
   };
 
-  const tabIcons: Record<Tab, LucideIcon> = {
+  const tabIcons: Record<Tab, React.FC<any>> = {
     "Địa điểm ăn chay": Store,
     "Món ăn nổi bật": Utensils,
     "Sự kiện": PartyPopper,
@@ -599,18 +483,7 @@ export default function Home() {
                 <span>Tìm kiếm</span>
               </Button>
             </div>
-            <div className="flex flex-wrap gap-6 pt-2">
-              {[
-                { label: "Nhà hàng", value: "100+" },
-                { label: "Món ăn", value: "500+" },
-                { label: "Đánh giá", value: "2.000+" },
-              ].map((s) => (
-                <div key={s.label} className="text-white">
-                  <span className="text-2xl font-extrabold">{s.value}</span>
-                  <span className="ml-1.5 text-sm text-white/70">{s.label}</span>
-                </div>
-              ))}
-            </div>
+
           </div>
         </div>
       </section>
@@ -658,7 +531,7 @@ export default function Home() {
                     {tab}
                     {tab === "Bài đăng cộng đồng" && (
                       <span className={`rounded-full px-1.5 py-0.5 text-xs font-bold ${selectedTab === tab ? "bg-white/25 text-white" : "bg-violet-100 text-violet-700"}`}>
-                        {posts.length}
+                        {apiPostings.length}
                       </span>
                     )}
                   </button>

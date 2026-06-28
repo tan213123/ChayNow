@@ -4,7 +4,7 @@ import {
   ShieldAlert,
   CheckCircle,
 } from "lucide-react";
-import type { Report } from "@/data/reports";
+import type { Report } from "@/types/report";
 
 interface Props {
   reports: Report[];

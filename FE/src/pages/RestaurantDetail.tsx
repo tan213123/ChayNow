@@ -23,7 +23,6 @@ import {
   Tag,
   Utensils,
   X,
-  type LucideIcon,
 } from "lucide-react";
 import {
   createRestaurantReview,
@@ -46,7 +45,7 @@ import type {
 const tabLabels = ["Thông tin", "Sự kiện", "Thực đơn", "Đánh giá"] as const;
 type Tab = (typeof tabLabels)[number];
 
-const tabIcons: Record<Tab, LucideIcon> = {
+const tabIcons: Record<Tab, React.FC<any>> = {
   "Thông tin": Info,
   "Sự kiện": PartyPopper,
   "Thực đơn": Utensils,

@@ -16,6 +16,7 @@ const toLoginResponse = (data: TokenApiData): LoginResponse => ({
     role: data.role,
     status: data.status,
     avatarUrl: data.avtUrl,
+    createdAt: data.createdAt,
   },
 });
 
