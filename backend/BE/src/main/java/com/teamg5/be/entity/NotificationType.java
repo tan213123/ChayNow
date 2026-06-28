@@ -1,0 +1,13 @@
+package com.teamg5.be.entity;
+
+public enum NotificationType {
+    NEW_RESTAURANT,
+    NEW_DISH,
+    ADMIN_USER_NOTICE,
+    NEW_REVIEW_COMMENT,
+    NEW_RATING_STAR,
+    RESTAURANT_STATUS_UPDATE,
+    ADMIN_OWNER_NOTICE,
+    USER_REPORT,
+    RESTAURANT_APPROVAL_REQUEST
+}

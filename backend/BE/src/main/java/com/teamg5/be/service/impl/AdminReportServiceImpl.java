@@ -9,6 +9,7 @@ import com.teamg5.be.repository.*;
 import com.teamg5.be.service.AdminReportService;
 import com.teamg5.be.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -17,6 +18,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.teamg5.be.entity.NotificationType;
+import com.teamg5.be.event.SystemNotificationEvent;
 
 import java.util.List;
 
@@ -31,6 +34,7 @@ public class AdminReportServiceImpl implements AdminReportService {
     private final CommentService commentService;
     private final PostingRepository postingRepository;
     private final RestaurantRepository restaurantRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional(readOnly = true)
@@ -303,6 +307,23 @@ public class AdminReportServiceImpl implements AdminReportService {
                     message += " Creator has reached 3 warnings and is now SUSPENDED.";
                 }
                 userRepository.save(contentCreator);
+
+                // Notify Content Creator (User/Owner) of community violation and warning
+                try {
+                    String warningMsg = "Nội dung của bạn vi phạm tiêu chuẩn cộng đồng và đã bị gỡ bỏ. Bạn nhận được 1 cảnh cáo.";
+                    if (contentCreator.getStatus() == AccountStatus.SUSPENDED) {
+                        warningMsg += " Tài khoản của bạn đã bị khóa do đạt giới hạn cảnh cáo.";
+                    }
+                    eventPublisher.publishEvent(new SystemNotificationEvent(
+                            contentCreator,
+                            "Cảnh cáo vi phạm cộng đồng",
+                            warningMsg,
+                            NotificationType.ADMIN_USER_NOTICE,
+                            report.getId().toString()
+                    ));
+                } catch (Exception e) {
+                    // Log warning but don't fail transaction
+                }
             }
         } else if ("REJECT".equals(action)) {
             newStatus = ReportStatus.REJECTED;
@@ -317,13 +338,31 @@ public class AdminReportServiceImpl implements AdminReportService {
         if (request.getDetails() != null) {
             report.setDetails(request.getDetails());
         }
-        reportRepository.save(report);
+        Report savedReport = reportRepository.save(report);
+
+        // Notify Reporter of outcome
+        try {
+            if (savedReport.getReporter() != null) {
+                String outcomeMsg = newStatus == ReportStatus.RESOLVED 
+                        ? "Báo cáo của bạn về đối tượng vi phạm đã được duyệt và xử lý." 
+                        : "Báo cáo của bạn đã bị từ chối do không đủ bằng chứng vi phạm.";
+                eventPublisher.publishEvent(new SystemNotificationEvent(
+                        savedReport.getReporter(),
+                        "Kết quả xử lý báo cáo",
+                        outcomeMsg,
+                        NotificationType.ADMIN_USER_NOTICE,
+                        savedReport.getId().toString()
+                ));
+            }
+        } catch (Exception e) {
+            // Log warning but don't fail transaction
+        }
 
         return ReportActionResponse.builder()
-                .reportId(report.getId())
+                .reportId(savedReport.getId())
                 .status(newStatus.name())
                 .message(message)
-                .resolvedAt(report.getResolvedAt())
+                .resolvedAt(savedReport.getResolvedAt())
                 .build();
     }
 }
