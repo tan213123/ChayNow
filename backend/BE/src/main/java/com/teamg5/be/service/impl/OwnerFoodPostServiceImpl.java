@@ -42,21 +42,21 @@ public class OwnerFoodPostServiceImpl implements OwnerFoodPostService {
 
         // 1. Verify role is OWNER
         if (currentUser.getRole() != Role.OWNER) {
-            throw new AppException(ErrorCode.FORBIDDEN, "Only users with role OWNER can post food items");
+            throw new AppException(ErrorCode.FORBIDDEN, "Chỉ người dùng có vai trò CHỦ QUÁN mới có thể đăng bài chia sẻ món ăn");
         }
 
         // 2. Fetch and check restaurant exists
         Restaurant restaurant = restaurantRepository.findById(request.getRestaurantId())
-                .orElseThrow(() -> new AppException(ErrorCode.RESTAURANT_NOT_FOUND, "Restaurant not found with ID: " + request.getRestaurantId()));
+                .orElseThrow(() -> new AppException(ErrorCode.RESTAURANT_NOT_FOUND, "Không tìm thấy nhà hàng với mã ID: " + request.getRestaurantId()));
 
         // 3. Verify ownership
         if (restaurant.getOwner() == null || !restaurant.getOwner().getId().equals(currentUser.getId())) {
-            throw new AppException(ErrorCode.FORBIDDEN, "You do not own this restaurant");
+            throw new AppException(ErrorCode.FORBIDDEN, "Bạn không sở hữu nhà hàng này");
         }
 
         // 4. Verify restaurant is active and not rejected
         if (!Boolean.TRUE.equals(restaurant.getActive()) || restaurant.getStatus() == RestaurantStatus.REJECTED) {
-            throw new AppException(ErrorCode.INVALID_INPUT, "Restaurant is inactive or rejected");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Nhà hàng không hoạt động hoặc đã bị từ chối");
         }
 
         // 5. Validate category is valid FoodCategory
@@ -64,7 +64,7 @@ public class OwnerFoodPostServiceImpl implements OwnerFoodPostService {
         try {
             FoodCategory.valueOf(categoryStr);
         } catch (IllegalArgumentException e) {
-            throw new AppException(ErrorCode.INVALID_INPUT, "Invalid food category: " + request.getCategory());
+            throw new AppException(ErrorCode.INVALID_INPUT, "Danh mục món ăn không hợp lệ: " + request.getCategory());
         }
 
         // 6. Create posting

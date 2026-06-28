@@ -37,24 +37,24 @@ public class OwnerEventServiceImpl implements OwnerEventService {
 
         // 1. Verify role is OWNER
         if (currentUser.getRole() != Role.OWNER) {
-            throw new AppException(ErrorCode.FORBIDDEN, "Only users with role OWNER can create events");
+            throw new AppException(ErrorCode.FORBIDDEN, "Chỉ người dùng có vai trò CHỦ QUÁN mới có thể tạo sự kiện");
         }
 
         if (request.getRestaurantId() == null) {
-            throw new AppException(ErrorCode.INVALID_INPUT, "Restaurant ID is required");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Mã nhà hàng không được để trống");
         }
         // 2. Fetch and check restaurant exists
         Restaurant restaurant = restaurantRepository.findById(request.getRestaurantId())
-                .orElseThrow(() -> new AppException(ErrorCode.RESTAURANT_NOT_FOUND, "Restaurant not found with ID: " + request.getRestaurantId()));
+                .orElseThrow(() -> new AppException(ErrorCode.RESTAURANT_NOT_FOUND, "Không tìm thấy nhà hàng với mã ID: " + request.getRestaurantId()));
 
         // 3. Verify ownership
         if (restaurant.getOwner() == null || !restaurant.getOwner().getId().equals(currentUser.getId())) {
-            throw new AppException(ErrorCode.FORBIDDEN, "You do not own this restaurant");
+            throw new AppException(ErrorCode.FORBIDDEN, "Bạn không sở hữu nhà hàng này");
         }
 
         // 4. Verify restaurant is active
         if (!Boolean.TRUE.equals(restaurant.getActive()) || restaurant.getStatus() == RestaurantStatus.REJECTED) {
-            throw new AppException(ErrorCode.INVALID_INPUT, "Restaurant is inactive or rejected");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Nhà hàng không hoạt động hoặc đã bị từ chối");
         }
 
         // 5. Validate type
@@ -63,23 +63,23 @@ public class OwnerEventServiceImpl implements OwnerEventService {
             typeStr = request.getEventType() != null ? request.getEventType().name() : null;
         }
         if (typeStr == null || typeStr.isBlank()) {
-            throw new AppException(ErrorCode.INVALID_INPUT, "Event type is required (DISCOUNT or CHARITY)");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Yêu cầu loại sự kiện (DISCOUNT hoặc CHARITY)");
         }
         typeStr = typeStr.trim().toUpperCase();
         EventType eventType;
         try {
             eventType = EventType.valueOf(typeStr);
         } catch (IllegalArgumentException e) {
-            throw new AppException(ErrorCode.INVALID_INPUT, "Invalid event type. Must be DISCOUNT or CHARITY");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Loại sự kiện không hợp lệ. Phải là DISCOUNT hoặc CHARITY");
         }
 
         // 6. Validate dates
         LocalDate today = LocalDate.now();
         if (request.getStartDate().isBefore(today)) {
-            throw new AppException(ErrorCode.INVALID_INPUT, "Start date cannot be in the past");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Ngày bắt đầu không được ở quá khứ");
         }
         if (request.getEndDate().isBefore(request.getStartDate())) {
-            throw new AppException(ErrorCode.INVALID_INPUT, "End date must be greater than or equal to start date");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Ngày kết thúc phải sau hoặc bằng ngày bắt đầu");
         }
 
         // 7. Validate discountPercent & periods
@@ -89,7 +89,7 @@ public class OwnerEventServiceImpl implements OwnerEventService {
         if (eventType == EventType.DISCOUNT) {
             discountPercent = request.getDiscountPercent();
             if (discountPercent == null || discountPercent < 1 || discountPercent > 100) {
-                throw new AppException(ErrorCode.INVALID_INPUT, "Discount percent must be between 1 and 100 for DISCOUNT events");
+                throw new AppException(ErrorCode.INVALID_INPUT, "Phần trăm giảm giá phải từ 1 đến 100 đối với sự kiện GIẢM GIÁ");
             }
         } else {
             period = request.getPeriod() != null ? request.getPeriod().trim() : null;

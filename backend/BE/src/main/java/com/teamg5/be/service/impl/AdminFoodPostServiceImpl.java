@@ -96,7 +96,7 @@ public class AdminFoodPostServiceImpl implements AdminFoodPostService {
                 .orElseThrow(() -> new AppException(ErrorCode.POSTING_NOT_FOUND));
 
         if (!"PENDING".equalsIgnoreCase(posting.getStatus()) && !"REJECTED".equalsIgnoreCase(posting.getStatus())) {
-            throw new AppException(ErrorCode.INVALID_INPUT, "Only pending or rejected posts can be approved");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Chỉ có bài đăng đang chờ hoặc bị từ chối mới có thể được duyệt");
         }
 
         User currentUser = getCurrentUser();
@@ -126,7 +126,7 @@ public class AdminFoodPostServiceImpl implements AdminFoodPostService {
                 .orElseThrow(() -> new AppException(ErrorCode.POSTING_NOT_FOUND));
 
         if (!"PENDING".equalsIgnoreCase(posting.getStatus()) && !"APPROVED".equalsIgnoreCase(posting.getStatus())) {
-            throw new AppException(ErrorCode.INVALID_INPUT, "Only pending or approved posts can be rejected");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Chỉ có bài đăng đang chờ hoặc đã duyệt mới có thể bị từ chối");
         }
 
         posting.setStatus("REJECTED");

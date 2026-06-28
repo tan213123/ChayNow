@@ -17,21 +17,21 @@ import lombok.Setter;
 @AllArgsConstructor
 public class CreateFoodPostRequest {
 
-    @NotNull(message = "Restaurant ID is required")
+    @NotNull(message = "Mã nhà hàng không được để trống")
     private Long restaurantId;
 
-    @NotBlank(message = "Name is required")
-    @Size(min = 2, max = 100, message = "Name must be between 2 and 100 characters")
+    @NotBlank(message = "Tên không được để trống")
+    @Size(min = 2, max = 100, message = "Tên phải từ 2 đến 100 ký tự")
     private String name;
 
-    @NotBlank(message = "Category is required")
+    @NotBlank(message = "Danh mục không được để trống")
     private String category;
 
-    @NotBlank(message = "Description is required")
-    @Size(min = 10, max = 1000, message = "Description must be between 10 and 1000 characters")
+    @NotBlank(message = "Mô tả không được để trống")
+    @Size(min = 10, max = 1000, message = "Mô tả phải từ 10 đến 1000 ký tự")
     private String description;
 
-    @NotBlank(message = "Image URL is required")
-    @Pattern(regexp = "^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]$", message = "Image URL must be a valid URL")
+    @NotBlank(message = "Đường dẫn ảnh không được để trống")
+    @Pattern(regexp = "^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]$", message = "Đường dẫn ảnh phải là một URL hợp lệ")
     private String imageUrl;
 }

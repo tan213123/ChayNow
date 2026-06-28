@@ -34,6 +34,11 @@ export default function Register() {
       toast.error("Vui lòng nhập đầy đủ họ tên, email và mật khẩu.");
       return;
     }
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email.trim())) {
+      toast.error("Định dạng email không hợp lệ.");
+      return;
+    }
     if (password.length < 8 || password.length > 12) {
       toast.error("Mật khẩu phải có từ 8 đến 12 ký tự.");
       return;

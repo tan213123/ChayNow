@@ -23,22 +23,22 @@ public class CreateEventRequest {
     @Size(max = 50, message = "Type must not exceed 50 characters")
     private String type;
 
-    @NotBlank(message = "Title is required")
-    @Size(min = 5, max = 255, message = "Title must be between 5 and 255 characters")
+    @NotBlank(message = "Tiêu đề không được để trống")
+    @Size(min = 5, max = 255, message = "Tiêu đề phải từ 5 đến 255 ký tự")
     private String title;
 
     @Size(max = 5000, message = "Description must not exceed 5000 characters")
     private String description;
 
-    @Size(max = 500, message = "Image URL cannot exceed 500 characters")
+    @Size(max = 500, message = "Đường dẫn ảnh không được vượt quá 500 ký tự")
     private String imageUrl;
 
     private EventType eventType;
 
-    @NotNull(message = "Start date cannot be null")
+    @NotNull(message = "Ngày bắt đầu không được để trống")
     private LocalDate startDate;
 
-    @NotNull(message = "End date cannot be null")
+    @NotNull(message = "Ngày kết thúc không được để trống")
     private LocalDate endDate;
 
     private Integer discountPercent;

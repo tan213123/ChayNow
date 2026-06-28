@@ -9,8 +9,7 @@ import lombok.Setter;
 @Setter
 public class CreateTypeRestaurantRequest {
     
-    @NotBlank(message = "Name is required")
-    @Size(max = 100, message = "Name must not exceed 100 characters")
+    @NotBlank(message = "Tên không được để trống")
     private String name;
 
     @Size(max = 500, message = "Description must not exceed 500 characters")

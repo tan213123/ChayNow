@@ -14,15 +14,15 @@ import lombok.Setter;
 @AllArgsConstructor
 public class UpdatePostingRequest {
 
-    @Size(max = 255, message = "Title must be at most 255 characters")
+    @Size(max = 255, message = "Tiêu đề không được vượt quá 255 ký tự")
     private String title;
 
-    @Size(max = 1000, message = "Content must be at most 1000 characters")
+    @Size(max = 1000, message = "Nội dung không được vượt quá 1000 ký tự")
     private String content;
 
-    @Size(max = 100, message = "Category must be at most 100 characters")
+    @Size(max = 100, message = "Danh mục không được vượt quá 100 ký tự")
     private String category;
 
-    @Size(max = 500, message = "Image URL must be at most 500 characters")
+    @Size(max = 500, message = "Đường dẫn ảnh không được vượt quá 500 ký tự")
     private String imageUrl;
 }

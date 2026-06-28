@@ -83,7 +83,7 @@ public class EventServiceImpl implements EventService {
     @Override
     public EventResponse updateEvent(Long eventId, UpdateEventRequest request) {
         Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Event not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Không tìm thấy sự kiện"));
 
         verifyOwnerOrAdmin(event.getRestaurant());
 
@@ -131,7 +131,7 @@ public class EventServiceImpl implements EventService {
     @Override
     public void deleteEvent(Long eventId) {
         Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Event not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Không tìm thấy sự kiện"));
 
         verifyOwnerOrAdmin(event.getRestaurant());
 
@@ -142,7 +142,7 @@ public class EventServiceImpl implements EventService {
     @Transactional(readOnly = true)
     public EventResponse getEventById(Long eventId) {
         Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Event not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Không tìm thấy sự kiện"));
         return EventResponse.from(event);
     }
 

@@ -68,7 +68,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
-            throw new AppException(ErrorCode.INVALID_CREDENTIALS, "Current password does not match");
+            throw new AppException(ErrorCode.INVALID_CREDENTIALS, "Mật khẩu hiện tại không khớp");
         }
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
