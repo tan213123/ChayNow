@@ -31,6 +31,8 @@ export interface RestaurantResponse {
   ownerId: number | null;
   ownerName: string | null;
   mediaList: MediaResponse[];
+  status?: string;
+  rejectReason?: string;
 }
 
 export interface CreateRestaurantRequest {

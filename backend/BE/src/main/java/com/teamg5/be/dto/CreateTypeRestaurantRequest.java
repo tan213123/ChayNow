@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 public class CreateTypeRestaurantRequest {
     
-    @NotBlank(message = "Name is required")
+    @NotBlank(message = "Tên không được để trống")
     private String name;
 
    private String description;

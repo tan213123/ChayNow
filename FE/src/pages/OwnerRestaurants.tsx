@@ -172,9 +172,16 @@ export default function OwnerRestaurants() {
                     <div className="p-6">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <h2 className="text-xl font-semibold text-slate-900">
-                            {restaurant.name}
-                          </h2>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h2 className="text-xl font-semibold text-slate-900">
+                              {restaurant.name}
+                            </h2>
+                            {!restaurant.active && (
+                              <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-700 uppercase">
+                                Đã ẩn / Khóa
+                              </span>
+                            )}
+                          </div>
                           <p className="mt-1 text-sm text-slate-500">
                             {restaurant.placeName ?? restaurant.address}
                           </p>
@@ -183,6 +190,12 @@ export default function OwnerRestaurants() {
                           {restaurant.typeRestaurantName}
                         </span>
                       </div>
+                      {!restaurant.active && restaurant.rejectReason && (
+                        <div className="mt-4 rounded-2xl bg-rose-50/70 border border-rose-100 p-3 text-xs text-rose-800">
+                          <p className="font-bold flex items-center gap-1">⚠️ Lý do khóa/từ chối:</p>
+                          <p className="mt-1 text-slate-700 leading-relaxed">{restaurant.rejectReason}</p>
+                        </div>
+                      )}
                       <div className="mt-5 flex justify-between text-sm text-slate-600">
                         <span>{stats?.average.toFixed(1) ?? "0.0"} ★</span>
                         <span>{stats?.count ?? 0} đánh giá</span>

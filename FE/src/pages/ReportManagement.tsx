@@ -1,6 +1,8 @@
 
 import { AlertTriangle, CheckCircle2, Clock3, XCircle } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
+import { getApiErrorMessage } from "@/services/api.service";
 import {
   getAdminReports,
   getAdminReportStats,
@@ -62,11 +64,11 @@ export default function ReportManagement() {
       await resolveAdminReport(id, {
         action,
       });
-
+      toast.success("Xử lý báo cáo thành công.");
       loadReports();
     } catch (error) {
       console.error(error);
-      alert("Xử lý báo cáo thất bại");
+      toast.error(getApiErrorMessage(error, "Xử lý báo cáo thất bại. Vui lòng thử lại."));
     }
   };
 

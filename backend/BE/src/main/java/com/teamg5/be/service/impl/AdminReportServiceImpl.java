@@ -52,7 +52,7 @@ public class AdminReportServiceImpl implements AdminReportService {
             try {
                 statusEnum = ReportStatus.valueOf(status.trim().toUpperCase());
             } catch (IllegalArgumentException e) {
-                throw new AppException(ErrorCode.INVALID_INPUT, "Invalid status: " + status);
+                throw new AppException(ErrorCode.INVALID_INPUT, "Trạng thái không hợp lệ: " + status);
             }
         }
 
@@ -61,7 +61,7 @@ public class AdminReportServiceImpl implements AdminReportService {
             try {
                 typeEnum = ReportTargetType.valueOf(type.trim().toUpperCase());
             } catch (IllegalArgumentException e) {
-                throw new AppException(ErrorCode.INVALID_INPUT, "Invalid type: " + type);
+                throw new AppException(ErrorCode.INVALID_INPUT, "Loại không hợp lệ: " + type);
             }
         }
 
@@ -107,7 +107,7 @@ public class AdminReportServiceImpl implements AdminReportService {
         verifyAdmin();
 
         Report report = reportRepository.findByIdWithReporter(id)
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Report not found with id: " + id));
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Không tìm thấy báo cáo với mã id: " + id));
 
         return mapToDetailResponse(report);
     }
@@ -246,10 +246,10 @@ public class AdminReportServiceImpl implements AdminReportService {
         User admin = verifyAdmin();
 
         Report report = reportRepository.findById(reportId)
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Report not found with id: " + reportId));
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Không tìm thấy báo cáo với mã id: " + reportId));
 
         if (report.getStatus() != ReportStatus.PENDING) {
-            throw new AppException(ErrorCode.INVALID_INPUT, "Report is already resolved or rejected");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Báo cáo đã được xử lý hoặc bị từ chối");
         }
 
         String action = request.getAction().trim().toUpperCase();
@@ -296,7 +296,8 @@ public class AdminReportServiceImpl implements AdminReportService {
 
             // Issue warning to creator
             if (contentCreator != null) {
-                contentCreator.setWarningCount(contentCreator.getWarningCount() + 1);
+                int currentWarnings = contentCreator.getWarningCount() != null ? contentCreator.getWarningCount() : 0;
+                contentCreator.setWarningCount(currentWarnings + 1);
                 if (contentCreator.getWarningCount() >= 3) {
                     contentCreator.setStatus(AccountStatus.SUSPENDED);
                     message += " Creator has reached 3 warnings and is now SUSPENDED.";
@@ -307,7 +308,7 @@ public class AdminReportServiceImpl implements AdminReportService {
             newStatus = ReportStatus.REJECTED;
             message = "Report rejected.";
         } else {
-            throw new AppException(ErrorCode.INVALID_INPUT, "Invalid action: " + action + ". Must be ACCEPT or REJECT");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Hành động không hợp lệ: " + action + ". Phải là ACCEPT hoặc REJECT");
         }
 
         report.setStatus(newStatus);

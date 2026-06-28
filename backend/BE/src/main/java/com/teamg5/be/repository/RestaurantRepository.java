@@ -40,6 +40,8 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
     boolean existsByPlace_IdAndActiveTrue(Long placeId);
 
     // Lấy tất cả nhà hàng của một user
+    List<Restaurant> findAllByOwner_Id(Long ownerId);
+
     List<Restaurant> findAllByOwner_IdAndActiveTrue(Long ownerId);
 
     // Lấy một nhà hàng thuộc đúng user

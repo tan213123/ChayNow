@@ -60,7 +60,7 @@ public class FavouritePlaceController {
             @RequestParam(defaultValue = "10") int size
     ) {
         if (page < 0 || size <= 0 || size > 50) {
-            throw new AppException(ErrorCode.INVALID_INPUT, "Page must be >= 0 and size must be between 1 and 50");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Trang phải từ 0 trở lên và kích thước phải từ 1 đến 50");
         }
         PageResponse<FavouritePlaceResponse> response = favouritePlaceService.getMyFavourites(page, size);
         return ResponseEntity.ok(ApiResponse.<PageResponse<FavouritePlaceResponse>>builder()

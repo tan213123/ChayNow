@@ -66,6 +66,7 @@ export default function RestaurantDetail() {
   const [reportReason, setReportReason] = useState("");
   const [reportDescription, setReportDescription] = useState("");
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+  const [reportTarget, setReportTarget] = useState<{ type: "RESTAURANT" | "REVIEW"; id: number } | null>(null);
 
   const isOwner = useMemo(() => {
     return user?.id !== undefined && apiRestaurant?.ownerId !== undefined && user.id === apiRestaurant.ownerId;
@@ -161,6 +162,9 @@ export default function RestaurantDetail() {
       toast.error("Vui lòng đăng nhập để báo cáo!");
       return;
     }
+    if (!reportTarget) {
+      return;
+    }
     if (!reportReason.trim()) {
       toast.error("Vui lòng chọn hoặc nhập lý do báo cáo!");
       return;
@@ -168,15 +172,16 @@ export default function RestaurantDetail() {
     try {
       setIsSubmittingReport(true);
       await createReport({
-        type: "RESTAURANT",
-        targetId: restaurantId,
+        targetType: reportTarget.type,
+        targetId: reportTarget.id,
         reason: reportReason,
-        description: reportDescription,
+        details: reportDescription,
       });
       toast.success("Đã gửi báo cáo thành công. Quản trị viên sẽ xử lý sớm.");
       setIsReportModalOpen(false);
       setReportReason("");
       setReportDescription("");
+      setReportTarget(null);
     } catch (error) {
       toast.error("Không thể gửi báo cáo. Vui lòng thử lại sau.");
     } finally {
@@ -221,6 +226,7 @@ export default function RestaurantDetail() {
         image: item.imageUrl,
       })),
       reviewsList: apiReviews.map((review) => ({
+        id: review.id,
         name: review.userName ?? `Người dùng #${review.userId}`,
         rating: review.rating,
         date: review.createdAt
@@ -683,12 +689,28 @@ export default function RestaurantDetail() {
                                   <p className="text-xs text-slate-400">{review.date}</p>
                                 </div>
                               </div>
-                              <div className="flex gap-0.5 text-amber-400">
-                                {[...Array(5)].map((_, idx) => (
-                                  <span key={idx} className={idx < review.rating ? "text-amber-400" : "text-slate-200"}>
-                                    ★
-                                  </span>
-                                ))}
+                              <div className="flex flex-col items-end gap-1.5">
+                                <div className="flex gap-0.5 text-amber-400">
+                                  {[...Array(5)].map((_, idx) => (
+                                    <span key={idx} className={idx < review.rating ? "text-amber-400" : "text-slate-200"}>
+                                      ★
+                                    </span>
+                                  ))}
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    if (!user) {
+                                      toast.error("Vui lòng đăng nhập để báo cáo!");
+                                      return;
+                                    }
+                                    setReportTarget({ type: "REVIEW", id: review.id });
+                                    setIsReportModalOpen(true);
+                                  }}
+                                  className="text-xs text-slate-400 hover:text-red-500 flex items-center gap-1 transition"
+                                  title="Báo cáo đánh giá này"
+                                >
+                                  🚩 Báo cáo
+                                </button>
                               </div>
                             </div>
                             <p className="mt-3 text-sm leading-relaxed text-slate-600">{review.comment}</p>
@@ -747,6 +769,7 @@ export default function RestaurantDetail() {
                     toast.error("Vui lòng đăng nhập để báo cáo!");
                     return;
                   }
+                  setReportTarget({ type: "RESTAURANT", id: restaurantId });
                   setIsReportModalOpen(true);
                 }}
                 className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 hover:border-red-200 hover:bg-red-50 hover:text-red-700 transition"
@@ -797,9 +820,13 @@ export default function RestaurantDetail() {
       {isReportModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
-            <h3 className="text-xl font-bold text-slate-900">Báo cáo nhà hàng</h3>
+            <h3 className="text-xl font-bold text-slate-900">
+              {reportTarget?.type === "REVIEW" ? "Báo cáo đánh giá" : "Báo cáo nhà hàng"}
+            </h3>
             <p className="mt-2 text-sm text-slate-500">
-              Vui lòng cho chúng tôi biết vấn đề của nhà hàng này.
+              {reportTarget?.type === "REVIEW"
+                ? "Vui lòng cho chúng tôi biết vấn đề của đánh giá này."
+                : "Vui lòng cho chúng tôi biết vấn đề của nhà hàng này."}
             </p>
             
             <div className="mt-5 space-y-4">
@@ -811,11 +838,22 @@ export default function RestaurantDetail() {
                   className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-red-400 focus:ring-4 focus:ring-red-100 transition"
                 >
                   <option value="">Chọn lý do...</option>
-                  <option value="Thông tin không chính xác">Thông tin không chính xác</option>
-                  <option value="Nhà hàng đã đóng cửa">Nhà hàng đã đóng cửa</option>
-                  <option value="Không phải nhà hàng chay">Không phải nhà hàng chay</option>
-                  <option value="Nội dung không phù hợp">Nội dung không phù hợp</option>
-                  <option value="Khác">Khác</option>
+                  {reportTarget?.type === "REVIEW" ? (
+                    <>
+                      <option value="Nội dung thô tục, xúc phạm">Nội dung thô tục, xúc phạm</option>
+                      <option value="Spam / Quảng cáo">Spam / Quảng cáo</option>
+                      <option value="Thông tin sai sự thật">Thông tin sai sự thật</option>
+                      <option value="Khác">Khác</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="Thông tin không chính xác">Thông tin không chính xác</option>
+                      <option value="Nhà hàng đã đóng cửa">Nhà hàng đã đóng cửa</option>
+                      <option value="Không phải nhà hàng chay">Không phải nhà hàng chay</option>
+                      <option value="Nội dung không phù hợp">Nội dung không phù hợp</option>
+                      <option value="Khác">Khác</option>
+                    </>
+                  )}
                 </select>
               </div>
 

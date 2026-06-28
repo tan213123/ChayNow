@@ -23,6 +23,8 @@ public class RestaurantResponse {
     private String phoneNumber;
     private String address;
     private Boolean active;
+    private String status;
+    private String rejectReason;
     private Long typeRestaurantId;
     private Long placeId;
     private String placeName;
@@ -47,6 +49,8 @@ public class RestaurantResponse {
 
                // .operatingStatus(restaurant.getOperatingStatus())
                 .active(restaurant.getActive())
+                .status(restaurant.getStatus() != null ? restaurant.getStatus().name() : null)
+                .rejectReason(restaurant.getRejectReason())
 
                 .placeId(
                         restaurant.getPlace() != null

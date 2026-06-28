@@ -13,7 +13,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ResolveReportRequest {
-    @NotBlank(message = "Action is required (ACCEPT or REJECT)")
+    @NotBlank(message = "Hành động không được để trống (ACCEPT hoặc REJECT)")
     private String action; // ACCEPT or REJECT
 
     private String details; // Reason/Details of resolution

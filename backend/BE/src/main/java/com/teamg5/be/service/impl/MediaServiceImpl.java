@@ -89,7 +89,7 @@ public class MediaServiceImpl implements MediaService {
             return MediaResponse.from(savedMedia);
 
         } catch (IOException e) {
-            throw new AppException(ErrorCode.UPLOAD_FAILED, "Failed to upload file to Cloudinary: " + e.getMessage());
+            throw new AppException(ErrorCode.UPLOAD_FAILED, "Tải tập tin lên Cloudinary thất bại: " + e.getMessage());
         }
     }
 
@@ -106,7 +106,7 @@ public class MediaServiceImpl implements MediaService {
     @Transactional
     public List<MediaResponse> uploadFiles(MultipartFile[] files, Long restaurantId, Long reviewId) {
         if (files == null || files.length == 0) {
-            throw new AppException(ErrorCode.EMPTY_FILE, "No files uploaded");
+            throw new AppException(ErrorCode.EMPTY_FILE, "Không có tập tin nào được tải lên");
         }
 
         List<MediaResponse> responses = new ArrayList<>();

@@ -41,10 +41,10 @@ public class CommentServiceImpl implements CommentService {
 
         String content = request.getContent() == null ? null : request.getContent().trim();
         if (!StringUtils.hasText(content)) {
-            throw new AppException(ErrorCode.INVALID_INPUT, "Comment content is required");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Nội dung bình luận không được để trống");
         }
         if (content.length() > 1000) {
-            throw new AppException(ErrorCode.INVALID_INPUT, "Comment content must be at most 1000 characters");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Nội dung bình luận phải tối đa 1000 ký tự");
         }
 
         Comment comment = Comment.builder()
@@ -142,7 +142,7 @@ public class CommentServiceImpl implements CommentService {
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         if (currentUser.getStatus() != AccountStatus.ACTIVE) {
-            throw new AppException(ErrorCode.FORBIDDEN, "Suspended or inactive users cannot comment");
+            throw new AppException(ErrorCode.FORBIDDEN, "Người dùng bị khóa hoặc không hoạt động không thể bình luận");
         }
 
         return currentUser;

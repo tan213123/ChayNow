@@ -109,11 +109,11 @@ public class PostingServiceImpl implements PostingService {
         Posting posting = getOwnedPosting(postingId, currentUser);
 
         if ("APPROVED".equalsIgnoreCase(posting.getStatus())) {
-            throw new AppException(ErrorCode.INVALID_INPUT, "Approved posts cannot be edited directly");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Không thể chỉnh sửa trực tiếp các bài đăng đã được duyệt");
         }
 
         if (!hasUpdatableField(request)) {
-            throw new AppException(ErrorCode.INVALID_INPUT, "At least one field must be provided for update");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Phải cung cấp ít nhất một trường thông tin để cập nhật");
         }
 
         applyUpdate(posting, request);
@@ -137,7 +137,7 @@ public class PostingServiceImpl implements PostingService {
         Posting posting = getOwnedPosting(postingId, currentUser);
 
         if (!"REJECTED".equalsIgnoreCase(posting.getStatus())) {
-            throw new AppException(ErrorCode.INVALID_INPUT, "Only rejected posts can be resubmitted");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Chỉ các bài viết bị từ chối mới có thể được gửi lại");
         }
 
         posting.setStatus("PENDING");
@@ -173,7 +173,7 @@ public class PostingServiceImpl implements PostingService {
                 || posting.getRestaurant().getOwner() == null
                 || posting.getRestaurant().getOwner().getId() == null
                 || !posting.getRestaurant().getOwner().getId().equals(currentUser.getId())) {
-            throw new AppException(ErrorCode.FORBIDDEN, "You do not own this posting");
+            throw new AppException(ErrorCode.FORBIDDEN, "Bạn không sở hữu bài viết này");
         }
 
         return posting;
@@ -182,7 +182,7 @@ public class PostingServiceImpl implements PostingService {
     private User requireOwner() {
         User currentUser = getCurrentUser();
         if (currentUser.getRole() != Role.OWNER) {
-            throw new AppException(ErrorCode.FORBIDDEN, "Only users with role OWNER can manage postings");
+            throw new AppException(ErrorCode.FORBIDDEN, "Chỉ người dùng có vai trò CHỦ QUÁN mới có thể quản lý bài viết");
         }
         return currentUser;
     }
@@ -191,7 +191,7 @@ public class PostingServiceImpl implements PostingService {
         if (StringUtils.hasText(request.getTitle())) {
             String title = request.getTitle().trim();
             if (title.length() < 2 || title.length() > 255) {
-                throw new AppException(ErrorCode.INVALID_INPUT, "Title must be between 2 and 255 characters");
+                throw new AppException(ErrorCode.INVALID_INPUT, "Tiêu đề phải từ 2 đến 255 ký tự");
             }
             posting.setTitle(title);
         }
@@ -199,7 +199,7 @@ public class PostingServiceImpl implements PostingService {
         if (StringUtils.hasText(request.getContent())) {
             String content = request.getContent().trim();
             if (content.length() < 10 || content.length() > 1000) {
-                throw new AppException(ErrorCode.INVALID_INPUT, "Content must be between 10 and 1000 characters");
+                throw new AppException(ErrorCode.INVALID_INPUT, "Nội dung phải từ 10 đến 1000 ký tự");
             }
             posting.setContent(content);
         }
@@ -211,7 +211,7 @@ public class PostingServiceImpl implements PostingService {
         if (StringUtils.hasText(request.getImageUrl())) {
             String imageUrl = request.getImageUrl().trim();
             if (imageUrl.length() > 500 || !imageUrl.matches(IMAGE_URL_PATTERN)) {
-                throw new AppException(ErrorCode.INVALID_INPUT, "Image URL must be a valid URL");
+                throw new AppException(ErrorCode.INVALID_INPUT, "Đường dẫn ảnh phải là một URL hợp lệ");
             }
             posting.setThumbnailUrl(imageUrl);
         }
@@ -237,7 +237,7 @@ public class PostingServiceImpl implements PostingService {
         try {
             FoodCategory.valueOf(normalized);
         } catch (IllegalArgumentException ex) {
-            throw new AppException(ErrorCode.INVALID_INPUT, "Invalid food category: " + category);
+            throw new AppException(ErrorCode.INVALID_INPUT, "Danh mục món ăn không hợp lệ: " + category);
         }
         return normalized;
     }

@@ -15,7 +15,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class CreateCommentRequest {
 
-    @NotBlank(message = "Content is required")
-    @Size(min = 1, max = 1000, message = "Content must be between 1 and 1000 characters")
+    @NotBlank(message = "Nội dung không được để trống")
+    @Size(min = 1, max = 1000, message = "Nội dung phải từ 1 đến 1000 ký tự")
     private String content;
 }

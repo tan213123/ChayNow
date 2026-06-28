@@ -178,7 +178,7 @@ public class RestaurantServiceImpl implements RestaurantService {
         User currentUser = getCurrentUser();
 
         return restaurantRepository
-                .findAllByOwner_IdAndActiveTrue(currentUser.getId())
+                .findAllByOwner_Id(currentUser.getId())
                 .stream()
                 .map(RestaurantResponse::from)
                 .toList();

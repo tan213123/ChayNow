@@ -28,7 +28,7 @@ public class UpdateRestaurantRequest {
     private String description;
     @Pattern(
             regexp = "^$|^(0|\\+84)(3|5|7|8|9)[0-9]{8}$",
-            message = "Phone number is invalid. It should start with 0 or +84 followed by a valid prefix (3, 5, 7, 8, 9) and 8 digits."
+            message = "Số điện thoại không hợp lệ. Phải bắt đầu bằng 0 hoặc +84, theo sau bởi các đầu số hợp lệ (3, 5, 7, 8, 9) và có 8 chữ số."
     )
     private String phoneNumber;
     private Long placeId;

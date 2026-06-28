@@ -139,7 +139,7 @@ public class AdminUserServiceImplTest {
         AppException exception = assertThrows(AppException.class, () -> {
             adminUserService.getAllUsers(0, 6, "", "INVALID_ROLE", "");
         });
-        assertTrue(exception.getMessage().contains("Invalid role parameter"));
+        assertTrue(exception.getMessage().contains("Tham số vai trò không hợp lệ"));
     }
 
     @Test
@@ -148,7 +148,7 @@ public class AdminUserServiceImplTest {
         AppException exception = assertThrows(AppException.class, () -> {
             adminUserService.getAllUsers(0, 6, "", "", "INVALID_STATUS");
         });
-        assertTrue(exception.getMessage().contains("Invalid status parameter"));
+        assertTrue(exception.getMessage().contains("Tham số trạng thái không hợp lệ"));
     }
 
     @Test
@@ -186,7 +186,7 @@ public class AdminUserServiceImplTest {
         // Act & Assert
         AppException exception = assertThrows(AppException.class, () -> adminUserService.suspendUser(1L));
         assertEquals(ErrorCode.INVALID_INPUT, exception.getErrorCode());
-        assertEquals("You cannot suspend yourself", exception.getMessage());
+        assertEquals("Bạn không thể tự khóa tài khoản của chính mình", exception.getMessage());
         verify(userRepository, never()).save(any(User.class));
     }
 
@@ -235,7 +235,7 @@ public class AdminUserServiceImplTest {
         // Act & Assert
         AppException exception = assertThrows(AppException.class, () -> adminUserService.activateUser(1L));
         assertEquals(ErrorCode.INVALID_INPUT, exception.getErrorCode());
-        assertEquals("You cannot activate yourself", exception.getMessage());
+        assertEquals("Bạn không thể tự kích hoạt tài khoản của chính mình", exception.getMessage());
         verify(userRepository, never()).save(any(User.class));
     }
 
@@ -323,6 +323,6 @@ public class AdminUserServiceImplTest {
         // Act & Assert
         AppException exception = assertThrows(AppException.class, () -> adminUserService.createAdmin(request));
         assertEquals(ErrorCode.INVALID_INPUT, exception.getErrorCode());
-        assertTrue(exception.getMessage().contains("Email is already in use"));
+        assertTrue(exception.getMessage().contains("Email đã được sử dụng"));
     }
 }

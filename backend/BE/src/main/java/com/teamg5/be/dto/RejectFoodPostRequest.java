@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RejectFoodPostRequest {
-    @NotBlank(message = "Reason is required")
-    @Size(min = 5, max = 500, message = "Reason length must be between 5 and 500 characters")
+    @NotBlank(message = "Lý do không được để trống")
+    @Size(min = 5, max = 500, message = "Lý do phải từ 5 đến 500 ký tự")
     private String reason;
 }

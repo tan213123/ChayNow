@@ -57,7 +57,7 @@ public class AdminUserServiceImpl implements AdminUserService {
             try {
                 role = Role.valueOf(roleStr.trim().toUpperCase());
             } catch (IllegalArgumentException e) {
-                throw new AppException(ErrorCode.INVALID_INPUT, "Invalid role parameter: " + roleStr);
+                throw new AppException(ErrorCode.INVALID_INPUT, "Tham số vai trò không hợp lệ: " + roleStr);
             }
         }
 
@@ -66,7 +66,7 @@ public class AdminUserServiceImpl implements AdminUserService {
             try {
                 status = AccountStatus.valueOf(statusStr.trim().toUpperCase());
             } catch (IllegalArgumentException e) {
-                throw new AppException(ErrorCode.INVALID_INPUT, "Invalid status parameter: " + statusStr);
+                throw new AppException(ErrorCode.INVALID_INPUT, "Tham số trạng thái không hợp lệ: " + statusStr);
             }
         }
 
@@ -110,7 +110,7 @@ public class AdminUserServiceImpl implements AdminUserService {
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public AdminUserDetailResponse getUserById(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "User not found with id: " + userId));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "Không tìm thấy người dùng với mã id: " + userId));
 
         long reviewCount = userRepository.countReviewsByUserId(userId);
 
@@ -135,7 +135,7 @@ public class AdminUserServiceImpl implements AdminUserService {
     @org.springframework.transaction.annotation.Transactional
     public AdminUserDetailResponse updateUser(Long userId, UpdateUserRequest request) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "User not found with id: " + userId));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "Không tìm thấy người dùng với mã id: " + userId));
 
         if (request.getFullName() != null && !request.getFullName().trim().isEmpty()) {
             user.setFullName(request.getFullName().trim());
@@ -150,7 +150,7 @@ public class AdminUserServiceImpl implements AdminUserService {
                 Role role = Role.valueOf(request.getRole().trim().toUpperCase());
                 user.setRole(role);
             } catch (IllegalArgumentException e) {
-                throw new AppException(ErrorCode.INVALID_INPUT, "Invalid role: " + request.getRole());
+                throw new AppException(ErrorCode.INVALID_INPUT, "Vai trò không hợp lệ: " + request.getRole());
             }
         }
 
@@ -159,7 +159,7 @@ public class AdminUserServiceImpl implements AdminUserService {
                 AccountStatus status = AccountStatus.valueOf(request.getStatus().trim().toUpperCase());
                 user.setStatus(status);
             } catch (IllegalArgumentException e) {
-                throw new AppException(ErrorCode.INVALID_INPUT, "Invalid status: " + request.getStatus());
+                throw new AppException(ErrorCode.INVALID_INPUT, "Trạng thái không hợp lệ: " + request.getStatus());
             }
         }
 
@@ -187,11 +187,11 @@ public class AdminUserServiceImpl implements AdminUserService {
     @org.springframework.transaction.annotation.Transactional
     public void deleteUser(Long userId) {
         User targetUser = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "User not found with id: " + userId));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "Không tìm thấy người dùng với mã id: " + userId));
 
         User currentUser = getCurrentUser();
         if (currentUser.getId().equals(targetUser.getId())) {
-            throw new AppException(ErrorCode.INVALID_INPUT, "You cannot delete yourself");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Bạn không thể tự xóa tài khoản của chính mình");
         }
 
         userRepository.delete(targetUser);
@@ -202,11 +202,11 @@ public class AdminUserServiceImpl implements AdminUserService {
     @org.springframework.transaction.annotation.Transactional
     public void suspendUser(Long userId) {
         User targetUser = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "User not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "Không tìm thấy người dùng"));
 
         User currentUser = getCurrentUser();
         if (currentUser.getId().equals(targetUser.getId())) {
-            throw new AppException(ErrorCode.INVALID_INPUT, "You cannot suspend yourself");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Bạn không thể tự khóa tài khoản của chính mình");
         }
 
         targetUser.setStatus(AccountStatus.SUSPENDED);
@@ -217,11 +217,11 @@ public class AdminUserServiceImpl implements AdminUserService {
     @org.springframework.transaction.annotation.Transactional
     public void activateUser(Long userId) {
         User targetUser = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "User not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "Không tìm thấy người dùng"));
 
         User currentUser = getCurrentUser();
         if (currentUser.getId().equals(targetUser.getId())) {
-            throw new AppException(ErrorCode.INVALID_INPUT, "You cannot activate yourself");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Bạn không thể tự kích hoạt tài khoản của chính mình");
         }
 
         targetUser.setStatus(AccountStatus.ACTIVE);
@@ -265,7 +265,7 @@ public class AdminUserServiceImpl implements AdminUserService {
         verifyAdmin();
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new AppException(ErrorCode.INVALID_INPUT, "Email is already in use");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Email đã được sử dụng");
         }
 
         User newAdmin = User.builder()

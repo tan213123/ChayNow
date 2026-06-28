@@ -39,7 +39,7 @@ public class FavouritePlaceServiceImpl implements FavouritePlaceService {
                 .orElseThrow(() -> new AppException(ErrorCode.RESTAURANT_NOT_FOUND));
 
         if (!Boolean.TRUE.equals(restaurant.getActive()) || restaurant.getStatus() != RestaurantStatus.APPROVED) {
-            throw new AppException(ErrorCode.RESTAURANT_NOT_FOUND, "This restaurant is not active or approved");
+            throw new AppException(ErrorCode.RESTAURANT_NOT_FOUND, "Nhà hàng này chưa hoạt động hoặc chưa được duyệt");
         }
 
         boolean exists = favouritePlaceRepository.existsByUserAndRestaurantId(currentUser, restaurantId);

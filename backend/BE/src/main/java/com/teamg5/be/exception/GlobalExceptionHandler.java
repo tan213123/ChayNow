@@ -38,7 +38,7 @@ public class GlobalExceptionHandler {
 
         ApiResponse<Map<String, String>> response = ApiResponse.<Map<String, String>>builder()
                 .success(false)
-                .message("Validation failed")
+                .message("Xác thực dữ liệu thất bại")
                 .code(ErrorCode.INVALID_INPUT.getCode())
                 .data(errors)
                 .build();

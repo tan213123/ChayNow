@@ -72,7 +72,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "User not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Không tìm thấy người dùng"));
         String token = jwtService.generateToken(user);
         return TokenResponse.builder()
                 .accessToken(token)

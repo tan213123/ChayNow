@@ -128,6 +128,12 @@ export default function AdminUsers() {
       return;
     }
 
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(payload.email)) {
+      toast.error("Định dạng email không hợp lệ.");
+      return;
+    }
+
     setCreateLoading(true);
     try {
       await createAdminAccount(payload);
@@ -161,15 +167,15 @@ export default function AdminUsers() {
 
       toast.success(
         isActivating
-          ? `Activated account "${userName}" successfully.`
-          : `Suspended account "${userName}" successfully.`,
+          ? `Kích hoạt tài khoản "${userName}" thành công.`
+          : `Tạm khóa tài khoản "${userName}" thành công.`,
       );
       setConfirmOpen(false);
       setTargetUser(null);
       await fetchUsers();
     } catch (err) {
       console.error("Admin user status update failed:", err);
-      toast.error(getApiErrorMessage(err, "Unable to update account status. Please try again."));
+      toast.error(getApiErrorMessage(err, "Không thể cập nhật trạng thái tài khoản. Vui lòng thử lại."));
     } finally {
       actionInFlightRef.current = false;
       setActionLoading(false);

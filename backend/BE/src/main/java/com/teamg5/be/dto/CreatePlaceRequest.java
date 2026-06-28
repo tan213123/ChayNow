@@ -13,13 +13,13 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreatePlaceRequest {
-    @NotBlank(message = "Name is required")
+    @NotBlank(message = "Tên địa điểm không được để trống")
     private String name;
 
-    @NotBlank(message = "District is required")
+    @NotBlank(message = "Quận/huyện không được để trống")
     private String district;
 
-    @NotBlank(message = "City is required")
+    @NotBlank(message = "Thành phố không được để trống")
     private String city;
 
     private String address;
