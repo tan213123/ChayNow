@@ -15,12 +15,15 @@ import com.teamg5.be.repository.UserRepository;
 import com.teamg5.be.service.CommentService;
 import com.teamg5.be.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import com.teamg5.be.entity.NotificationType;
+import com.teamg5.be.event.SystemNotificationEvent;
 
 import java.util.List;
 
@@ -31,6 +34,7 @@ public class CommentServiceImpl implements CommentService {
     private final CommentRepository commentRepository;
     private final PostingRepository postingRepository;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -55,6 +59,20 @@ public class CommentServiceImpl implements CommentService {
 
         Comment saved = commentRepository.save(comment);
         incrementCommentCount(posting);
+
+        try {
+            if (posting.getUser() != null && !posting.getUser().getId().equals(currentUser.getId())) {
+                eventPublisher.publishEvent(new SystemNotificationEvent(
+                        posting.getUser(),
+                        "Bình luận mới trên bài viết",
+                        "Người dùng " + currentUser.getFullName() + " đã bình luận trên bài viết '" + posting.getTitle() + "' của bạn",
+                        NotificationType.NEW_REVIEW_COMMENT,
+                        posting.getId().toString()
+                ));
+            }
+        } catch (Exception e) {
+            // Log warning but don't fail comment transaction
+        }
 
         return CommentResponse.from(saved);
     }

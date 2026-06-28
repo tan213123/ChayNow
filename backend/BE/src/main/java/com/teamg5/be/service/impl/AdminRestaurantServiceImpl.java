@@ -13,11 +13,15 @@ import com.teamg5.be.repository.UserRepository;
 import com.teamg5.be.service.AdminRestaurantService;
 import com.teamg5.be.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.teamg5.be.entity.Role;
+import com.teamg5.be.entity.NotificationType;
+import com.teamg5.be.event.SystemNotificationEvent;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -28,6 +32,7 @@ public class AdminRestaurantServiceImpl implements AdminRestaurantService {
 
     private final RestaurantRepository restaurantRepository;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional(readOnly = true)
@@ -87,6 +92,33 @@ public class AdminRestaurantServiceImpl implements AdminRestaurantService {
         restaurant.setRejectReason(null);
 
         Restaurant saved = restaurantRepository.save(restaurant);
+
+        // Notify Restaurant Owner and all Customers
+        try {
+            if (saved.getOwner() != null) {
+                eventPublisher.publishEvent(new SystemNotificationEvent(
+                        saved.getOwner(),
+                        "Yêu cầu duyệt quán ăn thành công",
+                        "Nhà hàng '" + saved.getName() + "' của bạn đã được duyệt bởi ban quản trị!",
+                        NotificationType.RESTAURANT_STATUS_UPDATE,
+                        saved.getId().toString()
+                ));
+            }
+
+            List<User> customers = userRepository.findByRole(Role.USER);
+            for (User customer : customers) {
+                eventPublisher.publishEvent(new SystemNotificationEvent(
+                        customer,
+                        "Quán ăn mới xuất hiện!",
+                        "Nhà hàng chay mới '" + saved.getName() + "' đã mở cửa. Hãy khám phá ngay!",
+                        NotificationType.NEW_RESTAURANT,
+                        saved.getId().toString()
+                ));
+            }
+        } catch (Exception e) {
+            // Log but don't fail transaction
+        }
+
         return mapToDTO(saved);
     }
 
@@ -108,6 +140,22 @@ public class AdminRestaurantServiceImpl implements AdminRestaurantService {
         restaurant.setApprovedAt(LocalDateTime.now());
 
         Restaurant saved = restaurantRepository.save(restaurant);
+
+        // Notify Restaurant Owner
+        try {
+            if (saved.getOwner() != null) {
+                eventPublisher.publishEvent(new SystemNotificationEvent(
+                        saved.getOwner(),
+                        "Yêu cầu duyệt quán ăn bị từ chối",
+                        "Yêu cầu duyệt nhà hàng '" + saved.getName() + "' đã bị từ chối. Lý do: " + request.getReason(),
+                        NotificationType.RESTAURANT_STATUS_UPDATE,
+                        saved.getId().toString()
+                ));
+            }
+        } catch (Exception e) {
+            // Log but don't fail transaction
+        }
+
         return mapToDTO(saved);
     }
 
