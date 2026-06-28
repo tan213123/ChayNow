@@ -89,7 +89,7 @@ public class AdminController {
             @Parameter(description = "ID của người dùng cần cập nhật", example = "2")
             @PathVariable(name = "id") Long id,
 
-            @RequestBody UpdateUserRequest request
+            @jakarta.validation.Valid @RequestBody UpdateUserRequest request
     ) {
         AdminUserDetailResponse response = adminUserService.updateUser(id, request);
         return ResponseEntity.ok(ApiResponse.<AdminUserDetailResponse>builder()

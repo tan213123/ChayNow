@@ -11,6 +11,7 @@ import lombok.Data;
 public class RegisterRequest {
     @NotBlank(message = "Email is required")
     @Email(message = "Invalid email format")
+    @Size(max = 255, message = "Email must not exceed 255 characters")
     @Schema(description = "User's unique email address", example = "newuser@example.com")
     private String email;
 
@@ -20,6 +21,7 @@ public class RegisterRequest {
     private String password;
 
     @NotBlank(message = "Full name is required")
+    @Size(max = 255, message = "Full name must not exceed 255 characters")
     @Schema(description = "User's full name", example = "John Doe")
     private String fullName;
 }
