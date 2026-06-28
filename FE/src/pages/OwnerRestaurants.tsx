@@ -10,6 +10,7 @@ import {
   getReviews,
 } from "@/services/restaurant.service";
 import { setSelectedRestaurantId } from "@/lib/ownerRestaurant";
+import { getRestaurantStatusMeta } from "@/lib/restaurantStatus";
 import type {
   RestaurantResponse,
   ReviewResponse,
@@ -127,7 +128,7 @@ export default function OwnerRestaurants() {
           <div className="flex flex-wrap gap-3">
             <Button
               onClick={() => navigate("/manage/edit")}
-              className="rounded-2xl bg-emerald-600 px-6 py-3 text-white hover:bg-emerald-700"
+              className="h-auto rounded-2xl bg-emerald-600 px-6 py-3 text-white hover:bg-emerald-700"
             >
               Thêm quán mới
             </Button>
@@ -155,6 +156,7 @@ export default function OwnerRestaurants() {
           <div className="grid gap-6 lg:grid-cols-3">
             {restaurants.map((restaurant) => {
               const stats = reviewStats.get(restaurant.id);
+              const statusMeta = getRestaurantStatusMeta(restaurant.status);
               return (
                 <article
                   key={restaurant.id}
@@ -182,6 +184,12 @@ export default function OwnerRestaurants() {
                                 Đã ẩn / Khóa
                               </span>
                             )}
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ring-1 ${statusMeta.className}`}
+                              title={statusMeta.description}
+                            >
+                              {statusMeta.label}
+                            </span>
                           </div>
                           <p className="mt-1 text-sm text-slate-500">
                             {restaurant.placeName ?? restaurant.address}
@@ -191,7 +199,15 @@ export default function OwnerRestaurants() {
                           {restaurant.typeRestaurantName}
                         </span>
                       </div>
-                      {!restaurant.active && restaurant.rejectReason && (
+                      {restaurant.status === "REJECTED" && restaurant.rejectReason ? (
+                        <div className="mt-4 rounded-2xl border border-rose-100 bg-rose-50/70 p-3 text-xs text-rose-800">
+                          <p className="font-bold">Lý do từ chối duyệt:</p>
+                          <p className="mt-1 leading-relaxed text-slate-700">
+                            {restaurant.rejectReason}
+                          </p>
+                        </div>
+                      ) : null}
+                      {!restaurant.active && restaurant.rejectReason && restaurant.status !== "REJECTED" && (
                         <div className="mt-4 rounded-2xl bg-rose-50/70 border border-rose-100 p-3 text-xs text-rose-800">
                           <p className="font-bold flex items-center gap-1">⚠️ Lý do khóa/từ chối:</p>
                           <p className="mt-1 text-slate-700 leading-relaxed">{restaurant.rejectReason}</p>

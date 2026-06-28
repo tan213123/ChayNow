@@ -382,7 +382,7 @@ export default function OwnerEdit() {
           ? "Cập nhật nhà hàng thành công."
           : "Tạo nhà hàng thành công.",
       );
-      navigate(`/restaurant/${restaurant.id}`);
+      navigate(isEditing ? "/manage" : "/manage/restaurants");
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Không thể lưu nhà hàng.",

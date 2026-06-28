@@ -12,6 +12,7 @@ import {
   getSelectedRestaurantId,
   setSelectedRestaurantId,
 } from "@/lib/ownerRestaurant";
+import { getRestaurantStatusMeta } from "@/lib/restaurantStatus";
 import type {
   RestaurantResponse,
   ReviewResponse,
@@ -90,6 +91,7 @@ export default function OwnerDashboard() {
       reviews.length
     );
   }, [reviews]);
+  const statusMeta = getRestaurantStatusMeta(restaurant?.status);
 
   if (isLoading) {
     return (
@@ -161,6 +163,12 @@ export default function OwnerDashboard() {
                   </p>
                 ) : null}
                 <div className="mt-3 flex flex-wrap gap-2">
+                  <span
+                    className={`rounded-full px-3 py-1 text-sm font-semibold ring-1 ${statusMeta.className}`}
+                    title={statusMeta.description}
+                  >
+                    {statusMeta.label}
+                  </span>
                   <span className="rounded-full bg-emerald-50 px-3 py-1 text-sm text-emerald-700">
                     {restaurant.typeRestaurantName}
                   </span>
@@ -170,6 +178,14 @@ export default function OwnerDashboard() {
                     </span>
                   ) : null}
                 </div>
+                {restaurant.status === "REJECTED" && restaurant.rejectReason ? (
+                  <div className="mt-4 rounded-2xl border border-rose-100 bg-rose-50/70 p-3 text-xs text-rose-800">
+                    <p className="font-bold">Lý do từ chối duyệt:</p>
+                    <p className="mt-1 leading-relaxed text-slate-700">
+                      {restaurant.rejectReason}
+                    </p>
+                  </div>
+                ) : null}
               </div>
             </div>
             <Link
