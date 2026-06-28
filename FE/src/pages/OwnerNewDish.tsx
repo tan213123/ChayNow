@@ -365,14 +365,6 @@ export default function OwnerNewDish() {
                     />
                   </label>
                 )}
-                
-                <input
-                  value={form.imageUrl}
-                  onChange={(event) => setField("imageUrl", event.target.value)}
-                  type="text"
-                  placeholder="Hoặc nhập đường dẫn ảnh (URL)"
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-normal outline-none focus:border-emerald-500"
-                />
               </div>
               <label className="block space-y-2 text-sm font-semibold text-slate-700">
                 Mô tả
