@@ -391,16 +391,6 @@ export default function OwnerEvents() {
               </label>
 
               <label className="block space-y-2 text-sm font-semibold text-slate-700">
-                URL hình ảnh
-                <input
-                  value={form.imageUrl}
-                  onChange={(event) => setField("imageUrl", event.target.value)}
-                  placeholder="Nhập đường dẫn hình ảnh"
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-normal outline-none focus:border-emerald-500"
-                />
-              </label>
-
-              <label className="block space-y-2 text-sm font-semibold text-slate-700">
                 Mô tả
                 <textarea
                   value={form.description}
