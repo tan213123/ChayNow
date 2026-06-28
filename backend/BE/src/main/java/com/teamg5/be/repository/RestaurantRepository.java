@@ -51,4 +51,21 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
     );
 
     long countByStatus(RestaurantStatus status);
+
+    @Query("""
+        SELECT COUNT(r) > 0 FROM Restaurant r
+        WHERE r.active = true
+        AND LOWER(TRIM(r.name)) = LOWER(TRIM(:name))
+        AND r.place.id = :placeId
+    """)
+    boolean existsDuplicateRestaurant(@Param("name") String name, @Param("placeId") Long placeId);
+
+    @Query("""
+        SELECT COUNT(r) > 0 FROM Restaurant r
+        WHERE r.active = true
+        AND r.id <> :id
+        AND LOWER(TRIM(r.name)) = LOWER(TRIM(:name))
+        AND r.place.id = :placeId
+    """)
+    boolean existsDuplicateRestaurantForUpdate(@Param("name") String name, @Param("placeId") Long placeId, @Param("id") Long id);
 }
