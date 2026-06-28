@@ -8,6 +8,7 @@ import {
   getMyRestaurants,
 } from "@/services/restaurant.service";
 import {
+  clearSelectedRestaurantId,
   getSelectedRestaurantId,
   setSelectedRestaurantId,
 } from "@/lib/ownerRestaurant";
@@ -28,13 +29,19 @@ export default function OwnerDashboard() {
     let cancelled = false;
 
     const loadDashboard = async () => {
+      const restaurants = await getMyRestaurants();
       let restaurantId = getSelectedRestaurantId();
+      let ownedRestaurant = restaurantId
+        ? restaurants.find((item) => item.id === restaurantId)
+        : null;
 
-      if (!restaurantId) {
-        const restaurants = await getMyRestaurants();
-        restaurantId = restaurants[0]?.id ?? null;
+      if (!ownedRestaurant) {
+        ownedRestaurant = restaurants[0] ?? null;
+        restaurantId = ownedRestaurant?.id ?? null;
         if (restaurantId) {
           setSelectedRestaurantId(restaurantId);
+        } else {
+          clearSelectedRestaurantId();
         }
       }
 

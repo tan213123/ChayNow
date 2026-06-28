@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { clearSelectedRestaurantId } from "@/lib/ownerRestaurant";
 import type { AuthState, LoginResponse } from "@/types/auth";
 
 export function isTokenExpired(token: string): boolean {
@@ -19,6 +20,7 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
 
       login: (data: LoginResponse) => {
+        clearSelectedRestaurantId();
         localStorage.setItem("access_token", data.accessToken);
         if (data.refreshToken) {
           localStorage.setItem("refresh_token", data.refreshToken);
@@ -35,6 +37,7 @@ export const useAuthStore = create<AuthState>()(
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
         localStorage.removeItem("authUser");
+        clearSelectedRestaurantId();
 
         set({
           user: null,
