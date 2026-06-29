@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import OwnerLayout from "@/components/OwnerLayout";
@@ -8,6 +8,7 @@ import {
   deleteEvent,
   getRestaurantEvents,
   updateEvent,
+  uploadEventImage,
 } from "@/services/event.service";
 import {
   getRestaurant,
@@ -92,6 +93,7 @@ export default function OwnerEvents() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -154,6 +156,40 @@ export default function OwnerEvents() {
   const resetForm = () => {
     setForm(emptyForm);
     setEditingId(null);
+  };
+
+  const handleImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) {
+      return;
+    }
+
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+      toast.error("Chỉ hỗ trợ ảnh PNG, JPG, JPEG hoặc WebP.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Dung lượng ảnh tối đa là 5MB.");
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      const response = await uploadEventImage(file);
+      if (response.success && response.data) {
+        setField("imageUrl", response.data.url);
+        toast.success("Tải ảnh sự kiện lên thành công.");
+      } else {
+        toast.error(response.message || "Không nhận được URL ảnh từ server.");
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Không thể tải ảnh sự kiện.",
+      );
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const startEditing = (restaurantEvent: EventResponse) => {
@@ -346,6 +382,41 @@ export default function OwnerEvents() {
                 </select>
               </label>
 
+              <div className="space-y-3 text-sm font-semibold text-slate-700">
+                <span className="block">Hình ảnh sự kiện</span>
+                {form.imageUrl ? (
+                  <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+                    <img
+                      src={form.imageUrl}
+                      alt="Xem trước sự kiện"
+                      className="h-40 w-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setField("imageUrl", "")}
+                      className="absolute right-3 top-3 rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-rose-700 shadow"
+                    >
+                      Xóa ảnh
+                    </button>
+                  </div>
+                ) : null}
+                <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center transition hover:border-emerald-400 hover:bg-emerald-50">
+                  <span className="text-sm font-semibold text-slate-700">
+                    {isUploading ? "Đang tải ảnh lên..." : "Chọn ảnh từ máy tính"}
+                  </span>
+                  <span className="mt-1 text-xs font-normal text-slate-500">
+                    PNG, JPG, JPEG hoặc WebP, tối đa 5MB
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    onChange={handleImageUpload}
+                    disabled={isUploading}
+                    className="sr-only"
+                  />
+                </label>
+              </div>
+
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block space-y-2 text-sm font-semibold text-slate-700">
                   Bắt đầu *
@@ -404,7 +475,7 @@ export default function OwnerEvents() {
 
               <Button
                 type="submit"
-                disabled={isSaving}
+                disabled={isSaving || isUploading}
                 className="w-full rounded-2xl bg-emerald-600 py-3 text-white hover:bg-emerald-700"
               >
                 {isSaving

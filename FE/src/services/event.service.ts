@@ -3,6 +3,7 @@ import type {
   ApiResponse,
   CreateEventRequest,
   EventResponse,
+  MediaResponse,
   UpdateEventRequest,
 } from "@/types/restaurant";
 
@@ -38,6 +39,18 @@ export const getRestaurantEvents = async (
  */
 export const getEvent = async (eventId: number): Promise<EventResponse> =>
   apiService.get<EventResponse, EventResponse>(`/api/events/${eventId}`);
+
+export const uploadEventImage = async (
+  file: File,
+): Promise<ApiResponse<MediaResponse>> => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  return apiService.post<ApiResponse<MediaResponse>, ApiResponse<MediaResponse>>(
+    "/api/events/upload-image",
+    formData,
+  );
+};
 
 // ─────────────────────────────────────────────────────────────
 // EVENT — AUTH REQUIRED (OWNER)
