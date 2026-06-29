@@ -19,11 +19,15 @@ import com.teamg5.be.repository.TypeRestaurantRepository;
 import com.teamg5.be.repository.UserRepository;
 import com.teamg5.be.service.RestaurantService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import com.teamg5.be.entity.Role;
+import com.teamg5.be.entity.NotificationType;
+import com.teamg5.be.event.SystemNotificationEvent;
 
 import java.time.LocalTime;
 import java.util.List;
@@ -38,6 +42,7 @@ public class RestaurantServiceImpl implements RestaurantService {
     private final PlaceRepository placeRepository;
     private final UserRepository userRepository;
     private final MediaRepository mediaRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     private List<MediaResponse> mediaList;
 
@@ -65,6 +70,11 @@ public class RestaurantServiceImpl implements RestaurantService {
             }
         }
 
+        String name = request.getName() != null ? request.getName().trim() : null;
+        if (restaurantRepository.existsDuplicateRestaurant(name, request.getPlaceId())) {
+            throw new AppException(ErrorCode.RESTAURANT_ALREADY_EXISTS);
+        }
+
         Restaurant restaurant = Restaurant.builder()
                 .name(request.getName() != null ? request.getName().trim() : null)
                 .address(request.getAddress() != null ? request.getAddress().trim() : null)
@@ -79,6 +89,21 @@ public class RestaurantServiceImpl implements RestaurantService {
                 .build();
         Restaurant savedRestaurant =
                 restaurantRepository.save(restaurant);
+
+        try {
+            List<User> admins = userRepository.findByRole(Role.ADMIN);
+            for (User admin : admins) {
+                eventPublisher.publishEvent(new SystemNotificationEvent(
+                        admin,
+                        "Yêu cầu duyệt quán ăn mới",
+                        "Chủ nhà hàng " + currentUser.getFullName() + " đã gửi yêu cầu duyệt nhà hàng mới: '" + savedRestaurant.getName() + "'",
+                        NotificationType.RESTAURANT_APPROVAL_REQUEST,
+                        savedRestaurant.getId().toString()
+                ));
+            }
+        } catch (Exception e) {
+            // Log warning but don't fail restaurant creation transaction
+        }
 
         return RestaurantResponse.from(savedRestaurant);
     }
@@ -105,6 +130,13 @@ public class RestaurantServiceImpl implements RestaurantService {
     public RestaurantResponse updateResponse(Long restaurantId , UpdateRestaurantRequest request) {
          Restaurant restaurant = restaurantRepository.findById(restaurantId)
             .orElseThrow(() -> new AppException(ErrorCode.RESTAURANT_NOT_FOUND));
+
+        String finalName = StringUtils.hasText(request.getName()) ? request.getName().trim() : restaurant.getName();
+        Long finalPlaceId = request.getPlaceId() != null ? request.getPlaceId() : (restaurant.getPlace() != null ? restaurant.getPlace().getId() : null);
+
+        if (finalPlaceId != null && restaurantRepository.existsDuplicateRestaurantForUpdate(finalName, finalPlaceId, restaurantId)) {
+            throw new AppException(ErrorCode.RESTAURANT_ALREADY_EXISTS);
+        }
 
         if (StringUtils.hasText(request.getName())) {
             restaurant.setName(request.getName().trim());

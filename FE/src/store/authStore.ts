@@ -45,6 +45,12 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: false,
         });
       },
+
+      updateUser: (partial) => {
+        set((state) => ({
+          user: state.user ? { ...state.user, ...partial } : null,
+        }));
+      },
     }),
     {
       name: "auth-storage",

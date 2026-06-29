@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Heart, Home, Leaf, LogOut, Store, UserCircle } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import type { Role } from "@/types/auth";
+import NotificationDropdown from "./NotificationDropdown";
 
 const roleLabels: Record<Role, string> = {
   ADMIN: "Quản trị viên",
@@ -77,6 +78,9 @@ export default function Navbar() {
         </nav>
 
         <div className="flex items-center gap-3">
+          {isLoggedIn && user && (
+            <NotificationDropdown />
+          )}
           {isLoggedIn && user ? (
             <div className="flex items-center gap-3">
               <Link

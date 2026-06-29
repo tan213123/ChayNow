@@ -2,6 +2,7 @@ package com.teamg5.be.service;
 
 import com.teamg5.be.dto.CreateRestaurantRequest;
 import com.teamg5.be.dto.RestaurantResponse;
+import com.teamg5.be.dto.UpdateRestaurantRequest;
 import com.teamg5.be.entity.Place;
 import com.teamg5.be.entity.Restaurant;
 import com.teamg5.be.entity.RestaurantStatus;
@@ -207,5 +208,50 @@ public class RestaurantServiceTest {
         assertNotNull(responses);
         assertEquals(1, responses.size());
         assertEquals("Vegan Paradise", responses.get(0).getName());
+    }
+
+    @Test
+    public void createdRestaurant_DuplicateNameAndPlace_ThrowsException() {
+        CreateRestaurantRequest request = new CreateRestaurantRequest();
+        request.setName("Vegan Paradise");
+        request.setAddress("123 Green St");
+        request.setTypeRestaurantId(1L);
+        request.setPlaceId(2L);
+
+        TypeRestaurant type = TypeRestaurant.builder().build();
+        type.setId(1L);
+        Place place = Place.builder().active(true).build();
+        place.setId(2L);
+
+        when(typeRestaurantRepository.findById(1L)).thenReturn(Optional.of(type));
+        when(placeRepository.findByIdAndActiveTrue(2L)).thenReturn(Optional.of(place));
+        when(restaurantRepository.existsDuplicateRestaurant("Vegan Paradise", 2L)).thenReturn(true);
+
+        AppException exception = assertThrows(AppException.class, () -> restaurantService.createdRestaurant(request));
+        assertEquals(ErrorCode.RESTAURANT_ALREADY_EXISTS, exception.getErrorCode());
+        verify(restaurantRepository, never()).save(any(Restaurant.class));
+    }
+
+    @Test
+    public void updateResponse_DuplicateNameAndPlace_ThrowsException() {
+        UpdateRestaurantRequest request = new UpdateRestaurantRequest();
+        request.setName("New Name");
+        request.setPlaceId(2L);
+
+        Place oldPlace = Place.builder().build();
+        oldPlace.setId(2L);
+
+        Restaurant existingRestaurant = Restaurant.builder()
+                .name("Old Name")
+                .place(oldPlace)
+                .build();
+        existingRestaurant.setId(10L);
+
+        when(restaurantRepository.findById(10L)).thenReturn(Optional.of(existingRestaurant));
+        when(restaurantRepository.existsDuplicateRestaurantForUpdate("New Name", 2L, 10L)).thenReturn(true);
+
+        AppException exception = assertThrows(AppException.class, () -> restaurantService.updateResponse(10L, request));
+        assertEquals(ErrorCode.RESTAURANT_ALREADY_EXISTS, exception.getErrorCode());
+        verify(restaurantRepository, never()).save(any(Restaurant.class));
     }
 }

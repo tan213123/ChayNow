@@ -14,11 +14,15 @@ import com.teamg5.be.repository.RestaurantRepository;
 import com.teamg5.be.repository.UserRepository;
 import com.teamg5.be.service.MenuService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import com.teamg5.be.entity.Role;
+import com.teamg5.be.entity.NotificationType;
+import com.teamg5.be.event.SystemNotificationEvent;
 
 import java.util.List;
 
@@ -30,6 +34,7 @@ public class MenuServiceImpl implements MenuService {
     private final MenuRepository menuRepository;
     private final RestaurantRepository restaurantRepository;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -91,6 +96,22 @@ public class MenuServiceImpl implements MenuService {
                 .build();
 
         Menu savedMenu = menuRepository.save(menu);
+
+        // Notify all standard customers of the new dish
+        try {
+            List<User> customers = userRepository.findByRole(Role.USER);
+            for (User customer : customers) {
+                eventPublisher.publishEvent(new SystemNotificationEvent(
+                        customer,
+                        "Món ăn mới tại " + restaurant.getName(),
+                        "Nhà hàng '" + restaurant.getName() + "' vừa thêm món mới vào thực đơn: '" + savedMenu.getName() + "'",
+                        NotificationType.NEW_DISH,
+                        restaurant.getId().toString()
+                ));
+            }
+        } catch (Exception e) {
+            // Log but don't fail transaction
+        }
 
         return MenuResponse.from(savedMenu);
     }

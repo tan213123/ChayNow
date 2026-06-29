@@ -12,10 +12,13 @@ import com.teamg5.be.repository.ReviewRepository;
 import com.teamg5.be.repository.UserRepository;
 import com.teamg5.be.service.ReviewService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.teamg5.be.entity.NotificationType;
+import com.teamg5.be.event.SystemNotificationEvent;
 
 import java.util.List;
 
@@ -27,6 +30,7 @@ public class ReviewServiceImpl implements ReviewService {
     private final ReviewRepository reviewRepository;
     private final RestaurantRepository restaurantRepository;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     public ReviewResponse createReview(Long restaurantId, CreateReviewRequest request) {
@@ -57,6 +61,20 @@ public class ReviewServiceImpl implements ReviewService {
                 .build();
 
         Review savedReview = reviewRepository.save(review);
+
+        try {
+            if (restaurant.getOwner() != null && !restaurant.getOwner().getId().equals(currentUser.getId())) {
+                eventPublisher.publishEvent(new SystemNotificationEvent(
+                        restaurant.getOwner(),
+                        "Đánh giá mới cho nhà hàng của bạn",
+                        "Người dùng " + currentUser.getFullName() + " đã đánh giá " + review.getRating() + " sao cho nhà hàng '" + restaurant.getName() + "' của bạn",
+                        NotificationType.NEW_REVIEW_COMMENT,
+                        restaurant.getId().toString()
+                ));
+            }
+        } catch (Exception e) {
+            // Log warning but don't fail review transaction
+        }
 
         return ReviewResponse.from(savedReview);
     }

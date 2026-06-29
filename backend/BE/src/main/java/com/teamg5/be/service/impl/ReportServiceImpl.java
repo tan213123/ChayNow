@@ -16,10 +16,15 @@ import com.teamg5.be.repository.ReviewRepository;
 import com.teamg5.be.repository.UserRepository;
 import com.teamg5.be.service.ReportService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.teamg5.be.entity.Role;
+import com.teamg5.be.entity.NotificationType;
+import com.teamg5.be.event.SystemNotificationEvent;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +37,7 @@ public class ReportServiceImpl implements ReportService {
     private final PostingRepository postingRepository;
     private final ReviewRepository reviewRepository;
     private final CommentRepository commentRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     public ReportResponse createReport(CreateReportRequest request) {
@@ -50,6 +56,21 @@ public class ReportServiceImpl implements ReportService {
                 .build();
 
         Report saved = reportRepository.save(report);
+
+        try {
+            List<User> admins = userRepository.findByRole(Role.ADMIN);
+            for (User admin : admins) {
+                eventPublisher.publishEvent(new SystemNotificationEvent(
+                        admin,
+                        "Báo cáo mới từ người dùng",
+                        "Người dùng " + currentUser.getFullName() + " đã báo cáo một " + request.getTargetType() + " vì lý do: " + request.getReason(),
+                        NotificationType.USER_REPORT,
+                        saved.getId().toString()
+                ));
+            }
+        } catch (Exception e) {
+            // Log but don't fail report creation transaction
+        }
 
         return ReportResponse.builder()
                 .id(saved.getId())
