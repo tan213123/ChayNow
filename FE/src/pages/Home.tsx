@@ -23,17 +23,32 @@ import { getEvents } from "@/services/event.service";
 import { getMenus } from "@/services/menu.service";
 import { getComments, createComment, type CommentResponse } from "@/services/comment.service";
 import type { RestaurantResponse, EventResponse, MenuResponse } from "@/types/restaurant";
-import { getPublicPostings, type PostingResponse } from "@/services/posting.service";
+import { createPosting, getPublicPostings, type PostingResponse } from "@/services/posting.service";
+import { useAuthStore } from "@/store/authStore";
+import { toast } from "sonner";
 
 const tabs = ["Địa điểm ăn chay", "Món ăn nổi bật", "Sự kiện", "Bài đăng cộng đồng"] as const;
 type Tab = (typeof tabs)[number];
 
 const categoryFilters = ["Tất cả", "Cao Cấp", "Bình Dân", "Từ Thiện"];
+const postCategoryOptions = [
+  { value: "OTHER", label: "Chia sẻ chung" },
+  { value: "MAIN_DISH", label: "Món chính" },
+  { value: "APPETIZER", label: "Khai vị" },
+  { value: "DRINK", label: "Đồ uống" },
+  { value: "DESSERT", label: "Tráng miệng" },
+];
 
 export default function Home() {
+  const user = useAuthStore((state) => state.user);
   const [selectedTab, setSelectedTab] = useState<Tab>(tabs[0]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Tất cả");
+  const [postTitle, setPostTitle] = useState("");
+  const [postContent, setPostContent] = useState("");
+  const [postCategory, setPostCategory] = useState(postCategoryOptions[0].value);
+  const [postImageUrl, setPostImageUrl] = useState("");
+  const [isCreatingPost, setIsCreatingPost] = useState(false);
 
   // API data
   const [apiRestaurants, setApiRestaurants] = useState<RestaurantResponse[]>([]);
@@ -86,6 +101,37 @@ export default function Home() {
     setLikedPosts((prev) =>
       prev.includes(postId) ? prev.filter((id) => id !== postId) : [...prev, postId]
     );
+  };
+
+  const handleCreatePost = async () => {
+    if (!user) {
+      toast.error("Vui lòng đăng nhập để viết bài.");
+      return;
+    }
+
+    if (postTitle.trim().length < 2 || postContent.trim().length < 10) {
+      toast.error("Tiêu đề cần ít nhất 2 ký tự và nội dung cần ít nhất 10 ký tự.");
+      return;
+    }
+
+    setIsCreatingPost(true);
+    try {
+      await createPosting({
+        title: postTitle.trim(),
+        content: postContent.trim(),
+        category: postCategory,
+        imageUrl: postImageUrl.trim() || undefined,
+      });
+      setPostTitle("");
+      setPostContent("");
+      setPostCategory(postCategoryOptions[0].value);
+      setPostImageUrl("");
+      toast.success("Đã gửi bài đăng. Bài sẽ hiển thị sau khi admin duyệt.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Không thể tạo bài đăng.");
+    } finally {
+      setIsCreatingPost(false);
+    }
   };
 
   useEffect(() => {
@@ -183,7 +229,7 @@ export default function Home() {
                   <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-400">
                     <span className="flex items-center gap-1"><Phone className="h-3.5 w-3.5" /> {item.phoneNumber ?? "Chưa cập nhật"}</span>
                   </div>
-                  <Link to={`/restaurant/${item.id}`}>
+                  <Link to={`/restaurant/${item.id}?tab=menu`}>
                     <Button className="w-full rounded-2xl bg-emerald-600 py-3 text-sm font-semibold text-white hover:bg-emerald-700 transition">
                       Xem chi tiết →
                     </Button>
@@ -207,7 +253,11 @@ export default function Home() {
             </div>
           ) : (
             apiMenus.map((dish) => (
-              <article key={dish.id} className="group overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
+              <Link
+                key={dish.id}
+                to={`/restaurant/${dish.restaurantId}?tab=menu`}
+                className="group overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl"
+              >
                 <div className="relative h-48 overflow-hidden bg-slate-100">
                   <img src={dish.imageUrl ?? DISH_FALLBACK} alt={dish.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-110" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
@@ -224,7 +274,7 @@ export default function Home() {
                     <p className="text-xs text-slate-400 line-clamp-2">{dish.description}</p>
                   )}
                 </div>
-              </article>
+              </Link>
             ))
           )}
         </div>
@@ -290,6 +340,59 @@ export default function Home() {
             <p className="text-sm text-slate-500">
               Khám phá những bài đăng và đánh giá mới nhất từ cộng đồng về các quán chay.
             </p>
+          </div>
+
+          <div className="rounded-2xl border border-violet-100 bg-violet-50/40 p-4">
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="font-bold text-slate-900">Viết bài đăng</h3>
+                  <p className="mt-1 text-xs text-slate-500">Bài viết sẽ được gửi duyệt trước khi hiển thị công khai.</p>
+                </div>
+              </div>
+              <input
+                value={postTitle}
+                onChange={(e) => setPostTitle(e.target.value)}
+                maxLength={255}
+                placeholder="Tiêu đề bài đăng..."
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+              />
+              <textarea
+                value={postContent}
+                onChange={(e) => setPostContent(e.target.value)}
+                maxLength={1000}
+                rows={4}
+                placeholder="Chia sẻ trải nghiệm, món chay ngon hoặc câu chuyện của bạn..."
+                className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+              />
+              <div className="grid gap-3 md:grid-cols-[180px_1fr_auto] md:items-center">
+                <select
+                  value={postCategory}
+                  onChange={(e) => setPostCategory(e.target.value)}
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                >
+                  {postCategoryOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  value={postImageUrl}
+                  onChange={(e) => setPostImageUrl(e.target.value)}
+                  placeholder="URL ảnh minh họa (không bắt buộc)"
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                />
+                <Button
+                  type="button"
+                  onClick={handleCreatePost}
+                  disabled={isCreatingPost || !postTitle.trim() || !postContent.trim()}
+                  className="rounded-2xl bg-violet-600 px-5 py-3 text-sm font-bold text-white hover:bg-violet-700 disabled:opacity-50"
+                >
+                  {isCreatingPost ? "Đang gửi..." : "Đăng bài"}
+                </Button>
+              </div>
+            </div>
           </div>
 
           {/* Posts List */}

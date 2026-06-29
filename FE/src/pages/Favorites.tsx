@@ -176,7 +176,7 @@ export default function Favorites() {
                   <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-400">
                     <span className="flex items-center gap-1"><Phone className="h-3.5 w-3.5" /> {restaurant.phoneNumber ?? "Chưa cập nhật"}</span>
                   </div>
-                  <Link to={`/restaurant/${restaurant.id}`}>
+                  <Link to={`/restaurant/${restaurant.id}?tab=menu`}>
                     <Button className="w-full rounded-2xl bg-emerald-600 py-3 text-sm font-semibold text-white hover:bg-emerald-700 transition">
                       Xem chi tiết →
                     </Button>
@@ -229,7 +229,7 @@ export default function Favorites() {
                       <h3 className="font-bold text-slate-900">{restaurant.name}</h3>
                       <p className="mt-0.5 text-sm text-slate-500">{restaurant.address ?? "Chưa cập nhật"}</p>
                     </div>
-                    <Link to={`/restaurant/${restaurant.id}`} className="flex-1">
+                    <Link to={`/restaurant/${restaurant.id}?tab=menu`} className="flex-1">
                       <Button variant="outline" className="w-full rounded-2xl border-slate-300 py-2.5 text-sm">
                         Xem chi tiết
                       </Button>
