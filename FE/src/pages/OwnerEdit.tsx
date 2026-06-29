@@ -355,7 +355,7 @@ export default function OwnerEdit() {
       return;
     }
 
-    const payload = {
+    const payload: any = {
       name: form.name.trim(),
       address: form.address.trim() || undefined,
       phoneNumber: phoneNumber || undefined,
@@ -365,6 +365,12 @@ export default function OwnerEdit() {
       openTime: form.openTime,
       closedTime: form.closedTime,
     };
+
+    if (isEditing) {
+      if (imageFile || !form.mediaUrl) {
+        payload.mediaIds = [];
+      }
+    }
 
     try {
       setIsSaving(true);
