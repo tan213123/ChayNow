@@ -33,7 +33,6 @@ type EventForm = {
   eventType: EventType;
   startDate: string;
   endDate: string;
-  status: EventStatus | "AUTO";
 };
 
 const emptyForm: EventForm = {
@@ -43,7 +42,6 @@ const emptyForm: EventForm = {
   eventType: "CHARITY",
   startDate: "",
   endDate: "",
-  status: "AUTO",
 };
 
 const fallbackImage =
@@ -76,6 +74,32 @@ const getStatusLabel = (status: string | null) =>
 
 const getStatusStyle = (status: string | null) =>
   status ? statusStyles[status as EventStatus] : "bg-slate-100 text-slate-600";
+
+const getTodayInputValue = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const getStatusFromDates = (
+  startDate: string,
+  endDate: string,
+): EventStatus | null => {
+  if (!startDate || !endDate) {
+    return null;
+  }
+
+  const today = getTodayInputValue();
+  if (today < startDate) {
+    return "UPCOMING";
+  }
+  if (today > endDate) {
+    return "EXPIRED";
+  }
+  return "ACTIVE";
+};
 
 const dateFormatter = new Intl.DateTimeFormat("vi-VN", {
   day: "2-digit",
@@ -201,7 +225,6 @@ export default function OwnerEvents() {
       eventType: (restaurantEvent.eventType as EventType) ?? "CHARITY",
       startDate: restaurantEvent.startDate ?? "",
       endDate: restaurantEvent.endDate ?? "",
-      status: (restaurantEvent.status as EventStatus) ?? "AUTO",
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -232,7 +255,6 @@ export default function OwnerEvents() {
       eventType: form.eventType,
       startDate: form.startDate,
       endDate: form.endDate,
-      status: form.status === "AUTO" ? undefined : form.status,
     };
 
     try {
@@ -312,6 +334,8 @@ export default function OwnerEvents() {
       </OwnerLayout>
     );
   }
+
+  const previewStatus = getStatusFromDates(form.startDate, form.endDate);
 
   return (
     <OwnerLayout>
@@ -442,24 +466,20 @@ export default function OwnerEvents() {
                 </label>
               </div>
 
-              <label className="block space-y-2 text-sm font-semibold text-slate-700">
+              <div className="block space-y-2 text-sm font-semibold text-slate-700">
                 Trạng thái
-                <select
-                  value={form.status}
-                  onChange={(event) =>
-                    setField(
-                      "status",
-                      event.target.value as EventForm["status"],
-                    )
-                  }
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-normal outline-none focus:border-emerald-500"
+                <div
+                  className={`w-full rounded-2xl border border-slate-200 px-4 py-3 font-semibold ${
+                    previewStatus
+                      ? getStatusStyle(previewStatus)
+                      : "bg-slate-50 text-slate-500"
+                  }`}
                 >
-                  <option value="AUTO">Tự động theo ngày</option>
-                  <option value="UPCOMING">Sắp diễn ra</option>
-                  <option value="ACTIVE">Đang diễn ra</option>
-                  <option value="EXPIRED">Đã kết thúc</option>
-                </select>
-              </label>
+                  {previewStatus
+                    ? getStatusLabel(previewStatus)
+                    : "Tự động theo ngày"}
+                </div>
+              </div>
 
               <label className="block space-y-2 text-sm font-semibold text-slate-700">
                 Mô tả

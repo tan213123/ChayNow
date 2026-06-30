@@ -1,6 +1,7 @@
 package com.teamg5.be.dto;
 
 import com.teamg5.be.entity.Event;
+import com.teamg5.be.utils.EventStatusUtils;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -44,7 +45,7 @@ public class OwnerEventResponse {
                 .period(event.getPeriod())
                 .charityTime(event.getCharityTime())
                 .imageUrl(event.getImageUrl())
-                .status(event.getStatus())
+                .status(EventStatusUtils.resolve(event.getStatus(), event.getStartDate(), event.getEndDate()))
                 .createdAt(event.getCreatedAt())
                 .build();
     }
