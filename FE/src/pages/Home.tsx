@@ -17,13 +17,15 @@ import {
   Store,
   Utensils,
   Star,
+  ImagePlus,
+  X,
 } from "lucide-react";
 import { getRestaurants } from "@/services/restaurant.service";
 import { getEvents } from "@/services/event.service";
 import { getMenus } from "@/services/menu.service";
 import { getComments, createComment, type CommentResponse } from "@/services/comment.service";
 import type { RestaurantResponse, EventResponse, MenuResponse } from "@/types/restaurant";
-import { createPosting, getPublicPostings, type PostingResponse } from "@/services/posting.service";
+import { createPosting, getPublicPostings, uploadPostingImage, type PostingResponse } from "@/services/posting.service";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
 
@@ -46,9 +48,10 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState("Tất cả");
   const [postTitle, setPostTitle] = useState("");
   const [postContent, setPostContent] = useState("");
-  const [postCategory, setPostCategory] = useState(postCategoryOptions[0].value);
   const [postImageUrl, setPostImageUrl] = useState("");
+  const [postCategory, setPostCategory] = useState(postCategoryOptions[0].value);
   const [isCreatingPost, setIsCreatingPost] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   // API data
   const [apiRestaurants, setApiRestaurants] = useState<RestaurantResponse[]>([]);
@@ -131,6 +134,25 @@ export default function Home() {
       toast.error(error instanceof Error ? error.message : "Không thể tạo bài đăng.");
     } finally {
       setIsCreatingPost(false);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingImage(true);
+    try {
+      const response = await uploadPostingImage(file);
+      if (response.data?.url) {
+        setPostImageUrl(response.data.url);
+        toast.success("Tải ảnh bài đăng lên thành công");
+      }
+    } catch (error) {
+      toast.error("Lỗi khi tải ảnh lên");
+    } finally {
+      setIsUploadingImage(false);
+      if (e.target) e.target.value = '';
     }
   };
 
@@ -377,12 +399,31 @@ export default function Home() {
                     </option>
                   ))}
                 </select>
-                <input
-                  value={postImageUrl}
-                  onChange={(e) => setPostImageUrl(e.target.value)}
-                  placeholder="URL ảnh minh họa (không bắt buộc)"
-                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
-                />
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      value={postImageUrl}
+                      onChange={(e) => setPostImageUrl(e.target.value)}
+                      placeholder="URL ảnh minh họa (không bắt buộc)"
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100 pr-10"
+                    />
+                    <label className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer p-1.5 text-slate-400 hover:text-violet-600 transition-colors">
+                      <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={isUploadingImage} />
+                      <ImagePlus className="h-5 w-5" />
+                    </label>
+                  </div>
+                  {postImageUrl && (
+                    <div className="relative h-11 w-11 shrink-0 rounded-xl border border-slate-200 overflow-hidden">
+                      <img src={postImageUrl} alt="Preview" className="h-full w-full object-cover" />
+                      <button 
+                        onClick={() => setPostImageUrl("")}
+                        className="absolute -right-1 -top-1 rounded-full bg-red-500 p-0.5 text-white"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
+                </div>
                 <Button
                   type="button"
                   onClick={handleCreatePost}

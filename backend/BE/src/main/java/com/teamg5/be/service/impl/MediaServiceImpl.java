@@ -115,4 +115,20 @@ public class MediaServiceImpl implements MediaService {
         }
         return responses;
     }
+
+    @Override
+    public String uploadImageOnly(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new AppException(ErrorCode.EMPTY_FILE);
+        }
+        try {
+            Map<?, ?> uploadResult = cloudinary.uploader().upload(
+                    file.getBytes(),
+                    ObjectUtils.asMap("resource_type", "auto")
+            );
+            return (String) uploadResult.get("secure_url");
+        } catch (IOException e) {
+            throw new AppException(ErrorCode.UPLOAD_FAILED, "Tải tập tin lên Cloudinary thất bại: " + e.getMessage());
+        }
+    }
 }

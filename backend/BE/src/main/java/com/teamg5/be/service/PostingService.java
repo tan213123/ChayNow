@@ -5,9 +5,18 @@ import com.teamg5.be.dto.PostingResponse;
 import com.teamg5.be.dto.UpdatePostingRequest;
 
 /**
- * Service interface quản lý các bài đăng (Posting) của chủ nhà hàng (Owner).
+ * Service interface quản lý các bài đăng (Posting).
  */
 public interface PostingService {
+
+    /**
+     * Tạo bài đăng cộng đồng (dành cho User hoặc Owner).
+     *
+     * @param request dữ liệu tạo bài đăng
+     * @return PostingResponse chứa thông tin bài đăng vừa tạo
+     */
+    PostingResponse createPosting(com.teamg5.be.dto.CreatePostingRequest request);
+
 
     /**
      * Lấy danh sách bài đăng của chủ nhà hàng đang đăng nhập với bộ lọc trạng thái, từ khóa và nhà hàng cụ thể.

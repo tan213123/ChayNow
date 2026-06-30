@@ -59,6 +59,7 @@ export interface FetchPostingsParams {
   size?: number;
   keyword?: string;
   status?: PostingStatus | "ALL";
+  type?: "OWNER" | "COMMUNITY";
 }
 
 export const getAdminPostings = async (
@@ -72,6 +73,9 @@ export const getAdminPostings = async (
     queryParams.keyword = params.keyword.trim();
   }
   if (params.status && params.status !== "ALL") queryParams.status = params.status;
+  
+  // Default to OWNER if not specified, since this service is primarily for Owner posts
+  queryParams.type = params.type || "OWNER";
 
   const response = await apiService.get<
     MaybeWrapped<AdminPostingsResponse>,

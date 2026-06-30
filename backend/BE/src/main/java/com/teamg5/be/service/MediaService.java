@@ -34,7 +34,7 @@ public interface MediaService {
      *
      * @param files danh sách các tệp tin phương tiện cần tải lên
      * @param restaurantId ID của nhà hàng liên kết
-     * @return List&lt;MediaResponse&gt; danh sách phản hồi chứa thông tin các phương tiện đã lưu
+     * @return List<MediaResponse> danh sách phản hồi chứa thông tin các phương tiện đã lưu
      */
     List<MediaResponse> uploadFiles(MultipartFile[] files, Long restaurantId);
 
@@ -44,7 +44,12 @@ public interface MediaService {
      * @param files danh sách các tệp tin phương tiện cần tải lên
      * @param restaurantId ID của nhà hàng liên kết (có thể null)
      * @param reviewId ID của đánh giá liên kết (có thể null)
-     * @return List&lt;MediaResponse&gt; danh sách phản hồi chứa thông tin các phương tiện đã lưu
+     * @return List<MediaResponse> danh sách phản hồi chứa thông tin các phương tiện đã lưu
      */
     List<MediaResponse> uploadFiles(MultipartFile[] files, Long restaurantId, Long reviewId);
+
+    /**
+     * Tải ảnh lên Cloudinary và chỉ lấy URL (không lưu db).
+     */
+    String uploadImageOnly(MultipartFile file);
 }

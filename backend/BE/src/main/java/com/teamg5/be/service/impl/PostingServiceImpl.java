@@ -33,6 +33,24 @@ public class PostingServiceImpl implements PostingService {
     private final UserRepository userRepository;
 
     @Override
+    @Transactional
+    public com.teamg5.be.dto.PostingResponse createPosting(com.teamg5.be.dto.CreatePostingRequest request) {
+        User currentUser = getCurrentUser();
+        
+        Posting posting = Posting.builder()
+                .user(currentUser)
+                .title(request.getTitle().trim())
+                .content(request.getContent().trim())
+                .category(normalizeCategory(request.getCategory()))
+                .thumbnailUrl(request.getImageUrl() != null ? request.getImageUrl().trim() : null)
+                .status("PENDING")
+                .build();
+                
+        Posting saved = postingRepository.save(posting);
+        return mapToResponse(saved);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public PageResponseDTO<PostingResponse> getMyPostings(
             String status,

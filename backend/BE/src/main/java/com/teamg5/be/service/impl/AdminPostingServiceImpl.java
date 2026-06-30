@@ -29,14 +29,15 @@ public class AdminPostingServiceImpl implements AdminPostingService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponseDTO<PostingResponse> getAllPostings(String keyword, String status, int page, int size) {
+    public PageResponseDTO<PostingResponse> getAllPostings(String keyword, String status, String type, int page, int size) {
         if (size > 50) size = 50;
         PageRequest pageable = PageRequest.of(page, size);
 
         String searchKeyword = (keyword != null && !keyword.isBlank()) ? keyword.trim() : null;
         String searchStatus = (status != null && !status.isBlank()) ? status.trim().toUpperCase() : null;
+        String searchType = (type != null && !type.isBlank()) ? type.trim().toUpperCase() : null;
 
-        Page<Posting> dbPage = postingRepository.findAllForAdmin(searchStatus, searchKeyword, pageable);
+        Page<Posting> dbPage = postingRepository.findAllForAdmin(searchStatus, searchType, searchKeyword, pageable);
 
         List<PostingResponse> content = dbPage.getContent().stream()
                 .map(this::mapToResponse)
