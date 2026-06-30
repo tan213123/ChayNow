@@ -23,12 +23,16 @@ import {
   Star,
   Tag,
   Utensils,
+  Users,
   X,
 } from "lucide-react";
 import {
+  clickReviewTestOption,
   createRestaurantReview,
   getRestaurant,
   getRestaurantReviews,
+  getReviewTestOptions,
+  unclickReviewTestOption,
 } from "@/services/restaurant.service";
 import { getRestaurantEvents } from "@/services/event.service";
 import { getRestaurantMenus } from "@/services/menu.service";
@@ -42,6 +46,7 @@ import type {
   ReviewResponse,
   EventResponse,
   MenuResponse,
+  ReviewTestOptionResponse,
 } from "@/types/restaurant";
 
 const tabLabels = ["Thông tin", "Sự kiện", "Thực đơn", "Đánh giá"] as const;
@@ -53,16 +58,6 @@ const tabIcons: Record<Tab, React.FC<any>> = {
   "Thực đơn": Utensils,
   "Đánh giá": Star,
 };
-
-const reviewSuggestions = [
-  "Món ăn ngon",
-  "Phục vụ nhiệt tình",
-  "Không gian yên tĩnh",
-  "Giá cả hợp lý",
-  "Sạch sẽ",
-  "Lên món nhanh",
-  "Thực đơn đa dạng"
-];
 
 export default function RestaurantDetail() {
   const { id } = useParams();
@@ -85,6 +80,10 @@ export default function RestaurantDetail() {
   const [hoverRating, setHoverRating] = useState(0);
   const [selectedRating, setSelectedRating] = useState(0);
   const [reviewImages, setReviewImages] = useState<File[]>([]);
+  const [reviewTestOptions, setReviewTestOptions] = useState<
+    ReviewTestOptionResponse[]
+  >([]);
+  const [savingOptionId, setSavingOptionId] = useState<number | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -129,6 +128,10 @@ export default function RestaurantDetail() {
             console.error("Failed to load menus", err);
             return [] as MenuResponse[];
           }),
+          getReviewTestOptions(restaurantId).catch((err) => {
+            console.error("Failed to load review test options", err);
+            return [] as ReviewTestOptionResponse[];
+          }),
           user
             ? isFavourite(restaurantId)
                 .then((res) => (res.success ? res.data : false))
@@ -139,12 +142,13 @@ export default function RestaurantDetail() {
             : Promise.resolve(false),
         ]);
       })
-      .then(([restaurantResponse, reviewsResponse, eventsResponse, menusResponse, isFavResponse]) => {
+      .then(([restaurantResponse, reviewsResponse, eventsResponse, menusResponse, reviewOptionResponse, isFavResponse]) => {
         if (!cancelled) {
           setApiRestaurant(restaurantResponse);
           setApiReviews(reviewsResponse);
           setApiEvents(eventsResponse);
           setApiMenus(menusResponse);
+          setReviewTestOptions(reviewOptionResponse);
           setIsFavorite(!!isFavResponse);
         }
       })
@@ -304,6 +308,65 @@ export default function RestaurantDetail() {
   const handleReviewImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setReviewImages(Array.from(e.target.files));
+    }
+  };
+
+  const syncSuggestionText = (label: string, shouldInclude: boolean) => {
+    setReviewText((prev) => {
+      const parts = prev
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .filter((item) => item !== label);
+
+      if (shouldInclude) {
+        parts.push(label);
+      }
+
+      return parts.join(", ");
+    });
+  };
+
+  const handleToggleReviewTestOption = async (option: ReviewTestOptionResponse) => {
+    if (!user) {
+      toast.error("Vui lòng đăng nhập để chọn tiêu chí đánh giá.");
+      return;
+    }
+
+    const nextClicked = !option.clickedByCurrentUser;
+    setSavingOptionId(option.id);
+    setReviewTestOptions((current) =>
+      current.map((item) =>
+        item.id === option.id
+          ? {
+              ...item,
+              clickedByCurrentUser: nextClicked,
+              clickCount: Math.max(0, item.clickCount + (nextClicked ? 1 : -1)),
+            }
+          : item,
+      ),
+    );
+    syncSuggestionText(option.label, nextClicked);
+
+    try {
+      if (nextClicked) {
+        const updated = await clickReviewTestOption(restaurantId, option.id);
+        setReviewTestOptions((current) =>
+          current.map((item) => (item.id === option.id ? updated : item)),
+        );
+      } else {
+        await unclickReviewTestOption(restaurantId, option.id);
+      }
+    } catch (error) {
+      setReviewTestOptions((current) =>
+        current.map((item) => (item.id === option.id ? option : item)),
+      );
+      syncSuggestionText(option.label, option.clickedByCurrentUser);
+      toast.error(
+        error instanceof Error ? error.message : "Không thể lưu tiêu chí.",
+      );
+    } finally {
+      setSavingOptionId(null);
     }
   };
 
@@ -664,26 +727,26 @@ export default function RestaurantDetail() {
                           className="mt-3 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition resize-none"
                         />
                         <div className="mt-3 flex flex-wrap gap-2">
-                          {reviewSuggestions.map((suggestion) => {
-                            const isSelected = reviewText.includes(suggestion);
+                          {reviewTestOptions.map((option) => {
+                            const isSelected = option.clickedByCurrentUser;
                             return (
                               <button
-                                key={suggestion}
+                                key={option.id}
                                 type="button"
-                                onClick={() => {
-                                  if (isSelected) {
-                                    setReviewText(prev => prev.replace(suggestion, '').replace(/^,\s*|,\s*$/g, '').replace(/,\s*,/g, ', ').trim());
-                                  } else {
-                                    setReviewText(prev => prev ? `${prev}, ${suggestion}` : suggestion);
-                                  }
-                                }}
+                                onClick={() => handleToggleReviewTestOption(option)}
+                                disabled={savingOptionId === option.id}
                                 className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
                                   isSelected 
                                     ? "border-emerald-500 bg-emerald-50 text-emerald-700" 
                                     : "border-slate-200 bg-white text-slate-600 hover:border-emerald-300 hover:bg-emerald-50"
                                 }`}
                               >
-                                {isSelected ? <Check className="mr-1 inline h-3 w-3" /> : <Plus className="mr-1 inline h-3 w-3" />}{suggestion}
+                                {isSelected ? <Check className="mr-1 inline h-3 w-3" /> : <Plus className="mr-1 inline h-3 w-3" />}
+                                {option.label}
+                                <span className="ml-1 inline-flex items-center gap-0.5 rounded-full bg-white/70 px-1.5 py-0.5 text-[10px] font-bold">
+                                  <Users className="h-2.5 w-2.5" />
+                                  {option.clickCount}
+                                </span>
                               </button>
                             );
                           })}
@@ -896,6 +959,64 @@ export default function RestaurantDetail() {
                   })}
                 </div>
               </div>
+            </div>
+
+            <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-bold uppercase tracking-widest text-slate-400">
+                    Tiêu chí được chọn
+                  </p>
+                  <h2 className="mt-1 text-lg font-bold text-slate-900">
+                    Người dùng nói gì
+                  </h2>
+                </div>
+                <div className="rounded-2xl bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
+                  {reviewTestOptions.reduce((total, option) => total + option.clickCount, 0)} lượt chọn
+                </div>
+              </div>
+
+              {reviewTestOptions.length === 0 ? (
+                <p className="mt-4 rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">
+                  Chưa có dữ liệu tiêu chí.
+                </p>
+              ) : (
+                <div className="mt-4 space-y-3">
+                  {reviewTestOptions.map((option) => {
+                    const maxClickCount = Math.max(
+                      1,
+                      ...reviewTestOptions.map((item) => item.clickCount),
+                    );
+                    const width = Math.min(
+                      100,
+                      (option.clickCount / maxClickCount) * 100,
+                    );
+
+                    return (
+                      <div
+                        key={option.id}
+                        className="rounded-2xl border border-slate-100 bg-slate-50 p-3"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-sm font-semibold text-slate-900">
+                            {option.label}
+                          </p>
+                          <span className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-1 text-xs font-bold text-emerald-700 shadow-sm">
+                            <Users className="h-3.5 w-3.5" />
+                            {option.clickCount}
+                          </span>
+                        </div>
+                        <div className="mt-2 h-2 overflow-hidden rounded-full bg-white">
+                          <div
+                            className="h-full rounded-full bg-emerald-500"
+                            style={{ width: `${width}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </aside>
         </div>

@@ -100,6 +100,21 @@ export interface CreateReviewRequest {
   context: string;
 }
 
+export interface ReviewTestOptionResponse {
+  id: number;
+  label: string;
+  displayOrder: number;
+  clickCount: number;
+  clickedByCurrentUser: boolean;
+}
+
+export interface ReviewTestOptionClickUserResponse {
+  userId: number;
+  fullName: string;
+  email: string;
+  clickedAt: string;
+}
+
 export interface MenuResponse {
   id: number;
   restaurantId: number;
