@@ -53,7 +53,8 @@ export const uploadPostingImage = async (
 
   const response = await apiService.post<ApiResponse<MediaResponse>, ApiResponse<MediaResponse>>(
     `/api/postings/upload-image`,
-    formData
+    formData,
+    { timeout: 60000 },
   );
   return response;
 };

@@ -19,6 +19,7 @@ export const mediaService = {
     return apiService.post<ApiResponse<MediaResponse>, ApiResponse<MediaResponse>>(
       "/api/media/upload",
       formData,
+      { timeout: 60000 },
     );
   },
 
@@ -41,6 +42,7 @@ export const mediaService = {
     return apiService.post<ApiResponse<MediaResponse[]>, ApiResponse<MediaResponse[]>>(
       "/api/media/upload-multiple",
       formData,
+      { timeout: 60000 },
     );
   },
 };

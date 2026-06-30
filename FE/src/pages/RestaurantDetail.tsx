@@ -41,6 +41,7 @@ import { mediaService } from "@/services/media.service";
 import { useAuthStore } from "@/store/authStore";
 import { addFavourite, isFavourite, removeFavourite } from "@/services/favourite.service";
 import { createReport } from "@/services/report.service";
+import { refreshCurrentPageSoon } from "@/lib/refreshPage";
 import type {
   RestaurantResponse,
   ReviewResponse,
@@ -238,12 +239,14 @@ export default function RestaurantDetail() {
         if (res.success) {
           setIsFavorite(false);
           toast.success("Đã xóa khỏi danh sách yêu thích");
+          refreshCurrentPageSoon();
         }
       } else {
         const res = await addFavourite(restaurantId);
         if (res.success) {
           setIsFavorite(true);
           toast.success("Đã thêm vào danh sách yêu thích");
+          refreshCurrentPageSoon();
         }
       }
     } catch (error) {
@@ -277,6 +280,7 @@ export default function RestaurantDetail() {
       setReportReason("");
       setReportDescription("");
       setReportTarget(null);
+      refreshCurrentPageSoon();
     } catch (error) {
       toast.error("Không thể gửi báo cáo. Vui lòng thử lại sau.");
     } finally {
@@ -421,6 +425,7 @@ export default function RestaurantDetail() {
       setSelectedRating(0);
       setReviewImages([]);
       toast.success("Gửi đánh giá thành công.");
+      refreshCurrentPageSoon();
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Không thể gửi đánh giá.",
