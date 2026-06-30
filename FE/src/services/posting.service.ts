@@ -27,6 +27,23 @@ export interface PageResponseDTO<T> {
   last: boolean;
 }
 
+export interface CreatePostingRequest {
+  title: string;
+  content: string;
+  category?: string;
+  imageUrl?: string;
+}
+
+export const createPosting = async (
+  data: CreatePostingRequest
+): Promise<PostingResponse> => {
+  const response = await apiService.post<{ data: PostingResponse }>(
+    `/api/postings`,
+    data
+  );
+  return response.data?.data || (response as any).data || response;
+};
+
 export const getPublicPostings = async (
   params?: {
     keyword?: string;

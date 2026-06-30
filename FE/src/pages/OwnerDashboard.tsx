@@ -226,7 +226,7 @@ export default function OwnerDashboard() {
 
         <div className="grid gap-6 md:grid-cols-2">
           <Link
-            to="/manage/reviews"
+            to={`/manage/restaurants/${restaurant.id}/reviews`}
             className="rounded-[2rem] border border-emerald-200 bg-emerald-50 p-7"
           >
             <h2 className="text-lg font-semibold text-emerald-900">

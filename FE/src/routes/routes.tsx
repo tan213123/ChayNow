@@ -99,6 +99,14 @@ export const routes: RouteObject[] = [
     ),
   },
   {
+    path: "/manage/restaurants/:restaurantId/reviews",
+    element: (
+      <ProtectedRoute requiredRoles={["OWNER"]}>
+        <OwnerReviews />
+      </ProtectedRoute>
+    ),
+  },
+  {
     path: "/admin",
     element: (
       <ProtectedRoute requiredRoles={["ADMIN"]}>

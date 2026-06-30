@@ -21,6 +21,11 @@ export interface NotificationResponse {
   createdAt: string;
 }
 
+type RawNotificationResponse = Omit<NotificationResponse, "isRead"> & {
+  isRead?: boolean;
+  read?: boolean;
+};
+
 export interface PageResponse<T> {
   content: T[];
   page: number;
@@ -38,8 +43,18 @@ export const getNotifications = async (
   const response = await apiService.get<any>(`/api/notifications`, {
     params: { page, size, unreadOnly },
   });
-  return response.data;
+  return {
+    ...response.data,
+    content: response.data.content.map(normalizeNotification),
+  };
 };
+
+export const normalizeNotification = (
+  notification: RawNotificationResponse
+): NotificationResponse => ({
+  ...notification,
+  isRead: Boolean(notification.isRead ?? notification.read),
+});
 
 export const markAsRead = async (id: number) => {
   const response = await apiService.patch(`/api/notifications/${id}/read`);

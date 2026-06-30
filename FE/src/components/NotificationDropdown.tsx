@@ -8,6 +8,7 @@ import {
   markAsRead,
   markAllAsRead,
   deleteNotification,
+  normalizeNotification,
   type NotificationResponse,
 } from "@/services/notification.service";
 
@@ -66,20 +67,11 @@ export default function NotificationDropdown() {
 
     eventSource.addEventListener("notification", (event: MessageEvent) => {
       try {
-        const newNotif = JSON.parse(event.data) as NotificationResponse;
+        const newNotif = normalizeNotification(JSON.parse(event.data));
         
         // Add to list
         setNotifications((prev) => [newNotif, ...prev.slice(0, 9)]);
         setUnreadCount((prev) => prev + 1);
-
-        // Show toast
-        toast.info(newNotif.title, {
-          description: newNotif.content,
-          action: {
-            label: "Xem",
-            onClick: () => handleNotificationClick(newNotif),
-          },
-        });
       } catch (err) {
         console.error("Error parsing SSE notification:", err);
       }
@@ -137,9 +129,9 @@ export default function NotificationDropdown() {
     }
   };
 
-  const handleNotificationClick = (notif: NotificationResponse) => {
+  const handleNotificationClick = async (notif: NotificationResponse) => {
     if (!notif.isRead) {
-      handleMarkAsRead(notif.id);
+      await handleMarkAsRead(notif.id);
     }
     setIsOpen(false);
 

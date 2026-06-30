@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
@@ -64,6 +64,7 @@ const reviewSuggestions = [
 
 export default function RestaurantDetail() {
   const { id } = useParams();
+  const location = useLocation();
   const restaurantId = Number(id);
   const isValidId = Number.isInteger(restaurantId) && restaurantId > 0;
   const [apiRestaurant, setApiRestaurant] =
@@ -81,6 +82,14 @@ export default function RestaurantDetail() {
   const [hoverRating, setHoverRating] = useState(0);
   const [selectedRating, setSelectedRating] = useState(0);
   const [reviewImages, setReviewImages] = useState<File[]>([]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const targetTab = params.get("tab") ?? location.hash.replace("#", "");
+    if (targetTab === "menu") {
+      setActiveTab(tabLabels[2]);
+    }
+  }, [location.search, location.hash]);
 
   // Báo cáo state
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);

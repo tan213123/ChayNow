@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import OwnerLayout from "@/components/OwnerLayout";
@@ -16,7 +16,12 @@ import type {
 } from "@/types/restaurant";
 
 export default function OwnerReviews() {
-  const restaurantId = getSelectedRestaurantId();
+  const { restaurantId: routeRestaurantId } = useParams();
+  const parsedRouteRestaurantId = Number(routeRestaurantId);
+  const restaurantId =
+    Number.isInteger(parsedRouteRestaurantId) && parsedRouteRestaurantId > 0
+      ? parsedRouteRestaurantId
+      : getSelectedRestaurantId();
   const [restaurant, setRestaurant] = useState<RestaurantResponse | null>(null);
   const [reviews, setReviews] = useState<ReviewResponse[]>([]);
   const [selectedReview, setSelectedReview] = useState<ReviewResponse | null>(

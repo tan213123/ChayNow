@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import type { Role } from "@/types/auth";
-import { getRestaurants } from "@/services/restaurant.service";
+import { getFavourites } from "@/services/favourite.service";
 import type { RestaurantResponse } from "@/types/restaurant";
 import { getMyProfile, updateMyProfile } from "@/services/user.service";
 import type { UserProfileResponse } from "@/types/auth";
@@ -62,8 +62,12 @@ export default function Profile() {
   }, [user]);
 
   useEffect(() => {
-    getRestaurants()
-      .then((data) => setApiRestaurants(data))
+    getFavourites(0, 4)
+      .then((res) => {
+        if (res.success && res.data) {
+          setApiRestaurants(res.data.content.map((item) => item.restaurant));
+        }
+      })
       .catch(console.error)
       .finally(() => setRestLoading(false));
   }, []);
@@ -346,7 +350,7 @@ export default function Profile() {
                 ) : (
                   <div className="grid gap-4 sm:grid-cols-2">
                     {apiRestaurants.slice(0, 4).map((r) => (
-                      <Link key={r.id} to={`/restaurant/${r.id}`}>
+                      <Link key={r.id} to={`/restaurant/${r.id}?tab=menu`}>
                         <article className="group overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
                           <div className="relative h-44 overflow-hidden bg-slate-100">
                             <img
