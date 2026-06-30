@@ -3,6 +3,7 @@ import { Link, useLocation, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
+import RestaurantMap from "@/components/RestaurantMap";
 import {
   AlertTriangle,
   Calendar,
@@ -31,6 +32,7 @@ import {
 } from "@/services/restaurant.service";
 import { getRestaurantEvents } from "@/services/event.service";
 import { getRestaurantMenus } from "@/services/menu.service";
+import { getPlace } from "@/services/place.service";
 import { mediaService } from "@/services/media.service";
 import { useAuthStore } from "@/store/authStore";
 import { addFavourite, isFavourite, removeFavourite } from "@/services/favourite.service";
@@ -72,6 +74,7 @@ export default function RestaurantDetail() {
   const [apiReviews, setApiReviews] = useState<ReviewResponse[]>([]);
   const [apiEvents, setApiEvents] = useState<EventResponse[]>([]);
   const [apiMenus, setApiMenus] = useState<MenuResponse[]>([]);
+  const [placeMapUrl, setPlaceMapUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(isValidId);
   const { user } = useAuthStore();
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -112,6 +115,7 @@ export default function RestaurantDetail() {
         if (!cancelled) {
           setIsLoading(true);
           setLoadError(null);
+          setPlaceMapUrl(null);
         }
 
         return Promise.all([
@@ -161,6 +165,33 @@ export default function RestaurantDetail() {
       cancelled = true;
     };
   }, [restaurantId, isValidId, user]);
+
+  useEffect(() => {
+    const placeId = apiRestaurant?.placeId;
+    if (!placeId) {
+      setPlaceMapUrl(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    getPlace(placeId)
+      .then((place) => {
+        if (!cancelled) {
+          setPlaceMapUrl(place.mapUrl);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load place map URL", err);
+        if (!cancelled) {
+          setPlaceMapUrl(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [apiRestaurant?.placeId]);
 
   const handleToggleFavorite = async () => {
     if (!user) {
@@ -248,6 +279,7 @@ export default function RestaurantDetail() {
       intro: apiRestaurant.description ?? "Nhà hàng chưa có mô tả.",
       address: apiRestaurant.address ?? "Chưa cập nhật địa chỉ",
       phone: apiRestaurant.phoneNumber ?? "Chưa cập nhật",
+      mapUrl: placeMapUrl,
       mapAlt: `Bản đồ ${apiRestaurant.name}`,
       menu: apiMenus.map((item) => ({
         name: item.name,
@@ -267,7 +299,7 @@ export default function RestaurantDetail() {
       })),
       features: [apiRestaurant.typeRestaurantName].filter(Boolean),
     };
-  }, [apiRestaurant, apiReviews, apiMenus]);
+  }, [apiRestaurant, apiReviews, apiMenus, placeMapUrl]);
 
   const handleReviewImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -459,6 +491,11 @@ export default function RestaurantDetail() {
                         <p className="text-sm font-medium text-slate-900">{restaurant.priceRange}</p>
                       </div>
                     </div>
+                    <RestaurantMap
+                      name={restaurant.name}
+                      address={restaurant.address}
+                      mapUrl={restaurant.mapUrl}
+                    />
                   </div>
                 )}
 
@@ -812,6 +849,14 @@ export default function RestaurantDetail() {
               </button>
 
             </div>
+
+            <RestaurantMap
+              name={restaurant.name}
+              address={restaurant.address}
+              mapUrl={restaurant.mapUrl}
+              compact
+              mapClassName="h-64"
+            />
 
             {/* Rating summary */}
             <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm">
