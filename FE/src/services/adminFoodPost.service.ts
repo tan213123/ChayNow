@@ -1,20 +1,5 @@
 import apiService from "@/services/api.service";
 
-type MaybeWrapped<T> = T | { success?: boolean; message?: string; data: T };
-
-const unwrapResponse = <T>(response: MaybeWrapped<T>): T => {
-  if (
-    response &&
-    typeof response === "object" &&
-    "data" in response &&
-    "success" in response
-  ) {
-    return response.data;
-  }
-
-  return response as T;
-};
-
 export type FoodPostStatus = "PENDING" | "APPROVED" | "REJECTED";
 
 export interface AdminFoodPost {

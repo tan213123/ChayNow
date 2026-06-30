@@ -3,8 +3,10 @@ package com.teamg5.be.service.impl;
 import com.teamg5.be.dto.PageResponseDTO;
 import com.teamg5.be.dto.PostingResponse;
 import com.teamg5.be.dto.RejectPostingRequestDTO;
+import com.teamg5.be.entity.NotificationType;
 import com.teamg5.be.entity.Posting;
 import com.teamg5.be.entity.User;
+import com.teamg5.be.event.SystemNotificationEvent;
 import com.teamg5.be.exception.AppException;
 import com.teamg5.be.exception.ErrorCode;
 import com.teamg5.be.repository.PostingRepository;
@@ -12,6 +14,7 @@ import com.teamg5.be.repository.UserRepository;
 import com.teamg5.be.service.AdminPostingService;
 import com.teamg5.be.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -26,6 +29,7 @@ public class AdminPostingServiceImpl implements AdminPostingService {
 
     private final PostingRepository postingRepository;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional(readOnly = true)
@@ -67,6 +71,7 @@ public class AdminPostingServiceImpl implements AdminPostingService {
         posting.setRejectReason(null);
 
         Posting saved = postingRepository.save(posting);
+        notifyAuthorOfPostStatus(saved, true);
         return mapToResponse(saved);
     }
 
@@ -84,7 +89,27 @@ public class AdminPostingServiceImpl implements AdminPostingService {
         posting.setRejectReason(request.getReason());
 
         Posting saved = postingRepository.save(posting);
+        notifyAuthorOfPostStatus(saved, false);
         return mapToResponse(saved);
+    }
+
+    private void notifyAuthorOfPostStatus(Posting posting, boolean approved) {
+        if (posting.getUser() == null) {
+            return;
+        }
+
+        String statusText = approved ? "duoc duyet" : "bi tu choi";
+        String reason = !approved && posting.getRejectReason() != null && !posting.getRejectReason().isBlank()
+                ? " Ly do: " + posting.getRejectReason()
+                : "";
+
+        eventPublisher.publishEvent(new SystemNotificationEvent(
+                posting.getUser(),
+                "Admin da xu ly bai dang",
+                "Bai dang \"" + posting.getTitle() + "\" da " + statusText + "." + reason,
+                NotificationType.POST_STATUS_UPDATE,
+                posting.getId().toString()
+        ));
     }
 
     private User getCurrentUser() {

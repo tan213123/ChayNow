@@ -4,9 +4,11 @@ import com.teamg5.be.dto.PageResponseDTO;
 import com.teamg5.be.dto.PostingResponse;
 import com.teamg5.be.dto.UpdatePostingRequest;
 import com.teamg5.be.entity.FoodCategory;
+import com.teamg5.be.entity.NotificationType;
 import com.teamg5.be.entity.Posting;
 import com.teamg5.be.entity.Role;
 import com.teamg5.be.entity.User;
+import com.teamg5.be.event.SystemNotificationEvent;
 import com.teamg5.be.exception.AppException;
 import com.teamg5.be.exception.ErrorCode;
 import com.teamg5.be.repository.PostingRepository;
@@ -14,6 +16,7 @@ import com.teamg5.be.repository.UserRepository;
 import com.teamg5.be.service.PostingService;
 import com.teamg5.be.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -31,6 +34,7 @@ public class PostingServiceImpl implements PostingService {
 
     private final PostingRepository postingRepository;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -47,6 +51,7 @@ public class PostingServiceImpl implements PostingService {
                 .build();
                 
         Posting saved = postingRepository.save(posting);
+        notifyAdminsAboutPost(saved, "Bai dang moi can duyet");
         return mapToResponse(saved);
     }
 
@@ -165,7 +170,21 @@ public class PostingServiceImpl implements PostingService {
         posting.setRejectedAt(null);
 
         Posting saved = postingRepository.save(posting);
+        notifyAdminsAboutPost(saved, "Bai dang duoc gui lai");
         return mapToResponse(saved);
+    }
+
+    private void notifyAdminsAboutPost(Posting posting, String title) {
+        String authorName = posting.getUser() != null ? posting.getUser().getFullName() : "Nguoi dung";
+        userRepository.findByRole(Role.ADMIN).forEach(admin ->
+                eventPublisher.publishEvent(new SystemNotificationEvent(
+                        admin,
+                        title,
+                        authorName + " vua gui bai dang \"" + posting.getTitle() + "\".",
+                        NotificationType.NEW_POST,
+                        posting.getId().toString()
+                ))
+        );
     }
 
     private PageResponseDTO<PostingResponse> toPageResponse(Page<Posting> dbPage) {

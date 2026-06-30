@@ -12,6 +12,7 @@ import {
   Users,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+import NotificationDropdown from "@/components/NotificationDropdown";
 
 type AdminLayoutProps = {
   children: ReactNode;
@@ -94,6 +95,8 @@ export default function AdminLayout({
             </div>
 
             <div className="flex items-center gap-6">
+              <NotificationDropdown />
+
               <div className="flex items-center gap-3">
                 {user?.avatarUrl ? (
                   <img

@@ -3,11 +3,13 @@ package com.teamg5.be.service.impl;
 import com.teamg5.be.dto.CreateFoodPostRequest;
 import com.teamg5.be.dto.FoodPostResponse;
 import com.teamg5.be.entity.FoodCategory;
+import com.teamg5.be.entity.NotificationType;
 import com.teamg5.be.entity.Posting;
 import com.teamg5.be.entity.Restaurant;
 import com.teamg5.be.entity.RestaurantStatus;
 import com.teamg5.be.entity.Role;
 import com.teamg5.be.entity.User;
+import com.teamg5.be.event.SystemNotificationEvent;
 import com.teamg5.be.exception.AppException;
 import com.teamg5.be.exception.ErrorCode;
 import com.teamg5.be.repository.PostingRepository;
@@ -16,6 +18,7 @@ import com.teamg5.be.repository.UserRepository;
 import com.teamg5.be.service.OwnerFoodPostService;
 import com.teamg5.be.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -35,6 +38,7 @@ public class OwnerFoodPostServiceImpl implements OwnerFoodPostService {
     private final PostingRepository postingRepository;
     private final RestaurantRepository restaurantRepository;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     public FoodPostResponse createFoodPost(CreateFoodPostRequest request) {
@@ -79,7 +83,21 @@ public class OwnerFoodPostServiceImpl implements OwnerFoodPostService {
                 .build();
 
         Posting saved = postingRepository.save(posting);
+        notifyAdminsAboutFoodPost(saved);
         return FoodPostResponse.from(saved);
+    }
+
+    private void notifyAdminsAboutFoodPost(Posting posting) {
+        String authorName = posting.getUser() != null ? posting.getUser().getFullName() : "Chu quan";
+        userRepository.findByRole(Role.ADMIN).forEach(admin ->
+                eventPublisher.publishEvent(new SystemNotificationEvent(
+                        admin,
+                        "Bai dang mon an moi can duyet",
+                        authorName + " vua gui bai dang \"" + posting.getTitle() + "\".",
+                        NotificationType.NEW_POST,
+                        posting.getId().toString()
+                ))
+        );
     }
 
     @Override

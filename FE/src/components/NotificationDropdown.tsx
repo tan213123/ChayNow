@@ -138,15 +138,41 @@ export default function NotificationDropdown() {
     // Deep routing based on notification type
     switch (notif.type) {
       case "NEW_RESTAURANT":
-      case "NEW_DISH":
       case "RESTAURANT_STATUS_UPDATE":
-        if (notif.targetId) {
-          // If Owner or Admin, route to management page, else customer detail page
-          if (user?.role === "OWNER" || user?.role === "ADMIN") {
-            navigate(`/manage/restaurants/${notif.targetId}`);
-          } else {
-            navigate(`/restaurants/${notif.targetId}`);
-          }
+        if (user?.role === "ADMIN") {
+          navigate("/admin/locations");
+        } else if (user?.role === "OWNER") {
+          navigate("/manage/restaurants");
+        } else if (notif.targetId) {
+          navigate(`/restaurant/${notif.targetId}`);
+        }
+        break;
+      case "NEW_DISH":
+        if (user?.role === "ADMIN") {
+          navigate("/admin/posts");
+        } else if (user?.role === "OWNER") {
+          navigate("/manage/restaurants");
+        } else if (notif.targetId) {
+          navigate(`/restaurant/${notif.targetId}?tab=menu`);
+        }
+        break;
+      case "NEW_POST":
+        if (user?.role === "ADMIN") {
+          navigate("/admin/posts");
+        } else if (user?.role === "OWNER") {
+          navigate("/manage/restaurants");
+        }
+        break;
+      case "NEW_USER":
+        if (user?.role === "ADMIN") {
+          navigate("/admin/users");
+        }
+        break;
+      case "POST_STATUS_UPDATE":
+        if (user?.role === "OWNER") {
+          navigate("/manage/restaurants");
+        } else {
+          navigate("/");
         }
         break;
       case "NEW_REVIEW_COMMENT":
@@ -157,12 +183,12 @@ export default function NotificationDropdown() {
         break;
       case "USER_REPORT":
         if (user?.role === "ADMIN") {
-          navigate(`/admin/reports/${notif.targetId}`);
+          navigate("/admin/report");
         }
         break;
       case "RESTAURANT_APPROVAL_REQUEST":
         if (user?.role === "ADMIN") {
-          navigate(`/admin/restaurants`); // or specific admin approval tab
+          navigate("/admin/locations");
         }
         break;
       default:

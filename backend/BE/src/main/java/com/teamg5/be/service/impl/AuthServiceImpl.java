@@ -4,13 +4,16 @@ import com.teamg5.be.security.JwtService;
 import com.teamg5.be.dto.LoginRequest;
 import com.teamg5.be.dto.RegisterRequest;
 import com.teamg5.be.dto.TokenResponse;
+import com.teamg5.be.entity.NotificationType;
 import com.teamg5.be.entity.Role;
 import com.teamg5.be.entity.User;
+import com.teamg5.be.event.SystemNotificationEvent;
 import com.teamg5.be.repository.UserRepository;
 import com.teamg5.be.service.AuthService;
 import com.teamg5.be.exception.AppException;
 import com.teamg5.be.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -26,6 +29,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Value("${application.security.jwt.expiration}")
     private long jwtExpiration;
@@ -43,6 +47,7 @@ public class AuthServiceImpl implements AuthService {
                 .role(Role.USER)
                 .build();
         User savedUser = userRepository.save(user);
+        notifyAdminsAboutNewUser(savedUser);
 
         String token = jwtService.generateToken(savedUser);
         return TokenResponse.builder()
@@ -100,6 +105,7 @@ public class AuthServiceImpl implements AuthService {
                 .role(Role.OWNER)
                 .build();
         User savedUser = userRepository.save(user);
+        notifyAdminsAboutNewUser(savedUser);
 
         String token = jwtService.generateToken(savedUser);
         return TokenResponse.builder()
@@ -113,5 +119,17 @@ public class AuthServiceImpl implements AuthService {
                 .avtUrl(savedUser.getAvatarUrl())
                 .status(savedUser.getStatus())
                 .build();
+    }
+
+    private void notifyAdminsAboutNewUser(User user) {
+        userRepository.findByRole(Role.ADMIN).forEach(admin ->
+                eventPublisher.publishEvent(new SystemNotificationEvent(
+                        admin,
+                        "Nguoi dung moi",
+                        user.getFullName() + " vua dang ky tai khoan " + user.getRole().name() + ".",
+                        NotificationType.NEW_USER,
+                        user.getId().toString()
+                ))
+        );
     }
 }
