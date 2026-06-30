@@ -59,6 +59,9 @@ const tabIcons: Record<Tab, React.FC<any>> = {
   "Đánh giá": Star,
 };
 
+const visibleReviewOptionCount = 4;
+const visibleReviewStatsCount = 4;
+
 export default function RestaurantDetail() {
   const { id } = useParams();
   const location = useLocation();
@@ -84,6 +87,8 @@ export default function RestaurantDetail() {
     ReviewTestOptionResponse[]
   >([]);
   const [savingOptionId, setSavingOptionId] = useState<number | null>(null);
+  const [showAllReviewOptions, setShowAllReviewOptions] = useState(false);
+  const [showAllReviewStats, setShowAllReviewStats] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -103,6 +108,31 @@ export default function RestaurantDetail() {
   const isOwner = useMemo(() => {
     return user?.id !== undefined && apiRestaurant?.ownerId !== undefined && user.id === apiRestaurant.ownerId;
   }, [user, apiRestaurant]);
+
+  const sortedReviewTestOptions = useMemo(
+    () =>
+      [...reviewTestOptions].sort((a, b) => {
+        if (b.clickCount !== a.clickCount) return b.clickCount - a.clickCount;
+        return a.id - b.id;
+      }),
+    [reviewTestOptions],
+  );
+
+  const visibleReviewTestOptions = useMemo(
+    () =>
+      showAllReviewOptions
+        ? sortedReviewTestOptions
+        : sortedReviewTestOptions.slice(0, visibleReviewOptionCount),
+    [showAllReviewOptions, sortedReviewTestOptions],
+  );
+
+  const visibleReviewStatsOptions = useMemo(
+    () =>
+      showAllReviewStats
+        ? sortedReviewTestOptions
+        : sortedReviewTestOptions.slice(0, visibleReviewStatsCount),
+    [showAllReviewStats, sortedReviewTestOptions],
+  );
 
   useEffect(() => {
     if (!isValidId) return;
@@ -727,7 +757,7 @@ export default function RestaurantDetail() {
                           className="mt-3 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition resize-none"
                         />
                         <div className="mt-3 flex flex-wrap gap-2">
-                          {reviewTestOptions.map((option) => {
+                          {visibleReviewTestOptions.map((option) => {
                             const isSelected = option.clickedByCurrentUser;
                             return (
                               <button
@@ -750,6 +780,17 @@ export default function RestaurantDetail() {
                               </button>
                             );
                           })}
+                          {reviewTestOptions.length > visibleReviewOptionCount && (
+                            <button
+                              type="button"
+                              onClick={() => setShowAllReviewOptions((current) => !current)}
+                              className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-100"
+                            >
+                              {showAllReviewOptions
+                                ? "Thu gọn"
+                                : `Xem thêm ${reviewTestOptions.length - visibleReviewOptionCount}`}
+                            </button>
+                          )}
                         </div>
                         {reviewImages.length > 0 && (
                           <div className="mt-3 flex flex-wrap gap-2">
@@ -982,7 +1023,7 @@ export default function RestaurantDetail() {
                 </p>
               ) : (
                 <div className="mt-4 space-y-3">
-                  {reviewTestOptions.map((option) => {
+                  {visibleReviewStatsOptions.map((option) => {
                     const maxClickCount = Math.max(
                       1,
                       ...reviewTestOptions.map((item) => item.clickCount),
@@ -1015,6 +1056,17 @@ export default function RestaurantDetail() {
                       </div>
                     );
                   })}
+                  {reviewTestOptions.length > visibleReviewStatsCount && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllReviewStats((current) => !current)}
+                      className="w-full rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-100"
+                    >
+                      {showAllReviewStats
+                        ? "Thu gọn"
+                        : `Xem thêm ${reviewTestOptions.length - visibleReviewStatsCount}`}
+                    </button>
+                  )}
                 </div>
               )}
             </div>
