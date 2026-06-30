@@ -3,15 +3,19 @@ import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import OwnerLayout from "@/components/OwnerLayout";
-import { Star } from "lucide-react";
+import { Star, Users, X } from "lucide-react";
 import {
   getRestaurant,
   getRestaurantReviews,
   getReview,
+  getReviewTestOptionUsers,
+  getReviewTestOptions,
 } from "@/services/restaurant.service";
 import { getSelectedRestaurantId } from "@/lib/ownerRestaurant";
 import type {
   RestaurantResponse,
+  ReviewTestOptionClickUserResponse,
+  ReviewTestOptionResponse,
   ReviewResponse,
 } from "@/types/restaurant";
 
@@ -27,6 +31,15 @@ export default function OwnerReviews() {
   const [selectedReview, setSelectedReview] = useState<ReviewResponse | null>(
     null,
   );
+  const [reviewTestOptions, setReviewTestOptions] = useState<
+    ReviewTestOptionResponse[]
+  >([]);
+  const [selectedOption, setSelectedOption] =
+    useState<ReviewTestOptionResponse | null>(null);
+  const [selectedOptionUsers, setSelectedOptionUsers] = useState<
+    ReviewTestOptionClickUserResponse[]
+  >([]);
+  const [isLoadingOptionUsers, setIsLoadingOptionUsers] = useState(false);
   const [isLoading, setIsLoading] = useState(Boolean(restaurantId));
 
   useEffect(() => {
@@ -38,11 +51,16 @@ export default function OwnerReviews() {
     Promise.all([
       getRestaurant(restaurantId),
       getRestaurantReviews(restaurantId),
+      getReviewTestOptions(restaurantId).catch((error) => {
+        console.error("Failed to load review test options", error);
+        return [] as ReviewTestOptionResponse[];
+      }),
     ])
-      .then(([restaurantData, reviewData]) => {
+      .then(([restaurantData, reviewData, optionData]) => {
         if (!cancelled) {
           setRestaurant(restaurantData);
           setReviews(reviewData);
+          setReviewTestOptions(optionData);
         }
       })
       .catch((error: unknown) => {
@@ -93,6 +111,30 @@ export default function OwnerReviews() {
           ? error.message
           : "Không thể tải chi tiết đánh giá.",
       );
+    }
+  };
+
+  const handleOpenOptionUsers = async (option: ReviewTestOptionResponse) => {
+    if (!restaurantId) {
+      return;
+    }
+
+    try {
+      setSelectedOption(option);
+      setSelectedOptionUsers([]);
+      setIsLoadingOptionUsers(true);
+      setSelectedOptionUsers(
+        await getReviewTestOptionUsers(restaurantId, option.id),
+      );
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Không thể tải danh sách người dùng.",
+      );
+      setSelectedOption(null);
+    } finally {
+      setIsLoadingOptionUsers(false);
     }
   };
 
@@ -194,6 +236,61 @@ export default function OwnerReviews() {
         </div>
 
         <div className="rounded-[2rem] bg-white p-7 shadow-sm">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">
+                Thống kê tiêu chí nhanh
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Theo dõi số người đã chọn từng tiêu chí khi viết đánh giá.
+              </p>
+            </div>
+            <div className="rounded-2xl bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700">
+              {reviewTestOptions.reduce((total, option) => total + option.clickCount, 0)} lượt chọn
+            </div>
+          </div>
+
+          {isLoading ? (
+            <p className="mt-6 text-sm text-slate-500">Đang tải tiêu chí...</p>
+          ) : reviewTestOptions.length === 0 ? (
+            <p className="mt-6 rounded-2xl bg-slate-50 p-6 text-sm text-slate-500">
+              Chưa có dữ liệu tiêu chí nhanh.
+            </p>
+          ) : (
+            <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200">
+              <div className="grid grid-cols-[1fr_120px_140px] bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-500">
+                <span>Tiêu chí</span>
+                <span className="text-right">Số người chọn</span>
+                <span className="text-right">Chi tiết</span>
+              </div>
+              {reviewTestOptions.map((option) => (
+                <div
+                  key={option.id}
+                  className="grid grid-cols-[1fr_120px_140px] items-center border-t border-slate-100 px-4 py-3 text-sm"
+                >
+                  <span className="font-semibold text-slate-900">
+                    {option.label}
+                  </span>
+                  <span className="text-right font-bold text-slate-700">
+                    {option.clickCount}
+                  </span>
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenOptionUsers(option)}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
+                    >
+                      <Users className="h-3.5 w-3.5" />
+                      Người dùng
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-[2rem] bg-white p-7 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-900">
             Tất cả đánh giá
           </h2>
@@ -275,6 +372,71 @@ export default function OwnerReviews() {
             >
               Đóng
             </Button>
+          </div>
+        </div>
+      ) : null}
+
+      {selectedOption ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-2xl rounded-[2rem] bg-white p-8 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-emerald-700">
+                  Tiêu chí nhanh
+                </p>
+                <h2 className="mt-2 text-2xl font-bold text-slate-900">
+                  {selectedOption.label}
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  {selectedOption.clickCount} người dùng đã chọn tiêu chí này.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedOption(null)}
+                className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="mt-6 max-h-[420px] overflow-y-auto">
+              {isLoadingOptionUsers ? (
+                <p className="rounded-2xl bg-slate-50 p-6 text-sm text-slate-500">
+                  Đang tải danh sách người dùng...
+                </p>
+              ) : selectedOptionUsers.length === 0 ? (
+                <p className="rounded-2xl bg-slate-50 p-6 text-sm text-slate-500">
+                  Chưa có người dùng nào chọn tiêu chí này.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {selectedOptionUsers.map((item) => (
+                    <div
+                      key={`${item.userId}-${item.clickedAt}`}
+                      className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                    >
+                      <div>
+                        <p className="font-semibold text-slate-900">
+                          {item.fullName || `Người dùng #${item.userId}`}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {item.email}
+                        </p>
+                      </div>
+                      <p className="text-right text-xs font-medium text-slate-500">
+                        {item.clickedAt
+                          ? new Intl.DateTimeFormat("vi-VN", {
+                              dateStyle: "short",
+                              timeStyle: "short",
+                            }).format(new Date(item.clickedAt))
+                          : ""}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       ) : null}

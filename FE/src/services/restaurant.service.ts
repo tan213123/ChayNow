@@ -5,6 +5,8 @@ import type {
   CreateReviewRequest,
   CreateTypeRestaurantRequest,
   RestaurantResponse,
+  ReviewTestOptionClickUserResponse,
+  ReviewTestOptionResponse,
   ReviewResponse,
   TypeRestaurantResponse,
   UpdateRestaurantRequest,
@@ -162,6 +164,51 @@ export const createRestaurantReview = async (
     `/api/restaurants/${restaurantId}/reviews`,
     data,
   );
+
+/** GET /api/restaurants/{restaurantId}/review-test-options */
+export const getReviewTestOptions = async (
+  restaurantId: number,
+): Promise<ReviewTestOptionResponse[]> => {
+  const response = await apiService.get<
+    ApiResponse<ReviewTestOptionResponse[]>,
+    ApiResponse<ReviewTestOptionResponse[]>
+  >(`/api/restaurants/${restaurantId}/review-test-options`);
+  return response.data;
+};
+
+/** POST /api/restaurants/{restaurantId}/review-test-options/{optionId}/click */
+export const clickReviewTestOption = async (
+  restaurantId: number,
+  optionId: number,
+): Promise<ReviewTestOptionResponse> => {
+  const response = await apiService.post<
+    ApiResponse<ReviewTestOptionResponse>,
+    ApiResponse<ReviewTestOptionResponse>
+  >(`/api/restaurants/${restaurantId}/review-test-options/${optionId}/click`);
+  return response.data;
+};
+
+/** DELETE /api/restaurants/{restaurantId}/review-test-options/{optionId}/click */
+export const unclickReviewTestOption = async (
+  restaurantId: number,
+  optionId: number,
+): Promise<void> => {
+  await apiService.delete<ApiResponse<void>, ApiResponse<void>>(
+    `/api/restaurants/${restaurantId}/review-test-options/${optionId}/click`,
+  );
+};
+
+/** GET /api/restaurants/{restaurantId}/review-test-options/{optionId}/users */
+export const getReviewTestOptionUsers = async (
+  restaurantId: number,
+  optionId: number,
+): Promise<ReviewTestOptionClickUserResponse[]> => {
+  const response = await apiService.get<
+    ApiResponse<ReviewTestOptionClickUserResponse[]>,
+    ApiResponse<ReviewTestOptionClickUserResponse[]>
+  >(`/api/restaurants/${restaurantId}/review-test-options/${optionId}/users`);
+  return response.data;
+};
 
 /** GET /api/reviews — Lấy tất cả review */
 export const getReviews = async (): Promise<ReviewResponse[]> =>
