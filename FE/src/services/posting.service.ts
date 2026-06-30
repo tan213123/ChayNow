@@ -1,4 +1,5 @@
 import apiService from "@/services/api.service";
+import type { ApiResponse, MediaResponse } from "@/types/restaurant";
 
 export interface PostingResponse {
   id: number;
@@ -42,6 +43,19 @@ export const createPosting = async (
     data
   );
   return response.data?.data || (response as any).data || response;
+};
+
+export const uploadPostingImage = async (
+  file: File
+): Promise<ApiResponse<MediaResponse>> => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await apiService.post<ApiResponse<MediaResponse>, ApiResponse<MediaResponse>>(
+    `/api/postings/upload-image`,
+    formData
+  );
+  return response;
 };
 
 export const getPublicPostings = async (

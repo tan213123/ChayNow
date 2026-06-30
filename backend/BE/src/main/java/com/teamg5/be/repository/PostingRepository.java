@@ -58,16 +58,20 @@ public interface PostingRepository extends JpaRepository<Posting, Long> {
      * Lấy danh sách bài đăng cho Admin (Hỗ trợ lọc theo status và tìm kiếm từ khóa trong tiêu đề, nội dung, hoặc tên nhà hàng).
      */
     @Query("""
-        SELECT p FROM Posting p
+        SELECT p FROM Posting p LEFT JOIN p.restaurant r
         WHERE (:status IS NULL OR :status = '' OR p.status = :status)
+        AND (:type IS NULL OR :type = '' 
+             OR (:type = 'OWNER' AND r IS NOT NULL) 
+             OR (:type = 'COMMUNITY' AND r IS NULL))
         AND (:keyword IS NULL OR :keyword = ''
             OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
             OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%'))
-            OR LOWER(p.restaurant.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
+            OR (r IS NOT NULL AND LOWER(r.name) LIKE LOWER(CONCAT('%', :keyword, '%'))))
         ORDER BY p.createdAt DESC
     """)
     Page<Posting> findAllForAdmin(
             @Param("status") String status,
+            @Param("type") String type,
             @Param("keyword") String keyword,
             Pageable pageable
     );
@@ -83,14 +87,14 @@ public interface PostingRepository extends JpaRepository<Posting, Long> {
     List<Object[]> findFoodCategoriesWithPostCount();
 
     @Query("""
-        SELECT p FROM Posting p
+        SELECT p FROM Posting p LEFT JOIN p.restaurant r
         WHERE (:status IS NULL OR :status = '' OR p.status = :status)
         AND (:categoryId IS NULL OR :categoryId = '' OR p.category = :categoryId)
         AND (:minLikes IS NULL OR p.likeCount >= :minLikes)
         AND (:keyword IS NULL OR :keyword = ''
             OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
             OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%'))
-            OR LOWER(p.restaurant.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
+            OR (r IS NOT NULL AND LOWER(r.name) LIKE LOWER(CONCAT('%', :keyword, '%'))))
     """)
     Page<Posting> findAllFoodPosts(
             @Param("status") String status,
@@ -101,15 +105,15 @@ public interface PostingRepository extends JpaRepository<Posting, Long> {
     );
 
     @Query("""
-        SELECT p FROM Posting p
+        SELECT p FROM Posting p LEFT JOIN p.restaurant r LEFT JOIN r.place pl
         WHERE p.status = 'APPROVED'
         AND (:categoryId IS NULL OR :categoryId = '' OR p.category = :categoryId)
-        AND (:restaurantId IS NULL OR p.restaurant.id = :restaurantId)
-        AND (:placeId IS NULL OR (p.restaurant.place IS NOT NULL AND p.restaurant.place.id = :placeId))
+        AND (:restaurantId IS NULL OR r.id = :restaurantId)
+        AND (:placeId IS NULL OR pl.id = :placeId)
         AND (:keyword IS NULL OR :keyword = ''
             OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
             OR LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%'))
-            OR LOWER(p.restaurant.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
+            OR (r IS NOT NULL AND LOWER(r.name) LIKE LOWER(CONCAT('%', :keyword, '%'))))
         ORDER BY p.createdAt DESC
     """)
     Page<Posting> findApprovedPublicPostings(

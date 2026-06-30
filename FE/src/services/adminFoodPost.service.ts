@@ -59,33 +59,64 @@ export const getAdminFoodPosts = async (
   if (params.keyword && params.keyword.trim() !== "") {
     queryParams.keyword = params.keyword.trim();
   }
-  if (params.categoryId && params.categoryId !== "ALL") {
-    queryParams.categoryId = params.categoryId;
-  }
   if (params.status && params.status !== "ALL") queryParams.status = params.status;
+  
+  queryParams.type = "COMMUNITY";
 
-  const response = await apiService.get<
-    MaybeWrapped<AdminFoodPostsResponse>,
-    MaybeWrapped<AdminFoodPostsResponse>
-  >("/api/admin/food-posts", { params: queryParams });
+  // Gọi chung API postings
+  const response = await apiService.get<any, any>("/api/admin/postings", { params: queryParams });
+  const rawData = response.data || response;
 
-  return unwrapResponse(response);
+  const content = rawData.content || [];
+  
+  const mappedData: AdminFoodPost[] = content.map((item: any) => ({
+    id: item.id.toString(),
+    title: item.title,
+    description: item.content || "",
+    imageUrl: item.thumbnailUrl || "",
+    restaurantId: item.restaurantId?.toString() || "",
+    restaurantName: item.restaurantName || "",
+    categoryId: item.category || "",
+    categoryName: item.category || "",
+    likesCount: item.likeCount || 0,
+    status: item.status as FoodPostStatus,
+    createdAt: item.createdAt,
+  }));
+
+  return {
+    data: mappedData,
+    pagination: {
+      page: rawData.page,
+      size: rawData.size,
+      totalItems: rawData.totalElements,
+      totalPages: rawData.totalPages,
+    }
+  };
 };
 
 export const getAdminFoodPostById = async (
   postId: string,
 ): Promise<AdminFoodPost> => {
-  const response = await apiService.get<
-    MaybeWrapped<AdminFoodPost>,
-    MaybeWrapped<AdminFoodPost>
-  >(`/api/admin/food-posts/${postId}`);
-
-  return unwrapResponse(response);
+  const response = await apiService.get<any, any>(`/api/admin/postings/${postId}`);
+  const item = response.data || response;
+  return {
+    id: item.id.toString(),
+    title: item.title,
+    description: item.content || "",
+    imageUrl: item.thumbnailUrl || "",
+    restaurantId: item.restaurantId?.toString() || "",
+    restaurantName: item.restaurantName || "",
+    categoryId: item.category || "",
+    categoryName: item.category || "",
+    likesCount: item.likeCount || 0,
+    status: item.status as FoodPostStatus,
+    createdAt: item.createdAt,
+  };
 };
 
 export const approveFoodPost = async (postId: string): Promise<unknown> => {
   return apiService.patch<unknown, unknown>(
-    `/api/admin/food-posts/${postId}/approve`,
+    `/api/admin/postings/${postId}/approve`,
   );
 };
 
@@ -94,7 +125,7 @@ export const rejectFoodPost = async (
   reason?: string,
 ): Promise<unknown> => {
   return apiService.patch<unknown, unknown>(
-    `/api/admin/food-posts/${postId}/reject`,
-    reason ? { reason } : undefined,
+    `/api/admin/postings/${postId}/reject`,
+    { reason: reason || "" },
   );
 };

@@ -32,13 +32,16 @@ public class AdminPostingController {
             @Parameter(description = "Lọc theo trạng thái duyệt (PENDING, APPROVED, REJECTED)", example = "PENDING")
             @RequestParam(required = false) String status,
 
+            @Parameter(description = "Loại bài đăng (OWNER, COMMUNITY)", example = "OWNER")
+            @RequestParam(required = false) String type,
+
             @Parameter(description = "Số trang cần lấy (bắt đầu từ 0)", example = "0")
             @RequestParam(defaultValue = "0") int page,
 
             @Parameter(description = "Số lượng phần tử trên mỗi trang (tối đa 50)", example = "10")
             @RequestParam(defaultValue = "10") int size
     ) {
-        PageResponseDTO<PostingResponse> response = adminPostingService.getAllPostings(keyword, status, page, size);
+        PageResponseDTO<PostingResponse> response = adminPostingService.getAllPostings(keyword, status, type, page, size);
         return ResponseEntity.ok(ApiResponse.<PageResponseDTO<PostingResponse>>builder()
                 .success(true)
                 .message("Get all postings successfully")

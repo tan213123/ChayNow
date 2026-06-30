@@ -11,9 +11,18 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.security.access.prepost.PreAuthorize;
+import jakarta.validation.Valid;
+import com.teamg5.be.dto.MediaResponse;
+import com.teamg5.be.service.MediaService;
+import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
 
 @RestController
 @RequestMapping("/api/postings")
@@ -22,6 +31,37 @@ import org.springframework.web.bind.annotation.RestController;
 public class PublicPostingController {
 
     private final PostingService postingService;
+    private final MediaService mediaService;
+
+    @PostMapping
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Tạo bài đăng cộng đồng mới")
+    public ResponseEntity<ApiResponse<PostingResponse>> createPosting(
+            @Valid @RequestBody com.teamg5.be.dto.CreatePostingRequest request
+    ) {
+        PostingResponse response = postingService.createPosting(request);
+        return ResponseEntity.status(201).body(ApiResponse.<PostingResponse>builder()
+                .success(true)
+                .message("Bài đăng đã được tạo và đang chờ duyệt")
+                .data(response)
+                .build());
+    }
+
+    @PostMapping(value = "/upload-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Upload ảnh riêng cho bài đăng cộng đồng")
+    public ResponseEntity<ApiResponse<MediaResponse>> uploadPostingImage(
+            @RequestParam("file") MultipartFile file
+    ) {
+        String url = mediaService.uploadImageOnly(file);
+        MediaResponse data = MediaResponse.builder().url(url).build();
+        ApiResponse<MediaResponse> response = ApiResponse.<MediaResponse>builder()
+                .success(true)
+                .message("Tải ảnh bài đăng lên thành công!")
+                .data(data)
+                .build();
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
 
     @GetMapping
     @Operation(
