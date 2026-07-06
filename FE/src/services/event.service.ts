@@ -49,6 +49,7 @@ export const uploadEventImage = async (
   return apiService.post<ApiResponse<MediaResponse>, ApiResponse<MediaResponse>>(
     "/api/events/upload-image",
     formData,
+    { timeout: 60000 },
   );
 };
 

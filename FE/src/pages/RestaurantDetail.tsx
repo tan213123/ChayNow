@@ -3,6 +3,7 @@ import { Link, useLocation, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
+import RestaurantMap from "@/components/RestaurantMap";
 import {
   AlertTriangle,
   Calendar,
@@ -35,10 +36,12 @@ import {
 } from "@/services/restaurant.service";
 import { getRestaurantEvents } from "@/services/event.service";
 import { getRestaurantMenus } from "@/services/menu.service";
+import { getPlace } from "@/services/place.service";
 import { mediaService } from "@/services/media.service";
 import { useAuthStore } from "@/store/authStore";
 import { addFavourite, isFavourite, removeFavourite } from "@/services/favourite.service";
 import { createReport } from "@/services/report.service";
+import { refreshCurrentPageSoon } from "@/lib/refreshPage";
 import type {
   RestaurantResponse,
   ReviewResponse,
@@ -57,6 +60,9 @@ const tabIcons: Record<Tab, React.FC<any>> = {
   "Đánh giá": Star,
 };
 
+const visibleReviewOptionCount = 4;
+const visibleReviewStatsCount = 4;
+
 export default function RestaurantDetail() {
   const { id } = useParams();
   const location = useLocation();
@@ -67,6 +73,7 @@ export default function RestaurantDetail() {
   const [apiReviews, setApiReviews] = useState<ReviewResponse[]>([]);
   const [apiEvents, setApiEvents] = useState<EventResponse[]>([]);
   const [apiMenus, setApiMenus] = useState<MenuResponse[]>([]);
+  const [placeMapUrl, setPlaceMapUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(isValidId);
   const { user } = useAuthStore();
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -81,6 +88,8 @@ export default function RestaurantDetail() {
     ReviewTestOptionResponse[]
   >([]);
   const [savingOptionId, setSavingOptionId] = useState<number | null>(null);
+  const [showAllReviewOptions, setShowAllReviewOptions] = useState(false);
+  const [showAllReviewStats, setShowAllReviewStats] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -101,6 +110,31 @@ export default function RestaurantDetail() {
     return user?.id !== undefined && apiRestaurant?.ownerId !== undefined && user.id === apiRestaurant.ownerId;
   }, [user, apiRestaurant]);
 
+  const sortedReviewTestOptions = useMemo(
+    () =>
+      [...reviewTestOptions].sort((a, b) => {
+        if (b.clickCount !== a.clickCount) return b.clickCount - a.clickCount;
+        return a.id - b.id;
+      }),
+    [reviewTestOptions],
+  );
+
+  const visibleReviewTestOptions = useMemo(
+    () =>
+      showAllReviewOptions
+        ? sortedReviewTestOptions
+        : sortedReviewTestOptions.slice(0, visibleReviewOptionCount),
+    [showAllReviewOptions, sortedReviewTestOptions],
+  );
+
+  const visibleReviewStatsOptions = useMemo(
+    () =>
+      showAllReviewStats
+        ? sortedReviewTestOptions
+        : sortedReviewTestOptions.slice(0, visibleReviewStatsCount),
+    [showAllReviewStats, sortedReviewTestOptions],
+  );
+
   useEffect(() => {
     if (!isValidId) return;
 
@@ -111,6 +145,7 @@ export default function RestaurantDetail() {
         if (!cancelled) {
           setIsLoading(true);
           setLoadError(null);
+          setPlaceMapUrl(null);
         }
 
         return Promise.all([
@@ -166,6 +201,33 @@ export default function RestaurantDetail() {
     };
   }, [restaurantId, isValidId, user]);
 
+  useEffect(() => {
+    const placeId = apiRestaurant?.placeId;
+    if (!placeId) {
+      setPlaceMapUrl(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    getPlace(placeId)
+      .then((place) => {
+        if (!cancelled) {
+          setPlaceMapUrl(place.mapUrl);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load place map URL", err);
+        if (!cancelled) {
+          setPlaceMapUrl(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [apiRestaurant?.placeId]);
+
   const handleToggleFavorite = async () => {
     if (!user) {
       toast.error("Vui lòng đăng nhập để lưu địa điểm yêu thích!");
@@ -177,12 +239,14 @@ export default function RestaurantDetail() {
         if (res.success) {
           setIsFavorite(false);
           toast.success("Đã xóa khỏi danh sách yêu thích");
+          refreshCurrentPageSoon();
         }
       } else {
         const res = await addFavourite(restaurantId);
         if (res.success) {
           setIsFavorite(true);
           toast.success("Đã thêm vào danh sách yêu thích");
+          refreshCurrentPageSoon();
         }
       }
     } catch (error) {
@@ -216,6 +280,7 @@ export default function RestaurantDetail() {
       setReportReason("");
       setReportDescription("");
       setReportTarget(null);
+      refreshCurrentPageSoon();
     } catch (error) {
       toast.error("Không thể gửi báo cáo. Vui lòng thử lại sau.");
     } finally {
@@ -252,6 +317,7 @@ export default function RestaurantDetail() {
       intro: apiRestaurant.description ?? "Nhà hàng chưa có mô tả.",
       address: apiRestaurant.address ?? "Chưa cập nhật địa chỉ",
       phone: apiRestaurant.phoneNumber ?? "Chưa cập nhật",
+      mapUrl: placeMapUrl,
       mapAlt: `Bản đồ ${apiRestaurant.name}`,
       menu: apiMenus.map((item) => ({
         name: item.name,
@@ -271,7 +337,7 @@ export default function RestaurantDetail() {
       })),
       features: [apiRestaurant.typeRestaurantName].filter(Boolean),
     };
-  }, [apiRestaurant, apiReviews, apiMenus]);
+  }, [apiRestaurant, apiReviews, apiMenus, placeMapUrl]);
 
   const handleReviewImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -359,6 +425,7 @@ export default function RestaurantDetail() {
       setSelectedRating(0);
       setReviewImages([]);
       toast.success("Gửi đánh giá thành công.");
+      refreshCurrentPageSoon();
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Không thể gửi đánh giá.",
@@ -522,6 +589,11 @@ export default function RestaurantDetail() {
                         <p className="text-sm font-medium text-slate-900">{restaurant.priceRange}</p>
                       </div>
                     </div>
+                    <RestaurantMap
+                      name={restaurant.name}
+                      address={restaurant.address}
+                      mapUrl={restaurant.mapUrl}
+                    />
                   </div>
                 )}
 
@@ -690,7 +762,7 @@ export default function RestaurantDetail() {
                           className="mt-3 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition resize-none"
                         />
                         <div className="mt-3 flex flex-wrap gap-2">
-                          {reviewTestOptions.map((option) => {
+                          {visibleReviewTestOptions.map((option) => {
                             const isSelected = option.clickedByCurrentUser;
                             return (
                               <button
@@ -713,6 +785,17 @@ export default function RestaurantDetail() {
                               </button>
                             );
                           })}
+                          {reviewTestOptions.length > visibleReviewOptionCount && (
+                            <button
+                              type="button"
+                              onClick={() => setShowAllReviewOptions((current) => !current)}
+                              className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-100"
+                            >
+                              {showAllReviewOptions
+                                ? "Thu gọn"
+                                : `Xem thêm ${reviewTestOptions.length - visibleReviewOptionCount}`}
+                            </button>
+                          )}
                         </div>
                         {reviewImages.length > 0 && (
                           <div className="mt-3 flex flex-wrap gap-2">
@@ -876,6 +959,14 @@ export default function RestaurantDetail() {
 
             </div>
 
+            <RestaurantMap
+              name={restaurant.name}
+              address={restaurant.address}
+              mapUrl={restaurant.mapUrl}
+              compact
+              mapClassName="h-64"
+            />
+
             {/* Rating summary */}
             <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm">
               <p className="text-sm font-bold uppercase tracking-widest text-slate-400">Đánh giá tổng quan</p>
@@ -937,7 +1028,7 @@ export default function RestaurantDetail() {
                 </p>
               ) : (
                 <div className="mt-4 space-y-3">
-                  {reviewTestOptions.map((option) => {
+                  {visibleReviewStatsOptions.map((option) => {
                     const maxClickCount = Math.max(
                       1,
                       ...reviewTestOptions.map((item) => item.clickCount),
@@ -970,6 +1061,17 @@ export default function RestaurantDetail() {
                       </div>
                     );
                   })}
+                  {reviewTestOptions.length > visibleReviewStatsCount && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllReviewStats((current) => !current)}
+                      className="w-full rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-100"
+                    >
+                      {showAllReviewStats
+                        ? "Thu gọn"
+                        : `Xem thêm ${reviewTestOptions.length - visibleReviewStatsCount}`}
+                    </button>
+                  )}
                 </div>
               )}
             </div>

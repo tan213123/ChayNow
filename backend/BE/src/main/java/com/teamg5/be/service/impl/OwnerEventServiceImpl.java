@@ -14,6 +14,7 @@ import com.teamg5.be.repository.EventRepository;
 import com.teamg5.be.repository.RestaurantRepository;
 import com.teamg5.be.repository.UserRepository;
 import com.teamg5.be.service.OwnerEventService;
+import com.teamg5.be.utils.EventStatusUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -112,7 +113,7 @@ public class OwnerEventServiceImpl implements OwnerEventService {
                 .period(period)
                 .charityTime(charityTime)
                 .imageUrl(imgUrl)
-                .status("ACTIVE")
+                .status(EventStatusUtils.resolveByDate(request.getStartDate(), request.getEndDate()))
                 .build();
 
         Event saved = eventRepository.save(event);

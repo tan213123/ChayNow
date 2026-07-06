@@ -3,9 +3,12 @@ import apiService from "./api.service";
 export type NotificationType =
   | "NEW_RESTAURANT"
   | "NEW_DISH"
+  | "NEW_POST"
+  | "NEW_USER"
   | "ADMIN_USER_NOTICE"
   | "NEW_REVIEW_COMMENT"
   | "NEW_RATING_STAR"
+  | "POST_STATUS_UPDATE"
   | "RESTAURANT_STATUS_UPDATE"
   | "ADMIN_OWNER_NOTICE"
   | "USER_REPORT"

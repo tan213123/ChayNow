@@ -14,6 +14,7 @@ import com.teamg5.be.repository.EventRepository;
 import com.teamg5.be.repository.RestaurantRepository;
 import com.teamg5.be.repository.UserRepository;
 import com.teamg5.be.service.EventService;
+import com.teamg5.be.utils.EventStatusUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -73,7 +74,7 @@ public class EventServiceImpl implements EventService {
                 .endDate(request.getEndDate())
                 .type(eventType != null ? eventType.name() : request.getType())
                 .eventType(eventType)
-                .status(request.getStatus() != null ? request.getStatus().trim() : "UPCOMING")
+                .status(resolveWritableStatus(request.getStatus(), null, request.getStartDate(), request.getEndDate()))
                 .build();
 
         Event saved = eventRepository.save(event);
@@ -120,9 +121,7 @@ public class EventServiceImpl implements EventService {
         if (request.getEndDate() != null) {
             event.setEndDate(request.getEndDate());
         }
-        if (StringUtils.hasText(request.getStatus())) {
-            event.setStatus(request.getStatus().trim());
-        }
+        event.setStatus(resolveWritableStatus(request.getStatus(), event.getStatus(), event.getStartDate(), event.getEndDate()));
 
         Event saved = eventRepository.save(event);
         return EventResponse.from(saved);
@@ -183,6 +182,17 @@ public class EventServiceImpl implements EventService {
 
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    private String resolveWritableStatus(String requestedStatus, String currentStatus, java.time.LocalDate startDate, java.time.LocalDate endDate) {
+        if (StringUtils.hasText(requestedStatus) && EventStatusUtils.HIDDEN.equalsIgnoreCase(requestedStatus.trim())) {
+            return EventStatusUtils.HIDDEN;
+        }
+        if (!StringUtils.hasText(requestedStatus) && EventStatusUtils.HIDDEN.equalsIgnoreCase(currentStatus)) {
+            return EventStatusUtils.HIDDEN;
+        }
+
+        return EventStatusUtils.resolveByDate(startDate, endDate);
     }
 
     private void verifyOwnerOrAdmin(Restaurant restaurant) {

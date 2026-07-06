@@ -28,6 +28,7 @@ import type { RestaurantResponse, EventResponse, MenuResponse } from "@/types/re
 import { createPosting, getPublicPostings, uploadPostingImage, type PostingResponse } from "@/services/posting.service";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
+import { refreshCurrentPageSoon } from "@/lib/refreshPage";
 
 const tabs = ["Địa điểm ăn chay", "Món ăn nổi bật", "Sự kiện", "Bài đăng cộng đồng"] as const;
 type Tab = (typeof tabs)[number];
@@ -95,6 +96,7 @@ export default function Home() {
       const newComment = await createComment(postId, commentInput);
       setApiComments((prev) => [newComment, ...prev]);
       setCommentInput("");
+      refreshCurrentPageSoon();
     } catch (error) {
       console.error("Failed to create comment", error);
     }
@@ -130,6 +132,7 @@ export default function Home() {
       setPostCategory(postCategoryOptions[0].value);
       setPostImageUrl("");
       toast.success("Đã gửi bài đăng. Bài sẽ hiển thị sau khi admin duyệt.");
+      refreshCurrentPageSoon();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Không thể tạo bài đăng.");
     } finally {
@@ -149,7 +152,13 @@ export default function Home() {
         toast.success("Tải ảnh bài đăng lên thành công");
       }
     } catch (error) {
-      toast.error("Lỗi khi tải ảnh lên");
+      const message =
+        error instanceof Error && error.message.includes("timeout")
+          ? "Tải ảnh quá lâu. Vui lòng thử lại hoặc chọn ảnh nhỏ hơn."
+          : error instanceof Error
+            ? error.message
+            : "Lỗi khi tải ảnh lên";
+      toast.error(message);
     } finally {
       setIsUploadingImage(false);
       if (e.target) e.target.value = '';

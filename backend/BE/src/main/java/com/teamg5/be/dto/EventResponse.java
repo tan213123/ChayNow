@@ -2,6 +2,7 @@ package com.teamg5.be.dto;
 
 import com.teamg5.be.entity.Event;
 import com.teamg5.be.entity.EventType;
+import com.teamg5.be.utils.EventStatusUtils;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -61,7 +62,7 @@ public class EventResponse {
                 .eventType(resolvedEventType)
                 .startDate(event.getStartDate())
                 .endDate(event.getEndDate())
-                .status(event.getStatus())
+                .status(EventStatusUtils.resolve(event.getStatus(), event.getStartDate(), event.getEndDate()))
                 .discountPercent(event.getDiscountPercent())
                 .period(event.getPeriod())
                 .charityTime(event.getCharityTime())
