@@ -12,6 +12,11 @@ public class UserProfileUpdateRequest {
     @Schema(description = "User's full name", example = "Nguyễn Văn A")
     private String fullName;
 
+    @jakarta.validation.constraints.Email(message = "Email không hợp lệ")
+    @Size(max = 255, message = "Email must not exceed 255 characters")
+    @Schema(description = "User's email", example = "test@example.com")
+    private String email;
+
     @Pattern(
             regexp = "^$|^(0|\\+84)(3|5|7|8|9)[0-9]{8}$",
             message = "Phone number is invalid. It should start with 0 or +84 followed by a valid prefix (3, 5, 7, 8, 9) and 8 digits."

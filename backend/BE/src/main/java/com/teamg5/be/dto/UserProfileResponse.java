@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class UserProfileResponse {
     private Long id;
     private String email;
+    private Boolean isEmailVerified;
     private String fullName;
     private String role;
     private String status;

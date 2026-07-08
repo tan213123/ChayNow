@@ -37,13 +37,16 @@ export default function Profile() {
   const updateUser = useAuthStore((state) => state.updateUser);
   const [activeTab, setActiveTab] = useState<"overview" | "favorites" | "activity">("overview");
   const [name, setName] = useState(user?.fullName || "");
+  const [email, setEmail] = useState(user?.email || "");
   const [bio, setBio] = useState(user?.bio || "");
   const [phone, setPhone] = useState(user?.phone || "");
   const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
   const [editBio, setEditBio] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const [apiRestaurants, setApiRestaurants] = useState<RestaurantResponse[]>([]);
   const [restLoading, setRestLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfileResponse | null>(null);
@@ -54,6 +57,7 @@ export default function Profile() {
         .then((profile) => {
           setUserProfile(profile);
           setName(profile.fullName || "");
+          setEmail(profile.email || "");
           setBio(profile.bio || "");
           setPhone(profile.phone || "");
         })
@@ -81,6 +85,7 @@ export default function Profile() {
 
   const handleStartEdit = () => {
     setEditName(name);
+    setEditEmail(email);
     setEditBio(bio);
     setEditPhone(phone);
     setIsEditing(true);
@@ -95,15 +100,18 @@ export default function Profile() {
     try {
       const updated = await updateMyProfile({
         fullName: editName,
+        email: editEmail,
         phone: editPhone,
         bio: editBio,
-      });
+      } as any);
       setName(updated.fullName || "");
+      setEmail(updated.email || "");
       setPhone(updated.phone || "");
       setBio(updated.bio || "");
       setUserProfile(updated);
       updateUser({
         fullName: updated.fullName,
+        email: updated.email,
         phone: updated.phone,
         bio: updated.bio,
       });
@@ -113,6 +121,53 @@ export default function Profile() {
       toast.error(err.message || "Lưu thất bại, vui lòng thử lại");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const [otp, setOtp] = useState("");
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  const handleResendVerification = async () => {
+    if (isResending) return;
+    setIsResending(true);
+    try {
+      const { resendVerificationEmail } = await import("@/services/auth.service");
+      await resendVerificationEmail(email);
+      toast.success("Đã gửi lại mã xác thực. Vui lòng kiểm tra hòm thư của bạn.");
+    } catch (err: any) {
+      toast.error(err.message || "Gửi lại email thất bại");
+    } finally {
+      setIsResending(false);
+    }
+  };
+
+  const handleVerify = async () => {
+    if (!otp.trim()) {
+      toast.error("Vui lòng nhập mã xác thực");
+      return;
+    }
+    setIsVerifying(true);
+    try {
+      const { verifyEmail } = await import("@/services/auth.service");
+      await verifyEmail(otp.trim());
+      
+      // Fetch updated profile to get the new email
+      const updatedProfile = await getMyProfile();
+      setUserProfile(updatedProfile);
+      setEmail(updatedProfile.email || "");
+      updateUser({
+        fullName: updatedProfile.fullName,
+        email: updatedProfile.email,
+        phone: updatedProfile.phone,
+        bio: updatedProfile.bio,
+      });
+
+      setOtp("");
+      toast.success("Xác thực email thành công!");
+    } catch (err: any) {
+      toast.error(err.message || "Xác thực thất bại. Mã không đúng hoặc đã hết hạn.");
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -225,8 +280,54 @@ export default function Profile() {
                   {/* Fields */}
                   {!isEditing ? (
                     <div className="space-y-3">
+                      <div className="flex items-start gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm">
+                        <Mail className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-600" />
+                        <div className="flex-1">
+                          <p className="text-xs text-slate-500">Email</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium text-slate-900">{email}</p>
+                            {userProfile?.isEmailVerified ? (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                                <Check className="h-3 w-3" /> Đã xác thực
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
+                                Chưa xác thực
+                              </span>
+                            )}
+                          </div>
+                          {userProfile && !userProfile.isEmailVerified && (
+                            <div className="mt-3 flex flex-col gap-2 border-t border-slate-100 pt-3">
+                              <p className="text-xs text-slate-500">Mã xác thực 6 số đã được gửi đến email mới của bạn.</p>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="text"
+                                  maxLength={6}
+                                  value={otp}
+                                  onChange={(e) => setOtp(e.target.value)}
+                                  placeholder="Nhập mã 6 số"
+                                  className="w-32 text-center tracking-widest font-bold rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm outline-none focus:border-emerald-500"
+                                />
+                                <button
+                                  onClick={handleVerify}
+                                  disabled={isVerifying || otp.length !== 6}
+                                  className="rounded-xl bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                                >
+                                  {isVerifying ? "..." : "Xác thực"}
+                                </button>
+                                <button
+                                  onClick={handleResendVerification}
+                                  disabled={isResending}
+                                  className="text-xs font-medium text-emerald-600 hover:underline disabled:opacity-50 ml-2"
+                                >
+                                  {isResending ? "Đang gửi..." : "Gửi lại mã"}
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                       {[
-                        { label: "Email", value: user.email, icon: Mail },
                         { label: "Họ và tên", value: name || "Chưa cập nhật", icon: User },
                         { label: "Số điện thoại", value: phone || "Chưa cập nhật", icon: Phone },
                         { label: "Giới thiệu", value: bio || "Chưa cập nhật", icon: Pencil },
@@ -250,6 +351,15 @@ export default function Profile() {
                     </div>
                   ) : (
                     <div className="space-y-4">
+                      <div>
+                        <label className="mb-1.5 block text-sm font-medium text-slate-700">Email</label>
+                        <input
+                          value={editEmail}
+                          onChange={(e) => setEditEmail(e.target.value)}
+                          placeholder="Nhập email..."
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition"
+                        />
+                      </div>
                       <div>
                         <label className="mb-1.5 block text-sm font-medium text-slate-700">Họ và tên</label>
                         <input
@@ -277,13 +387,6 @@ export default function Profile() {
                           placeholder="Kể về bản thân bạn..."
                           className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition resize-none"
                         />
-                      </div>
-                      <div className="rounded-2xl border border-slate-100 bg-white px-4 py-3 flex items-center gap-3 opacity-60">
-                        <Mail className="h-5 w-5 text-emerald-600" />
-                        <div>
-                          <p className="text-xs text-slate-500">Email (không thể thay đổi)</p>
-                          <p className="text-sm font-medium text-slate-900">{user.email}</p>
-                        </div>
                       </div>
                     </div>
                   )}
