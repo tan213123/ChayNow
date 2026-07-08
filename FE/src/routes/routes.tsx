@@ -19,8 +19,13 @@ import UserManagement from "@/pages/UserManagement";
 import ReportManagement from "@/pages/ReportManagement";
 import AdminLocations from "@/pages/AdminLocations";
 import AdminPosts from "@/pages/AdminPosts";
+import VerifyEmail from "@/pages/VerifyEmail";
 
 export const routes: RouteObject[] = [
+  {
+    path: "/verify-email",
+    element: <VerifyEmail />,
+  },
   {
     path: "/login",
     element: <Login />,

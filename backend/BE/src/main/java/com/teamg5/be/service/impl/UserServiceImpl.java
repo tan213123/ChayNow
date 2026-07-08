@@ -23,6 +23,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final com.teamg5.be.service.AuthService authService;
 
     @Override
     @Transactional(readOnly = true)
@@ -43,6 +44,17 @@ public class UserServiceImpl implements UserService {
             user.setFullName(request.getFullName().trim());
         }
 
+        boolean emailChanged = false;
+        String pendingEmail = null;
+        if (request.getEmail() != null && !request.getEmail().trim().isEmpty() && !request.getEmail().equals(user.getEmail())) {
+            if (userRepository.existsByEmail(request.getEmail().trim())) {
+                throw new AppException(ErrorCode.USER_ALREADY_EXISTS, "Email đã được sử dụng");
+            }
+            pendingEmail = request.getEmail().trim();
+            user.setIsEmailVerified(false);
+            emailChanged = true;
+        }
+
         if (request.getPhone() != null) {
             user.setPhone(request.getPhone().trim());
         }
@@ -56,6 +68,11 @@ public class UserServiceImpl implements UserService {
         }
 
         User savedUser = userRepository.save(user);
+        
+        if (emailChanged) {
+            authService.sendVerificationEmailForChange(savedUser.getEmail(), pendingEmail);
+        }
+
         return mapToUserProfileResponse(savedUser);
     }
 
@@ -79,6 +96,7 @@ public class UserServiceImpl implements UserService {
         return UserProfileResponse.builder()
                 .id(user.getId())
                 .email(user.getEmail())
+                .isEmailVerified(user.getIsEmailVerified())
                 .fullName(user.getFullName())
                 .role(user.getRole() != null ? user.getRole().name() : null)
                 .status(user.getStatus() != null ? user.getStatus().name() : null)

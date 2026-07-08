@@ -58,6 +58,10 @@ public class User extends BaseEntity implements UserDetails {
     @Builder.Default
     private Integer warningCount = 0;
 
+    @Column(name = "is_email_verified", columnDefinition = "boolean default false")
+    @Builder.Default
+    private Boolean isEmailVerified = false;
+
     @jakarta.persistence.OneToMany(mappedBy = "user", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
     @lombok.Builder.Default
     private List<FavouritePlace> favouritePlaces = new java.util.ArrayList<>();

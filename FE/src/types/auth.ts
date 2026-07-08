@@ -5,6 +5,7 @@ export type AccountStatus = "ACTIVE" | "SUSPENDED" | "PENDING";
 export interface User {
   id?: number;
   email: string;
+  isEmailVerified?: boolean;
   fullName: string;
   role: Role;
   status: AccountStatus;
@@ -48,6 +49,7 @@ export interface TokenApiData {
 export interface UserProfileResponse {
   id: number;
   email: string;
+  isEmailVerified: boolean;
   fullName: string;
   role: string;
   status: string;

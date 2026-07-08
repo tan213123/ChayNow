@@ -8,4 +8,7 @@ public interface AuthService {
     TokenResponse register(RegisterRequest request);
     TokenResponse login(LoginRequest request);
     TokenResponse registerOwner(RegisterRequest request);
+    void verifyEmail(String token);
+    void resendVerificationEmail(String email);
+    void sendVerificationEmailForChange(String oldEmail, String newEmail);
 }

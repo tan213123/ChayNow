@@ -27,6 +27,11 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [registerResponse, setRegisterResponse] = useState<any>(null);
+
   const handleRegister = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -57,22 +62,9 @@ export default function Register() {
         password,
       });
 
-      login(response);
-      localStorage.setItem(
-        "authUser",
-        JSON.stringify({
-          email: response.user.email,
-          label: roleLabels[response.user.role],
-        }),
-      );
-      toast.success(
-        ownerRequested
-          ? "Đăng ký tài khoản chủ quán thành công."
-          : "Đăng ký tài khoản thành công.",
-      );
-      navigate(ownerRequested ? "/manage/restaurants" : "/", {
-        replace: true,
-      });
+      setRegisterResponse(response);
+      setIsSuccess(true);
+      toast.success("Đã gửi mã xác thực đến email của bạn.");
     } catch (error) {
       toast.error(
         error instanceof Error
@@ -81,6 +73,37 @@ export default function Register() {
       );
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otp.trim()) {
+      toast.error("Vui lòng nhập mã xác thực.");
+      return;
+    }
+
+    try {
+      setIsVerifying(true);
+      const { verifyEmail } = await import("@/services/auth.service");
+      await verifyEmail(otp.trim());
+      
+      if (registerResponse) {
+        login(registerResponse);
+        localStorage.setItem(
+          "authUser",
+          JSON.stringify({
+            email: registerResponse.user.email,
+            label: roleLabels[registerResponse.user.role as Role],
+          }),
+        );
+      }
+      toast.success("Xác thực thành công!");
+      navigate(ownerRequested ? "/manage/restaurants" : "/", { replace: true });
+    } catch (error: any) {
+      toast.error(error.message || "Xác thực thất bại. Mã không đúng hoặc đã hết hạn.");
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -110,90 +133,123 @@ export default function Register() {
               Đăng ký
             </p>
             <h1 className="mt-4 text-3xl font-extrabold text-slate-900">
-              Tạo tài khoản ChayNow
+              {isSuccess ? "Nhập mã xác thực" : "Tạo tài khoản ChayNow"}
             </h1>
             <p className="mt-3 text-sm leading-7 text-slate-600">
-              Thông tin được gửi trực tiếp đến API đăng ký của hệ thống.
+              {isSuccess ? "Kiểm tra email của bạn để lấy mã." : "Thông tin được gửi trực tiếp đến API đăng ký của hệ thống."}
             </p>
           </div>
 
-          {ownerRequested ? (
-            <div className="mt-8 rounded-3xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-800">
-              Bạn đang đăng ký tài khoản chủ quán. Sau khi đăng ký, bạn có thể
-              tạo nhà hàng và thực đơn trong khu vực quản lý.
-            </div>
-          ) : null}
+          {isSuccess ? (
+            <form onSubmit={handleVerify} className="mt-8 rounded-3xl border border-emerald-200 bg-emerald-50 p-8 text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 mb-4">
+                <Leaf className="h-8 w-8 text-emerald-600" />
+              </div>
+              <p className="text-emerald-700 mb-6">
+                Mã xác thực gồm 6 chữ số đã được gửi đến <strong>{email}</strong>.<br/>
+                Vui lòng nhập mã để hoàn tất.
+              </p>
+              
+              <div className="max-w-xs mx-auto mb-6">
+                <input
+                  type="text"
+                  maxLength={6}
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  placeholder="Nhập mã 6 số"
+                  className="w-full text-center tracking-widest text-2xl font-bold rounded-2xl border border-emerald-200 bg-white px-4 py-3 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+                />
+              </div>
 
-          <form
-            onSubmit={handleRegister}
-            className="mt-8 space-y-5 rounded-[2rem] border border-slate-200 bg-slate-50 p-7"
-          >
-            <label className="block space-y-2 text-sm font-medium text-slate-700">
-              Họ và tên *
-              <input
-                value={fullName}
-                onChange={(event) => setFullName(event.target.value)}
-                type="text"
-                autoComplete="name"
-                placeholder="Nguyễn Văn A"
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
-              />
-            </label>
-            <label className="block space-y-2 text-sm font-medium text-slate-700">
-              Email *
-              <input
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                type="email"
-                autoComplete="email"
-                placeholder="your@email.com"
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
-              />
-            </label>
-            <label className="block space-y-2 text-sm font-medium text-slate-700">
-              Mật khẩu *
-              <input
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                type="password"
-                autoComplete="new-password"
-                placeholder="Từ 8 đến 12 ký tự"
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
-              />
-            </label>
-            <label className="block space-y-2 text-sm font-medium text-slate-700">
-              Xác nhận mật khẩu *
-              <input
-                value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value)}
-                type="password"
-                autoComplete="new-password"
-                placeholder="Nhập lại mật khẩu"
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
-              />
-            </label>
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full rounded-2xl bg-emerald-600 px-4 py-3 text-white hover:bg-emerald-700"
-            >
-              {isSubmitting
-                ? "Đang đăng ký..."
-                : ownerRequested
-                  ? "Đăng ký chủ quán"
-                  : "Đăng ký tài khoản"}
-            </Button>
-          </form>
+              <Button
+                type="submit"
+                disabled={isVerifying || otp.length !== 6}
+                className="rounded-2xl bg-emerald-600 px-6 py-3 text-white hover:bg-emerald-700 w-full max-w-xs"
+              >
+                {isVerifying ? "Đang xác thực..." : "Xác thực và đăng nhập"}
+              </Button>
+            </form>
+          ) : (
+            <>
+              {ownerRequested ? (
+                <div className="mt-8 rounded-3xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-800">
+                  Bạn đang đăng ký tài khoản chủ quán. Sau khi đăng ký, bạn có thể
+                  tạo nhà hàng và thực đơn trong khu vực quản lý.
+                </div>
+              ) : null}
 
-          <p className="mt-6 text-center text-sm text-slate-600">
-            Đã có tài khoản?{" "}
-            <Link
-              to="/login"
-              className="font-semibold text-emerald-700 hover:underline"
-            >
-              Đăng nhập ngay
-            </Link>
-          </p>
+              <form
+                onSubmit={handleRegister}
+                className="mt-8 space-y-5 rounded-[2rem] border border-slate-200 bg-slate-50 p-7"
+              >
+                <label className="block space-y-2 text-sm font-medium text-slate-700">
+                  Họ và tên *
+                  <input
+                    value={fullName}
+                    onChange={(event) => setFullName(event.target.value)}
+                    type="text"
+                    autoComplete="name"
+                    placeholder="Nguyễn Văn A"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+                  />
+                </label>
+                <label className="block space-y-2 text-sm font-medium text-slate-700">
+                  Email *
+                  <input
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    type="email"
+                    autoComplete="email"
+                    placeholder="your@email.com"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+                  />
+                </label>
+                <label className="block space-y-2 text-sm font-medium text-slate-700">
+                  Mật khẩu *
+                  <input
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder="Từ 8 đến 12 ký tự"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+                  />
+                </label>
+                <label className="block space-y-2 text-sm font-medium text-slate-700">
+                  Xác nhận mật khẩu *
+                  <input
+                    value={confirmPassword}
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder="Nhập lại mật khẩu"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+                  />
+                </label>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full rounded-2xl bg-emerald-600 px-4 py-3 text-white hover:bg-emerald-700"
+                >
+                  {isSubmitting
+                    ? "Đang đăng ký..."
+                    : ownerRequested
+                      ? "Đăng ký chủ quán"
+                      : "Đăng ký tài khoản"}
+                </Button>
+              </form>
+
+              <p className="mt-6 text-center text-sm text-slate-600">
+                Đã có tài khoản?{" "}
+                <Link
+                  to="/login"
+                  className="font-semibold text-emerald-700 hover:underline"
+                >
+                  Đăng nhập ngay
+                </Link>
+              </p>
+            </>
+          )}
         </div>
       </section>
     </main>

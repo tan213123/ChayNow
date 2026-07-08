@@ -62,3 +62,21 @@ export const registerOwner = async (
 
   return toLoginResponse(response.data);
 };
+
+export const verifyEmail = async (token: string): Promise<void> => {
+  const response = await apiService.post<ApiResponse<void>, ApiResponse<void>>(
+    `/api/auth/verify-email?token=${token}`
+  );
+  if (!response.success) {
+    throw new Error(response.message || "Email verification failed");
+  }
+};
+
+export const resendVerificationEmail = async (email: string): Promise<void> => {
+  const response = await apiService.post<ApiResponse<void>, ApiResponse<void>>(
+    `/api/auth/resend-verification?email=${email}`
+  );
+  if (!response.success) {
+    throw new Error(response.message || "Failed to resend verification email");
+  }
+};

@@ -57,4 +57,23 @@ public class AuthController {
                 .build());
     }
 
+    @PostMapping("/verify-email")
+    @Operation(summary = "Verify email", description = "Verifies the user's email using a token")
+    public ResponseEntity<ApiResponse<Void>> verifyEmail(@org.springframework.web.bind.annotation.RequestParam String token) {
+        authService.verifyEmail(token);
+        return ResponseEntity.ok(ApiResponse.<Void>builder()
+                .success(true)
+                .message("Email verified successfully")
+                .build());
+    }
+
+    @PostMapping("/resend-verification")
+    @Operation(summary = "Resend verification email", description = "Resends the verification email to the user")
+    public ResponseEntity<ApiResponse<Void>> resendVerificationEmail(@org.springframework.web.bind.annotation.RequestParam String email) {
+        authService.resendVerificationEmail(email);
+        return ResponseEntity.ok(ApiResponse.<Void>builder()
+                .success(true)
+                .message("Verification email resent successfully")
+                .build());
+    }
 }
