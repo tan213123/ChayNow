@@ -1,0 +1,1149 @@
+﻿{
+    "sourceUrl":  "https://vinwonders.com/vi/wonderpedia/news/quan-chay-quan-9-tphcm/",
+    "sourceName":  "VinWonders - quan chay Quan 9 TPHCM",
+    "importMode":  "draft",
+    "notes":  [
+                  "Du lieu nay duoc tao de lam ban nhap import/seed, can review lai truoc khi ghi database.",
+                  "Gia menu de null vi bai nguon khong cung cap gia chi tiet.",
+                  "Quan 9 hien thuoc TP Thu Duc, nhung giu district la Quan 9 theo noi dung nguon de de tim kiem.",
+                  "Cac mon trong menus co loai inferred = true la mon goi y them de tai su dung file import, khong phai toan bo deu lay truc tiep tu bai nguon."
+              ],
+    "defaults":  {
+                     "city":  "TP. Ho Chi Minh",
+                     "district":  "Quan 9",
+                     "typeRestaurantName":  "Binh dan",
+                     "status":  "PENDING",
+                     "active":  true
+                 },
+    "restaurants":  [
+                        {
+                            "sourceRank":  1,
+                            "place":  {
+                                          "name":  "Quan 9",
+                                          "district":  "Quan 9",
+                                          "city":  "TP. Ho Chi Minh",
+                                          "mapUrl":  null
+                                      },
+                            "restaurant":  {
+                                               "name":  "Hang Thien",
+                                               "address":  "25A Duong 12, Quan 9, TP. Ho Chi Minh",
+                                               "phoneNumber":  "0344353704",
+                                               "description":  "Quan lau chay tai Quan 9, phu hop cho bua an thanh dam va khong gian yen tinh.",
+                                               "typeRestaurantName":  "Binh dan",
+                                               "openTime":  "10:00",
+                                               "closedTime":  "22:00",
+                                               "status":  "PENDING",
+                                               "active":  true
+                                           },
+                            "menus":  [
+                                          {
+                                              "name":  "Lau chay",
+                                              "description":  "Mon lau chay dac trung cua quan.",
+                                              "price":  null,
+                                              "category":  "Lau",
+                                              "available":  true,
+                                              "featured":  true,
+                                              "imageUrl":  null
+                                          },
+                                          {
+                                              "name":  "Lau Thai chay",
+                                              "description":  "Lau Thai chay vi chua cay nhe, dung kem rau nam.",
+                                              "price":  null,
+                                              "category":  "Lau",
+                                              "available":  true,
+                                              "featured":  true,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Lau nam chay",
+                                              "description":  "Lau nam thanh dam voi nhieu loai nam va rau tuoi.",
+                                              "price":  null,
+                                              "category":  "Lau",
+                                              "available":  true,
+                                              "featured":  true,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Dau hu chien sa ot",
+                                              "description":  "Dau hu chien gion phu sa ot thom.",
+                                              "price":  null,
+                                              "category":  "Mon chien",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Nam kho tieu",
+                                              "description":  "Nam kho tieu dam vi, an kem com nong.",
+                                              "price":  null,
+                                              "category":  "Mon kho",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Goi cuon chay",
+                                              "description":  "Goi cuon rau cu va dau hu, dung kem nuoc cham chay.",
+                                              "price":  null,
+                                              "category":  "Khai vi",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Com chien duong chau chay",
+                                              "description":  "Com chien rau cu va nam theo phong cach chay.",
+                                              "price":  null,
+                                              "category":  "Com",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Tra tac",
+                                              "description":  "Nuoc giai khat vi tac tuoi.",
+                                              "price":  null,
+                                              "category":  "Nuoc uong",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          }
+                                      ]
+                        },
+                        {
+                            "sourceRank":  2,
+                            "place":  {
+                                          "name":  "Quan 9",
+                                          "district":  "Quan 9",
+                                          "city":  "TP. Ho Chi Minh",
+                                          "mapUrl":  null
+                                      },
+                            "restaurant":  {
+                                               "name":  "Tinh Tam Trai",
+                                               "address":  "96 Khong Tu, Quan 9, TP. Ho Chi Minh",
+                                               "phoneNumber":  "0937974427",
+                                               "description":  "Quan chay co thuc don da dang, phu hop cho khach thich mon chay thanh nhe.",
+                                               "typeRestaurantName":  "Binh dan",
+                                               "openTime":  "08:30",
+                                               "closedTime":  "21:30",
+                                               "status":  "PENDING",
+                                               "active":  true
+                                           },
+                            "menus":  [
+                                          {
+                                              "name":  "Com chay",
+                                              "description":  "Mon com chay phu hop bua trua hoac bua toi.",
+                                              "price":  null,
+                                              "category":  "Com",
+                                              "available":  true,
+                                              "featured":  true,
+                                              "imageUrl":  null
+                                          },
+                                          {
+                                              "name":  "Com tam chay",
+                                              "description":  "Com tam chay voi bi, cha va suon chay.",
+                                              "price":  null,
+                                              "category":  "Com",
+                                              "available":  true,
+                                              "featured":  true,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Bun rieu chay",
+                                              "description":  "Bun rieu chay voi dau hu, nam va ca chua.",
+                                              "price":  null,
+                                              "category":  "Bun",
+                                              "available":  true,
+                                              "featured":  true,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Pho chay",
+                                              "description":  "Pho nuoc chay voi rau thom va nam.",
+                                              "price":  null,
+                                              "category":  "Pho",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Hu tieu chay",
+                                              "description":  "Hu tieu chay nuoc thanh ngot tu rau cu.",
+                                              "price":  null,
+                                              "category":  "Hu tieu",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Dau hu sot ca",
+                                              "description":  "Dau hu sot ca chua dam vi.",
+                                              "price":  null,
+                                              "category":  "Mon sot",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Rau cu xao nam",
+                                              "description":  "Rau cu xao nam don gian, thanh dam.",
+                                              "price":  null,
+                                              "category":  "Mon xao",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Sua dau nanh",
+                                              "description":  "Sua dau nanh phu hop an kem mon chay.",
+                                              "price":  null,
+                                              "category":  "Nuoc uong",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          }
+                                      ]
+                        },
+                        {
+                            "sourceRank":  3,
+                            "place":  {
+                                          "name":  "Quan 9",
+                                          "district":  "Quan 9",
+                                          "city":  "TP. Ho Chi Minh",
+                                          "mapUrl":  null
+                                      },
+                            "restaurant":  {
+                                               "name":  "Quan chay Tam Dang",
+                                               "address":  "15 Duong So 2, Tang Nhon Phu B, Quan 9, TP. Ho Chi Minh",
+                                               "phoneNumber":  "0903387236",
+                                               "description":  "Quan chay phuc vu nhieu mon an quen thuoc, phu hop cho khach an chay hang ngay.",
+                                               "typeRestaurantName":  "Binh dan",
+                                               "openTime":  "08:00",
+                                               "closedTime":  "20:00",
+                                               "status":  "PENDING",
+                                               "active":  true
+                                           },
+                            "menus":  [
+                                          {
+                                              "name":  "Bun bo Hue chay",
+                                              "description":  "Phien ban chay cua mon bun bo Hue.",
+                                              "price":  null,
+                                              "category":  "Bun",
+                                              "available":  true,
+                                              "featured":  true,
+                                              "imageUrl":  null
+                                          },
+                                          {
+                                              "name":  "Mi Quang chay",
+                                              "description":  "Mi Quang chay voi huong vi thanh dam.",
+                                              "price":  null,
+                                              "category":  "Mi",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null
+                                          },
+                                          {
+                                              "name":  "Bun mam chay",
+                                              "description":  "Bun mam chay vi dam, dung kem rau song.",
+                                              "price":  null,
+                                              "category":  "Bun",
+                                              "available":  true,
+                                              "featured":  true,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Banh canh chay",
+                                              "description":  "Banh canh nuoc chay voi nam va dau hu.",
+                                              "price":  null,
+                                              "category":  "Banh canh",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Com chien chay",
+                                              "description":  "Com chien rau cu thap cam.",
+                                              "price":  null,
+                                              "category":  "Com",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Mi xao gion chay",
+                                              "description":  "Mi xao gion phu rau cu va nam.",
+                                              "price":  null,
+                                              "category":  "Mi",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Cha gio chay",
+                                              "description":  "Cha gio nhan rau cu chien gion.",
+                                              "price":  null,
+                                              "category":  "Khai vi",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Dau hu kho nam",
+                                              "description":  "Dau hu kho cung nam, vi man ngot nhe.",
+                                              "price":  null,
+                                              "category":  "Mon kho",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Nuoc sam",
+                                              "description":  "Nuoc sam mat lanh.",
+                                              "price":  null,
+                                              "category":  "Nuoc uong",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          }
+                                      ]
+                        },
+                        {
+                            "sourceRank":  4,
+                            "place":  {
+                                          "name":  "Quan 9",
+                                          "district":  "Quan 9",
+                                          "city":  "TP. Ho Chi Minh",
+                                          "mapUrl":  null
+                                      },
+                            "restaurant":  {
+                                               "name":  "Quan chay Hanh Nguyen",
+                                               "address":  "120 Hoang Huu Nam, Quan 9, TP. Ho Chi Minh",
+                                               "phoneNumber":  "0961793977",
+                                               "description":  "Quan chay tai duong Hoang Huu Nam, phuc vu cac mon chay binh dan.",
+                                               "typeRestaurantName":  "Binh dan",
+                                               "openTime":  "06:00",
+                                               "closedTime":  "20:00",
+                                               "status":  "PENDING",
+                                               "active":  true
+                                           },
+                            "menus":  [
+                                          {
+                                              "name":  "Bun bo Hue chay",
+                                              "description":  "Mon bun chay duoc nguon nhac den trong thuc don.",
+                                              "price":  null,
+                                              "category":  "Bun",
+                                              "available":  true,
+                                              "featured":  true,
+                                              "imageUrl":  null
+                                          },
+                                          {
+                                              "name":  "Lau nam",
+                                              "description":  "Mon lau chay voi nam.",
+                                              "price":  null,
+                                              "category":  "Lau",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null
+                                          },
+                                          {
+                                              "name":  "Com suon chay",
+                                              "description":  "Com suon chay an kem rau dua.",
+                                              "price":  null,
+                                              "category":  "Com",
+                                              "available":  true,
+                                              "featured":  true,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Bun thit nuong chay",
+                                              "description":  "Bun thit nuong chay voi do chua va rau song.",
+                                              "price":  null,
+                                              "category":  "Bun",
+                                              "available":  true,
+                                              "featured":  true,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Hu tieu kho chay",
+                                              "description":  "Hu tieu kho chay tron sot dam vi.",
+                                              "price":  null,
+                                              "category":  "Hu tieu",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Canh chua chay",
+                                              "description":  "Canh chua chay voi bac ha, dau bap va ca chua.",
+                                              "price":  null,
+                                              "category":  "Canh",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Kho quet chay",
+                                              "description":  "Kho quet chay dung voi rau luoc.",
+                                              "price":  null,
+                                              "category":  "Mon kho",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Rau luoc kho quet",
+                                              "description":  "Rau luoc an kem kho quet chay.",
+                                              "price":  null,
+                                              "category":  "Mon rau",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Chanh day",
+                                              "description":  "Nuoc chanh day tuoi.",
+                                              "price":  null,
+                                              "category":  "Nuoc uong",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          }
+                                      ]
+                        },
+                        {
+                            "sourceRank":  5,
+                            "place":  {
+                                          "name":  "Quan 9",
+                                          "district":  "Quan 9",
+                                          "city":  "TP. Ho Chi Minh",
+                                          "mapUrl":  null
+                                      },
+                            "restaurant":  {
+                                               "name":  "Com chay Thien Duyen",
+                                               "address":  "09 Duong Man Thien, Quan 9, TP. Ho Chi Minh",
+                                               "phoneNumber":  "0903813490",
+                                               "description":  "Quan com chay o khu Man Thien, phu hop cho bua an nhanh va gon.",
+                                               "typeRestaurantName":  "Binh dan",
+                                               "openTime":  "08:00",
+                                               "closedTime":  "20:00",
+                                               "status":  "PENDING",
+                                               "active":  true
+                                           },
+                            "menus":  [
+                                          {
+                                              "name":  "Com chay",
+                                              "description":  "Com chay suat hang ngay.",
+                                              "price":  null,
+                                              "category":  "Com",
+                                              "available":  true,
+                                              "featured":  true,
+                                              "imageUrl":  null
+                                          },
+                                          {
+                                              "name":  "Com thap cam chay",
+                                              "description":  "Com chay thap cam voi nhieu mon man.",
+                                              "price":  null,
+                                              "category":  "Com",
+                                              "available":  true,
+                                              "featured":  true,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Com ca kho chay",
+                                              "description":  "Com voi mon ca chay kho tieu.",
+                                              "price":  null,
+                                              "category":  "Com",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Com ga roti chay",
+                                              "description":  "Com ga chay roti vi dam.",
+                                              "price":  null,
+                                              "category":  "Com",
+                                              "available":  true,
+                                              "featured":  true,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Bun xao chay",
+                                              "description":  "Bun xao rau cu va dau hu.",
+                                              "price":  null,
+                                              "category":  "Bun",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Mi xao chay",
+                                              "description":  "Mi xao rau cu thap cam.",
+                                              "price":  null,
+                                              "category":  "Mi",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Canh rau cu",
+                                              "description":  "Canh rau cu thanh nhe.",
+                                              "price":  null,
+                                              "category":  "Canh",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Tra da",
+                                              "description":  "Tra da dung kem com chay.",
+                                              "price":  null,
+                                              "category":  "Nuoc uong",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          }
+                                      ]
+                        },
+                        {
+                            "sourceRank":  6,
+                            "place":  {
+                                          "name":  "Quan 9",
+                                          "district":  "Quan 9",
+                                          "city":  "TP. Ho Chi Minh",
+                                          "mapUrl":  null
+                                      },
+                            "restaurant":  {
+                                               "name":  "Com chay Dieu Hien",
+                                               "address":  "12 Duong So 102, Tang Nhon Phu A, Quan 9, TP. Ho Chi Minh",
+                                               "phoneNumber":  "0936956314",
+                                               "description":  "Quan com chay tai Tang Nhon Phu A, phuc vu cac mon chay binh dan.",
+                                               "typeRestaurantName":  "Binh dan",
+                                               "openTime":  "07:00",
+                                               "closedTime":  "22:00",
+                                               "status":  "PENDING",
+                                               "active":  true
+                                           },
+                            "menus":  [
+                                          {
+                                              "name":  "Com chay",
+                                              "description":  "Com chay suat hang ngay.",
+                                              "price":  null,
+                                              "category":  "Com",
+                                              "available":  true,
+                                              "featured":  true,
+                                              "imageUrl":  null
+                                          },
+                                          {
+                                              "name":  "Com suat chay",
+                                              "description":  "Com suat chay thay doi theo ngay.",
+                                              "price":  null,
+                                              "category":  "Com",
+                                              "available":  true,
+                                              "featured":  true,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Com bi cha chay",
+                                              "description":  "Com bi cha chay va rau dua.",
+                                              "price":  null,
+                                              "category":  "Com",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Bun Hue chay",
+                                              "description":  "Bun Hue chay cay nhe.",
+                                              "price":  null,
+                                              "category":  "Bun",
+                                              "available":  true,
+                                              "featured":  true,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Banh mi chay",
+                                              "description":  "Banh mi nhan cha, pate va rau chay.",
+                                              "price":  null,
+                                              "category":  "Banh mi",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Dau hu nhoi sot ca",
+                                              "description":  "Dau hu nhoi rau cu sot ca chua.",
+                                              "price":  null,
+                                              "category":  "Mon sot",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Nam xao sa ot",
+                                              "description":  "Nam xao sa ot thom cay.",
+                                              "price":  null,
+                                              "category":  "Mon xao",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Sua bap",
+                                              "description":  "Sua bap ngot nhe.",
+                                              "price":  null,
+                                              "category":  "Nuoc uong",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          }
+                                      ]
+                        },
+                        {
+                            "sourceRank":  7,
+                            "place":  {
+                                          "name":  "Quan 9",
+                                          "district":  "Quan 9",
+                                          "city":  "TP. Ho Chi Minh",
+                                          "mapUrl":  null
+                                      },
+                            "restaurant":  {
+                                               "name":  "Com chay Thien Quoc",
+                                               "address":  "40 Duong Tang Nhon Phu, Phuoc Long B, Quan 9, TP. Ho Chi Minh",
+                                               "phoneNumber":  "0907277683",
+                                               "description":  "Quan com chay tai Phuoc Long B, thich hop cho khach an chay quanh khu Quan 9.",
+                                               "typeRestaurantName":  "Binh dan",
+                                               "openTime":  "06:30",
+                                               "closedTime":  "20:00",
+                                               "status":  "PENDING",
+                                               "active":  true
+                                           },
+                            "menus":  [
+                                          {
+                                              "name":  "Com chay",
+                                              "description":  "Com chay suat hang ngay.",
+                                              "price":  null,
+                                              "category":  "Com",
+                                              "available":  true,
+                                              "featured":  true,
+                                              "imageUrl":  null
+                                          },
+                                          {
+                                              "name":  "Com chay thap cam",
+                                              "description":  "Com chay thap cam voi mon kho, xao va canh.",
+                                              "price":  null,
+                                              "category":  "Com",
+                                              "available":  true,
+                                              "featured":  true,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Com dau hu sot nam",
+                                              "description":  "Com voi dau hu sot nam dam vi.",
+                                              "price":  null,
+                                              "category":  "Com",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Bun cha gio chay",
+                                              "description":  "Bun cha gio chay voi rau song.",
+                                              "price":  null,
+                                              "category":  "Bun",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Mi Quang chay",
+                                              "description":  "Mi Quang chay voi dau hu va nam.",
+                                              "price":  null,
+                                              "category":  "Mi",
+                                              "available":  true,
+                                              "featured":  true,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Ca tim kho to chay",
+                                              "description":  "Ca tim kho to vi dam.",
+                                              "price":  null,
+                                              "category":  "Mon kho",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Goi ngo sen chay",
+                                              "description":  "Goi ngo sen tron chay thanh mat.",
+                                              "price":  null,
+                                              "category":  "Khai vi",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Nuoc mia",
+                                              "description":  "Nuoc mia tuoi.",
+                                              "price":  null,
+                                              "category":  "Nuoc uong",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          }
+                                      ]
+                        },
+                        {
+                            "sourceRank":  8,
+                            "place":  {
+                                          "name":  "Quan 9",
+                                          "district":  "Quan 9",
+                                          "city":  "TP. Ho Chi Minh",
+                                          "mapUrl":  null
+                                      },
+                            "restaurant":  {
+                                               "name":  "Quan chay co Tam",
+                                               "address":  "14 Le Van Viet, Quan 9, TP. Ho Chi Minh",
+                                               "phoneNumber":  null,
+                                               "description":  "Quan chay nam tren duong Le Van Viet, phuc vu cac mon chay quen thuoc.",
+                                               "typeRestaurantName":  "Binh dan",
+                                               "openTime":  "06:00",
+                                               "closedTime":  "20:00",
+                                               "status":  "PENDING",
+                                               "active":  true
+                                           },
+                            "menus":  [
+                                          {
+                                              "name":  "Mon chay tong hop",
+                                              "description":  "Danh muc mon chay can bo sung chi tiet khi import.",
+                                              "price":  null,
+                                              "category":  "Mon chay",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null
+                                          },
+                                          {
+                                              "name":  "Com chay co Tam",
+                                              "description":  "Com chay phan voi mon man thay doi theo ngay.",
+                                              "price":  null,
+                                              "category":  "Com",
+                                              "available":  true,
+                                              "featured":  true,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Bun rieu chay",
+                                              "description":  "Bun rieu chay dau hu va nam.",
+                                              "price":  null,
+                                              "category":  "Bun",
+                                              "available":  true,
+                                              "featured":  true,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Hu tieu chay",
+                                              "description":  "Hu tieu nuoc chay thanh dam.",
+                                              "price":  null,
+                                              "category":  "Hu tieu",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Banh xeo chay",
+                                              "description":  "Banh xeo nhan nam, dau xanh va rau.",
+                                              "price":  null,
+                                              "category":  "Banh",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Cha gio bap chay",
+                                              "description":  "Cha gio bap chay chien gion.",
+                                              "price":  null,
+                                              "category":  "Khai vi",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Dau hu kho sa ot",
+                                              "description":  "Dau hu kho sa ot cay nhe.",
+                                              "price":  null,
+                                              "category":  "Mon kho",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Tra chanh",
+                                              "description":  "Tra chanh mat lanh.",
+                                              "price":  null,
+                                              "category":  "Nuoc uong",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          }
+                                      ]
+                        },
+                        {
+                            "sourceRank":  9,
+                            "place":  {
+                                          "name":  "Quan 9",
+                                          "district":  "Quan 9",
+                                          "city":  "TP. Ho Chi Minh",
+                                          "mapUrl":  null
+                                      },
+                            "restaurant":  {
+                                               "name":  "Quan chay Sau Duong",
+                                               "address":  "13 Duong 138, Tan Phu, Quan 9, TP. Ho Chi Minh",
+                                               "phoneNumber":  "0906443433",
+                                               "description":  "Quan chay tai khu Tan Phu, phuc vu cac mon chay binh dan.",
+                                               "typeRestaurantName":  "Binh dan",
+                                               "openTime":  "07:00",
+                                               "closedTime":  "21:00",
+                                               "status":  "PENDING",
+                                               "active":  true
+                                           },
+                            "menus":  [
+                                          {
+                                              "name":  "Mon chay tong hop",
+                                              "description":  "Danh muc mon chay can bo sung chi tiet khi import.",
+                                              "price":  null,
+                                              "category":  "Mon chay",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null
+                                          },
+                                          {
+                                              "name":  "Com chay Sau Duong",
+                                              "description":  "Com chay binh dan voi mon man va canh.",
+                                              "price":  null,
+                                              "category":  "Com",
+                                              "available":  true,
+                                              "featured":  true,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Bun mam chay",
+                                              "description":  "Bun mam chay dam da.",
+                                              "price":  null,
+                                              "category":  "Bun",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Pho ap chao chay",
+                                              "description":  "Pho ap chao voi rau cu va nam.",
+                                              "price":  null,
+                                              "category":  "Pho",
+                                              "available":  true,
+                                              "featured":  true,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Mi xao mem chay",
+                                              "description":  "Mi xao mem rau cu thap cam.",
+                                              "price":  null,
+                                              "category":  "Mi",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Dau hu chien gion",
+                                              "description":  "Dau hu chien gion dung kem tuong.",
+                                              "price":  null,
+                                              "category":  "Mon chien",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Nam ram me",
+                                              "description":  "Nam ram sot me chua ngot.",
+                                              "price":  null,
+                                              "category":  "Mon sot",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Rau ma dau xanh",
+                                              "description":  "Rau ma dau xanh giai khat.",
+                                              "price":  null,
+                                              "category":  "Nuoc uong",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          }
+                                      ]
+                        },
+                        {
+                            "sourceRank":  10,
+                            "place":  {
+                                          "name":  "Quan 9",
+                                          "district":  "Quan 9",
+                                          "city":  "TP. Ho Chi Minh",
+                                          "mapUrl":  null
+                                      },
+                            "restaurant":  {
+                                               "name":  "Com chay Thien Phuoc",
+                                               "address":  "549 Nguyen Duy Trinh, Phu Huu, Quan 9, TP. Ho Chi Minh",
+                                               "phoneNumber":  "0902543230",
+                                               "description":  "Quan com chay tren duong Nguyen Duy Trinh, thuan tien cho khach khu Phu Huu.",
+                                               "typeRestaurantName":  "Binh dan",
+                                               "openTime":  "09:00",
+                                               "closedTime":  "20:00",
+                                               "status":  "PENDING",
+                                               "active":  true
+                                           },
+                            "menus":  [
+                                          {
+                                              "name":  "Com chay",
+                                              "description":  "Com chay suat hang ngay.",
+                                              "price":  null,
+                                              "category":  "Com",
+                                              "available":  true,
+                                              "featured":  true,
+                                              "imageUrl":  null
+                                          },
+                                          {
+                                              "name":  "Com chay Thien Phuoc",
+                                              "description":  "Com chay phan voi mon an thay doi theo ngay.",
+                                              "price":  null,
+                                              "category":  "Com",
+                                              "available":  true,
+                                              "featured":  true,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Com suon bi cha chay",
+                                              "description":  "Com suon bi cha chay day du.",
+                                              "price":  null,
+                                              "category":  "Com",
+                                              "available":  true,
+                                              "featured":  true,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Bun bo Hue chay",
+                                              "description":  "Bun bo Hue chay vi cay nhe.",
+                                              "price":  null,
+                                              "category":  "Bun",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Banh canh nam chay",
+                                              "description":  "Banh canh nam chay thanh dam.",
+                                              "price":  null,
+                                              "category":  "Banh canh",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Rau cu kho",
+                                              "description":  "Rau cu kho man ngot nhe.",
+                                              "price":  null,
+                                              "category":  "Mon kho",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Dau bap xao nam",
+                                              "description":  "Dau bap xao nam don gian.",
+                                              "price":  null,
+                                              "category":  "Mon xao",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Sam bi dao",
+                                              "description":  "Nuoc sam bi dao mat lanh.",
+                                              "price":  null,
+                                              "category":  "Nuoc uong",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          }
+                                      ]
+                        },
+                        {
+                            "sourceRank":  11,
+                            "place":  {
+                                          "name":  "Quan 9",
+                                          "district":  "Quan 9",
+                                          "city":  "TP. Ho Chi Minh",
+                                          "mapUrl":  null
+                                      },
+                            "restaurant":  {
+                                               "name":  "Nha hang chay Dieu Giac",
+                                               "address":  "177 Tran Nao, Quan 9, TP. Ho Chi Minh",
+                                               "phoneNumber":  "0908900588",
+                                               "description":  "Nha hang chay phuc vu khong gian am cung va thuc don chay da dang.",
+                                               "typeRestaurantName":  "Binh dan",
+                                               "openTime":  "07:00",
+                                               "closedTime":  "21:00",
+                                               "status":  "PENDING",
+                                               "active":  true
+                                           },
+                            "menus":  [
+                                          {
+                                              "name":  "Mon chay tong hop",
+                                              "description":  "Danh muc mon chay can bo sung chi tiet khi import.",
+                                              "price":  null,
+                                              "category":  "Mon chay",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null
+                                          },
+                                          {
+                                              "name":  "Lau nam Dieu Giac",
+                                              "description":  "Lau nam chay phu hop dung nhom.",
+                                              "price":  null,
+                                              "category":  "Lau",
+                                              "available":  true,
+                                              "featured":  true,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Com chien hat sen",
+                                              "description":  "Com chien chay voi hat sen va rau cu.",
+                                              "price":  null,
+                                              "category":  "Com",
+                                              "available":  true,
+                                              "featured":  true,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Goi cu hu dua chay",
+                                              "description":  "Goi cu hu dua thanh mat.",
+                                              "price":  null,
+                                              "category":  "Goi",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Nam dong co kho tieu",
+                                              "description":  "Nam dong co kho tieu dam vi.",
+                                              "price":  null,
+                                              "category":  "Mon kho",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Dau hu non sot nam",
+                                              "description":  "Dau hu non sot nam mem min.",
+                                              "price":  null,
+                                              "category":  "Mon sot",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Cha gio trai cay",
+                                              "description":  "Cha gio trai cay chay chien gion.",
+                                              "price":  null,
+                                              "category":  "Khai vi",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          },
+                                          {
+                                              "name":  "Tra sen",
+                                              "description":  "Tra sen thom nhe.",
+                                              "price":  null,
+                                              "category":  "Nuoc uong",
+                                              "available":  true,
+                                              "featured":  false,
+                                              "imageUrl":  null,
+                                              "inferred":  true
+                                          }
+                                      ]
+                        }
+                    ]
+}
